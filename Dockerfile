@@ -1,5 +1,5 @@
 # Use an official Python runtime as the base image
-FROM python:3.9-slim
+FROM python:3.13-slim
 
 # Set the working directory in the container
 WORKDIR /app
@@ -13,7 +13,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Set environment variables (default values can be overridden at runtime)
 ENV PLAYLIST_URL=""
-ENV OUTPUT_FILE="/app/parsed_playlist.m3u"
+ENV OUTPUT_FILE="/app/data/parsed_playlist.m3u"
 
 # Command to run the script
 CMD ["python", "read_m3u_playlist.py"]
