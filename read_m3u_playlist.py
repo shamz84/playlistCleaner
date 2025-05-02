@@ -41,16 +41,18 @@ def read_m3u_playlist(lines):
                 if line.startswith("#EXTINF:"):
                     # Extract metadata attributes (e.g., tvg-id, tvg-name, group-title)
                     metadata_match = re.search(
-                        r'tvg-id="([^"]*)".*?tvg-name="([^"]*)".*?group-title="([^"]*)"',
+                        r'tvg-id="([^"]*)".*?tvg-name="([^"]*)".*?tvg-logo="([^"]*)".*?group-title="([^"]*)"',
                         line
                     )
                     if metadata_match:
                         tvg_id = metadata_match.group(1).strip()
                         tvg_name = metadata_match.group(2).replace("◉", "").replace("4K", "").strip()
-                        group_title = metadata_match.group(3).strip()
+                        tvg_logo = metadata_match.group(3).strip()
+                        group_title = metadata_match.group(4).replace("UK| ").strip()
                         current_metadata = {
                             "tvg-id": tvg_id,
                             "tvg-name": tvg_name,
+                            "tvg-logo": tvg_logo,
                             "group-title": group_title
                         }
                 continue
@@ -95,6 +97,7 @@ def write_m3u_playlist(output_file_path, playlist_data):
                     extinf_line = (
                         f'#EXTINF:-1 tvg-id="{metadata.get("tvg-id", "")}" '
                         f'tvg-name="{metadata.get("tvg-name", "")}" '
+                        f'tvg-logo="{metadata.get("tvg-logo", "")}" '
                         f'group-title="{metadata.get("group-title", "")}",'
                         f'{metadata.get("tvg-name", "")}\n'
                     )
