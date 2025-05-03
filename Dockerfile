@@ -7,6 +7,7 @@ WORKDIR /app
 # Copy the script and requirements into the container
 COPY read_m3u_playlist.py /app/
 COPY requirements.txt /app/
+COPY Channel-Grouping-list.json /app/
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt

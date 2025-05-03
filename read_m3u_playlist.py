@@ -2,6 +2,7 @@ import re
 import aiohttp
 import asyncio
 import os
+import json
 
 # Static list of group-titles to ignore
 IGNORED_GROUP_TITLES = ["HINDI TAMIL", "BN - BENGALI", "UK| BFBS ᴿᴬᵂ", "UK| SPORT SD", "UK| LEAGUE ONE PPV", "UK| LEAGUE TWO PPV", "CRUNCHYROLL SERIES (MULTI-SUBS)", "IN - TAMIL", "IN - TELUGU"]
@@ -32,6 +33,14 @@ def read_m3u_playlist(lines):
     """
     playlist = []
 
+    # Load the channel-to-group mapping from the JSON file
+    try:
+        with open("Channel-Grouping-list.json", "r", encoding="utf-8") as json_file:
+            channel_group_mapping = json.load(json_file)
+    except Exception as e:
+        print(f"Error loading channel group mapping: {e}")
+        return []
+
     try:
         current_metadata = {}
         for line in lines:
@@ -48,7 +57,15 @@ def read_m3u_playlist(lines):
                         tvg_id = metadata_match.group(1).strip()
                         tvg_name = metadata_match.group(2).replace("◉", "").replace("4K", "").strip()
                         tvg_logo = metadata_match.group(3).strip()
-                        group_title = metadata_match.group(4).replace("UK| ").strip()
+                        group_title = metadata_match.group(4).replace("UK| ","").strip()
+
+                        # Check if group-title is "24/7 ᴴᴰ/ᴿᴬᵂ" and update based on mapping
+                        if group_title == "24/7 ᴴᴰ/ᴿᴬᵂ":
+                            for category, channels in channel_group_mapping.items():
+                                if isinstance(channels, list) and tvg_name in channels:
+                                    group_title = category
+                                    break
+
                         current_metadata = {
                             "tvg-id": tvg_id,
                             "tvg-name": tvg_name,
