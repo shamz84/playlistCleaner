@@ -5,7 +5,7 @@ import os
 import json
 
 # Static list of group-titles to ignore
-IGNORED_GROUP_TITLES = ["HINDI TAMIL", "BN - BENGALI", "UK| BFBS ᴿᴬᵂ", "UK| SPORT SD", "UK| LEAGUE ONE PPV", "UK| LEAGUE TWO PPV", "CRUNCHYROLL SERIES (MULTI-SUBS)", "IN - TAMIL", "IN - TELUGU"]
+IGNORED_GROUP_TITLES = ["HINDI TAMIL", "BN - BENGALI", "BFBS ᴿᴬᵂ", "GENERAL ʰᵉᵛᶜ","News ʰᵉᵛᶜ","SPORT SD", "LEAGUE ONE PPV", "LEAGUE TWO PPV", "CRUNCHYROLL SERIES (MULTI-SUBS)", "IN - TAMIL", "IN - TELUGU"]
 
 async def fetch_m3u_playlist(url):
     """
@@ -55,7 +55,7 @@ def read_m3u_playlist(lines):
                     )
                     if metadata_match:
                         tvg_id = metadata_match.group(1).strip()
-                        tvg_name = metadata_match.group(2).replace("◉", "").replace("4K", "").strip()
+                        tvg_name = metadata_match.group(2).replace("◉", "").replace("4K-","").replace("4K", "").strip()
                         tvg_logo = metadata_match.group(3).strip()
                         group_title = metadata_match.group(4).replace("UK| ","").strip()
 
