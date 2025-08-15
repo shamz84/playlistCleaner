@@ -461,7 +461,7 @@ downloaded_file.m3u
 manual_download.m3u
 
 # Generated playlist files
-8k_*.m3u
+8k*.m3u
 filtered_playlist*.m3u
 parsed_playlist.m3u
 

@@ -1,0 +1,11 @@
+{
+  "url": "https://repo-server.site/manual",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "data": {
+    "id": "19"
+  },
+  "output_filename": "downloaded_playlist.m3u",
+  "timeout": 30
+}

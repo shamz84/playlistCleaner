@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  playlist-processor:
+    build: .
+    container_name: playlist-processor
+    volumes:
+      # Mount a data directory to persist outputs
+      - ./data:/app/data
+      # Mount configuration files from config directory
+      - ./config:/app/data/config:ro
+      # Mount optional direct config files (for backward compatibility)
+      # - ./credentials.json:/app/credentials.json:ro
+      # - ./gdrive_config.json:/app/gdrive_config.json:ro# Optionally mount source playlists
+      # - ./raw_playlist_20.m3u:/app/raw_playlist_20.m3u:ro  # No longer needed - using downloaded_file.m3u
+      - ./raw_playlist_AsiaUk.m3u:/app/raw_playlist_AsiaUk.m3u:ro
+    environment:
+      # Pipeline control - set to --skip-<step> to skip that step
+      - SKIP_DOWNLOAD=
+      - SKIP_FILTER=
+      - SKIP_CREDENTIALS=
+      - SKIP_GDRIVE=--skip-gdrive  # Skip Google Drive by default in container
+    networks:
+      - playlist-network
+    restart: unless-stopped
+
+  # Alternative service configurations
+  playlist-processor-download-only:
+    build: .
+    container_name: playlist-downloader
+    volumes:
+      - ./data:/app/data
+      - ./download_config.json:/app/download_config.json:ro
+    environment:
+      - SKIP_DOWNLOAD=
+      - SKIP_FILTER=--skip-filter
+      - SKIP_CREDENTIALS=--skip-credentials
+      - SKIP_GDRIVE=--skip-gdrive
+    networks:
+      - playlist-network
+    profiles:
+      - download-only
+
+  playlist-processor-filter-only:
+    build: .
+    container_name: playlist-filter
+    volumes:
+      - ./data:/app/data      - ./group_titles_with_flags.json:/app/group_titles_with_flags.json:ro
+      # - ./raw_playlist_20.m3u:/app/raw_playlist_20.m3u:ro  # No longer needed - using downloaded_file.m3u
+      - ./raw_playlist_AsiaUk.m3u:/app/raw_playlist_AsiaUk.m3u:ro
+    environment:
+      - SKIP_DOWNLOAD=--skip-download
+      - SKIP_FILTER=
+      - SKIP_CREDENTIALS=--skip-credentials
+      - SKIP_GDRIVE=--skip-gdrive
+    networks:
+      - playlist-network
+    profiles:
+      - filter-only
+
+networks:
+  playlist-network:
+    driver: bridge
