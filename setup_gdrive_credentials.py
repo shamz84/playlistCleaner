@@ -114,10 +114,20 @@ def open_drive_api():
 
 def check_credentials_file():
     """Check if credentials file exists and is valid"""
-    creds_file = "gdrive_credentials.json"
+    # Check both locations
+    config_creds = "config/gdrive_credentials.json"
+    root_creds = "gdrive_credentials.json"
     
-    if not os.path.exists(creds_file):
-        print(f"❌ {creds_file} not found")
+    creds_file = None
+    if os.path.exists(config_creds):
+        creds_file = config_creds
+    elif os.path.exists(root_creds):
+        creds_file = root_creds
+    else:
+        print("❌ gdrive_credentials.json not found")
+        print("📁 Please place the file in either:")
+        print("   - config/gdrive_credentials.json (recommended)")
+        print("   - gdrive_credentials.json (root folder)")
         return False
     
     try:
@@ -133,6 +143,8 @@ def check_credentials_file():
                 if "your-client-id" not in client_id and "your-client-secret" not in client_secret:
                     print(f"✅ {creds_file} found and appears valid")
                     print(f"   Client ID: {client_id[:20]}...")
+                    if creds_file == root_creds:
+                        print("💡 Consider moving to config/gdrive_credentials.json for better organization")
                     return True
                 else:
                     print(f"❌ {creds_file} contains template values - need real credentials")

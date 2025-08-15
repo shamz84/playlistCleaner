@@ -106,12 +106,23 @@ python upload_to_gdrive.py --backup
 
 def check_credentials():
     """Check if Google Drive credentials are set up"""
-    if os.path.exists("gdrive_credentials.json"):
-        print("✅ gdrive_credentials.json found")
+    # Check config folder first, then root
+    config_creds = "config/gdrive_credentials.json"
+    root_creds = "gdrive_credentials.json"
+    
+    if os.path.exists(config_creds):
+        print(f"✅ gdrive_credentials.json found in config folder: {config_creds}")
+        return True
+    elif os.path.exists(root_creds):
+        print(f"✅ gdrive_credentials.json found in root folder: {root_creds}")
+        print("💡 Consider moving to config/gdrive_credentials.json for better organization")
         return True
     else:
         print("❌ gdrive_credentials.json not found")
         print("💡 You need to download OAuth credentials from Google Cloud Console")
+        print("📁 Place the file in either:")
+        print("   - config/gdrive_credentials.json (recommended)")
+        print("   - gdrive_credentials.json (root folder)")
         return False
 
 def check_config():

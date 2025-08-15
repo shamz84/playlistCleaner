@@ -30,7 +30,17 @@ SCOPES = ['https://www.googleapis.com/auth/drive.file']
 class GoogleDriveUploader:
     def __init__(self, credentials_file='gdrive_credentials.json', token_file='gdrive_token.json'):
         """Initialize the Google Drive uploader"""
-        self.credentials_file = credentials_file
+        # Check for credentials file in config folder first, then root
+        config_creds = os.path.join('config', credentials_file)
+        if os.path.exists(config_creds):
+            self.credentials_file = config_creds
+            print(f"📁 Using credentials from config folder: {config_creds}")
+        elif os.path.exists(credentials_file):
+            self.credentials_file = credentials_file
+            print(f"📁 Using credentials from root folder: {credentials_file}")
+        else:
+            self.credentials_file = credentials_file  # Will fail later with proper error message
+        
         self.token_file = token_file
         self.service = None
         
@@ -41,8 +51,7 @@ class GoogleDriveUploader:
         # The file token.json stores the user's access and refresh tokens.
         if os.path.exists(self.token_file):
             creds = Credentials.from_authorized_user_file(self.token_file, SCOPES)
-        
-        # If there are no (valid) credentials available, let the user log in.
+          # If there are no (valid) credentials available, let the user log in.
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
                 try:
@@ -62,6 +71,9 @@ class GoogleDriveUploader:
                     print("   3. Enable Google Drive API")
                     print("   4. Create credentials (OAuth 2.0 Client ID)")
                     print("   5. Download the JSON file and save as 'gdrive_credentials.json'")
+                    print("   6. Place it in either:")
+                    print("      - config/gdrive_credentials.json (recommended)")
+                    print("      - gdrive_credentials.json (root folder)")
                     return False
                 
                 try:

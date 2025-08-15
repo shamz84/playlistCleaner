@@ -249,6 +249,7 @@ setup_config_files() {
     # Setup each config file
     setup_config_file "credentials.json" "Credentials configuration"
     setup_config_file "gdrive_config.json" "Google Drive configuration" || echo "⚠️  Google Drive config not found (optional)"
+    setup_config_file "gdrive_credentials.json" "Google Drive credentials" || echo "⚠️  Google Drive credentials not found (optional)"
     setup_config_file "download_config.json" "Download configuration" || echo "⚠️  Download config not found (optional)"
     setup_config_file "group_titles_with_flags.json" "Group configuration"
     
