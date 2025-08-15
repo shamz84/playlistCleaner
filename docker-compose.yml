@@ -9,9 +9,12 @@ services:
       - ./data:/app/data
       # Mount configuration files from config directory
       - ./config:/app/data/config:ro
+      # Mount Google Drive authentication token (after host authentication)
+      - ./gdrive_token.json:/app/gdrive_token.json:ro
       # Mount optional direct config files (for backward compatibility)
       # - ./credentials.json:/app/credentials.json:ro
-      # - ./gdrive_config.json:/app/gdrive_config.json:ro# Optionally mount source playlists
+      # - ./gdrive_config.json:/app/gdrive_config.json:ro
+      # Optionally mount source playlists
       # - ./raw_playlist_20.m3u:/app/raw_playlist_20.m3u:ro  # No longer needed - using downloaded_file.m3u
       - ./raw_playlist_AsiaUk.m3u:/app/raw_playlist_AsiaUk.m3u:ro
     environment:
@@ -45,7 +48,8 @@ services:
     build: .
     container_name: playlist-filter
     volumes:
-      - ./data:/app/data      - ./group_titles_with_flags.json:/app/group_titles_with_flags.json:ro
+      - ./data:/app/data
+      - ./group_titles_with_flags.json:/app/group_titles_with_flags.json:ro
       # - ./raw_playlist_20.m3u:/app/raw_playlist_20.m3u:ro  # No longer needed - using downloaded_file.m3u
       - ./raw_playlist_AsiaUk.m3u:/app/raw_playlist_AsiaUk.m3u:ro
     environment:
