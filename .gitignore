@@ -454,6 +454,8 @@ credentials*.json
 !credentials_example.json
 gdrive_config*.json
 !gdrive_config_example.json
+gdrive_credentials*.json
+!gdrive_credentials_example.json
 
 # Downloaded playlist files
 raw_playlist*.m3u
