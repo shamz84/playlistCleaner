@@ -1,0 +1,11 @@
+# Docker Compose override for Google Drive enabled runs
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.gdrive.yml up --rm playlist-processor
+version: '3.8'
+
+services:
+  playlist-processor:
+    environment:
+      - SKIP_GDRIVE=""  # Enable Google Drive backup
+    volumes:
+      # Ensure Google Drive token is mounted
+      - ./gdrive_token.json:/app/gdrive_token.json:ro

@@ -15,13 +15,12 @@ services:
       # - ./gdrive_config.json:/app/gdrive_config.json:ro  # Use config/gdrive_config.json instead
       # Optionally mount source playlists
       # - ./raw_playlist_20.m3u:/app/raw_playlist_20.m3u:ro  # No longer needed - using downloaded_file.m3u
-      - ./raw_playlist_AsiaUk.m3u:/app/raw_playlist_AsiaUk.m3u:ro
-    environment:
+      - ./raw_playlist_AsiaUk.m3u:/app/raw_playlist_AsiaUk.m3u:ro    environment:
       # Pipeline control - set to --skip-<step> to skip that step
       - SKIP_DOWNLOAD=
       - SKIP_FILTER=
       - SKIP_CREDENTIALS=
-      - SKIP_GDRIVE=--skip-gdrive  # Skip Google Drive by default in container
+      - SKIP_GDRIVE=--skip-gdrive  # Change to "" to enable Google Drive backup
     networks:
       - playlist-network
     restart: unless-stopped
