@@ -175,8 +175,11 @@ validate_all_inputs() {
     # Google Drive step validation
     if [[ "$SKIP_GDRIVE" != "--skip-gdrive" ]]; then
         echo "🔍 Google Drive step enabled - checking GDrive requirements:"
-        if [ -f "/app/gdrive_config.json" ]; then
+        if [ -f "/app/data/config/gdrive_config.json" ]; then
+            validate_json_file "/app/data/config/gdrive_config.json" "Google Drive configuration" || validation_failed=true
+        elif [ -f "/app/gdrive_config.json" ]; then
             validate_json_file "/app/gdrive_config.json" "Google Drive configuration" || validation_failed=true
+            echo "💡 Consider moving gdrive_config.json to config folder for better organization"
         else
             echo "⚠️  Google Drive config not found - step may fail"
         fi

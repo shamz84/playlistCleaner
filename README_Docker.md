@@ -65,7 +65,7 @@ Control pipeline execution with these environment variables:
 ### Configuration Files (Read-Only)
 - `/app/credentials.json` - User credentials for playlist generation
 - `/app/group_titles_with_flags.json` - Group filtering configuration
-- `/app/gdrive_config.json` - Google Drive backup settings
+- `/app/data/config/gdrive_config.json` - Google Drive backup settings (mounted from config folder)
 
 ### Source Files (Read-Only)
 - `/app/raw_playlist_20.m3u` - Main source playlist

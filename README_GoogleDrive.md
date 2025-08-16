@@ -50,7 +50,7 @@ python upload_to_gdrive.py --list
 
 ## Configuration
 
-Edit `gdrive_config.json` to customize:
+Edit `config/gdrive_config.json` to customize (or `gdrive_config.json` for backward compatibility):
 
 ```json
 {

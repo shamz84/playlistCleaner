@@ -28,7 +28,7 @@ COPY download_config.json /app/
 #### **After (Mount-time config)**
 ```dockerfile
 # Config files mounted at runtime
-# Note: credentials.json, gdrive_config.json, download_config.json will be mounted at runtime
+# Note: credentials.json, gdrive_config.json, download_config.json will be mounted from config folder at runtime
 ```
 
 ### 📁 Directory Structure
@@ -37,7 +37,7 @@ COPY download_config.json /app/
 PlaylistCleaner/
 ├── config/                          # 🆕 Mounted config directory
 │   ├── credentials.json             # Runtime user credentials
-│   ├── gdrive_config.json          # Google Drive settings
+│   ├── gdrive_config.json          # Google Drive settings (moved to config folder)
 │   └── download_config.json        # Download parameters
 ├── data/                            # Output directory
 │   ├── 8k_sparmar.m3u              # Generated playlist 1

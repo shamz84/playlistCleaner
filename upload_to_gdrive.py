@@ -252,7 +252,10 @@ def create_config_template():
         ]
     }
     
-    config_file = "gdrive_config.json"
+    # Create config folder if it doesn't exist
+    os.makedirs("config", exist_ok=True)
+    config_file = "config/gdrive_config.json"
+    
     with open(config_file, 'w', encoding='utf-8') as f:
         json.dump(config, f, indent=2)
     
@@ -283,8 +286,7 @@ def main():
         else:
             print("❌ Setup failed!")
         return True
-    
-    # Authenticate
+      # Authenticate
     if not uploader.authenticate():
         print("❌ Authentication failed!")
         print("💡 Run with --setup to configure authentication")
@@ -298,14 +300,23 @@ def main():
     if sys.argv[1] == "--backup":
         print("💾 Starting playlist backup...")
         
-        # Load or create config
-        config_file = "gdrive_config.json"
-        if os.path.exists(config_file):
+        # Load or create config - check config folder first, then root
+        config_file = None
+        config_paths = ["config/gdrive_config.json", "gdrive_config.json"]
+        
+        for path in config_paths:
+            if os.path.exists(path):
+                config_file = path
+                break
+        
+        if config_file:
+            print(f"📁 Using config from: {config_file}")
             with open(config_file, 'r', encoding='utf-8') as f:
                 config = json.load(f)
         else:
             print("⚠️  Configuration not found, creating template...")
             config = create_config_template()
+            config_file = "config/gdrive_config.json"
         
         # Get or create backup folder
         folder_name = config.get('default_folder', 'PlaylistBackups')

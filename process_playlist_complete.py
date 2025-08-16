@@ -80,10 +80,25 @@ def step_download(skip=False):
         print("⏭️  Skipping download step")
         return check_file_exists("downloaded_file.m3u", "Downloaded playlist")
     
-    print("📥 Downloading playlist from remote server...")
-    success = run_script("download_file.py", 
-                        ["--direct"], 
-                        "Downloading playlist with hardcoded parameters")
+    # Check for download config - config folder first, then root
+    config_file = None
+    config_paths = ["config/download_config.json", "download_config.json"]
+    
+    for path in config_paths:
+        if check_file_exists(path, "Download configuration"):
+            config_file = path
+            break
+    
+    if not config_file:
+        print("💡 Using direct download mode as fallback")
+        success = run_script("download_file.py", 
+                            ["--direct"], 
+                            "Downloading playlist with hardcoded parameters")
+    else:
+        print(f"📥 Downloading playlist using configuration file: {config_file}")
+        success = run_script("download_file.py", 
+                            ["--config", config_file], 
+                            f"Downloading playlist with config: {config_file}")
     
     if success:
         check_file_exists("downloaded_file.m3u", "Downloaded playlist")

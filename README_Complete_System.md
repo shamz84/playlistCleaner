@@ -38,7 +38,7 @@ This comprehensive system automates the complete workflow for M3U playlist proce
 **File**: `upload_to_gdrive.py`
 - **Purpose**: Backs up generated files to Google Drive
 - **Authentication**: OAuth 2.0
-- **Configuration**: `gdrive_config.json`
+- **Configuration**: `config/gdrive_config.json`
 
 ## 📋 Usage Examples
 
@@ -106,7 +106,7 @@ python upload_to_gdrive.py --backup
 ]
 ```
 
-### `gdrive_config.json` - Google Drive Settings
+### `config/gdrive_config.json` - Google Drive Settings
 ```json
 {
   "default_folder": "PlaylistBackups",

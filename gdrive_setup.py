@@ -94,9 +94,9 @@ python upload_to_gdrive.py --backup
 ```
 
 ## Files Created:
-- gdrive_credentials.json (your OAuth credentials)
+- gdrive_credentials.json (your OAuth credentials - place in config folder)
 - gdrive_token.json (authentication token - auto-generated)
-- gdrive_config.json (backup configuration)
+- config/gdrive_config.json (backup configuration)
 """
     
     with open("GDRIVE_SETUP.md", "w", encoding="utf-8") as f:
@@ -127,20 +127,29 @@ def check_credentials():
 
 def check_config():
     """Check if Google Drive configuration exists"""
-    if os.path.exists("gdrive_config.json"):
-        try:
-            with open("gdrive_config.json", "r", encoding="utf-8") as f:
-                config = json.load(f)
-            print("✅ gdrive_config.json found and valid")
-            print(f"   Default folder: {config.get('default_folder', 'Not set')}")
-            print(f"   Backup files: {len(config.get('backup_files', []))} configured")
-            return True
-        except Exception as e:
-            print(f"❌ gdrive_config.json invalid: {e}")
-            return False
-    else:
-        print("❌ gdrive_config.json not found")
-        return False
+    # Check config folder first, then root
+    config_paths = ["config/gdrive_config.json", "gdrive_config.json"]
+    
+    for config_file in config_paths:
+        if os.path.exists(config_file):
+            try:
+                with open(config_file, "r", encoding="utf-8") as f:
+                    config = json.load(f)
+                print(f"✅ gdrive_config.json found: {config_file}")
+                print(f"   Default folder: {config.get('default_folder', 'Not set')}")
+                print(f"   Backup files: {len(config.get('backup_files', []))} configured")
+                if config_file == "gdrive_config.json":
+                    print("💡 Consider moving to config/gdrive_config.json for better organization")
+                return True
+            except Exception as e:
+                print(f"❌ gdrive_config.json invalid at {config_file}: {e}")
+                continue
+    
+    print("❌ gdrive_config.json not found")
+    print("💡 Place the file in either:")
+    print("   - config/gdrive_config.json (recommended)")
+    print("   - gdrive_config.json (root folder)")
+    return False
 
 def main():
     """Main function"""

@@ -6,6 +6,6 @@
   "data": {
     "id": "19"
   },
-  "output_filename": "downloaded_playlist.m3u",
+  "output_filename": "downloaded_file.m3u",
   "timeout": 30
 }
