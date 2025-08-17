@@ -147,8 +147,36 @@ class GoogleDriveUploader:
         if not folder_id:
             folder_id = self.create_folder(folder_name, parent_folder_id)
         return folder_id
+
+    def find_file_by_name(self, file_name, folder_id=None):
+        """Find a file by name in the specified folder"""
+        try:
+            query = f"name='{file_name}' and trashed=false"
+            if folder_id:
+                query += f" and '{folder_id}' in parents"
+            
+            results = self.service.files().list(q=query, fields="files(id, name)").execute()
+            files = results.get('files', [])
+            
+            if files:
+                return files[0]['id']  # Return the first match
+            return None
+                
+        except HttpError as error:
+            print(f"❌ Error searching for file: {error}")
+            return None
     
-    def upload_file(self, file_path, folder_id=None, new_name=None):
+    def delete_file(self, file_id):
+        """Delete a file from Google Drive"""
+        try:
+            self.service.files().delete(fileId=file_id).execute()
+            print(f"🗑️  Deleted existing file (ID: {file_id})")
+            return True
+        except HttpError as error:
+            print(f"❌ Error deleting file: {error}")
+            return False
+
+    def upload_file(self, file_path, folder_id=None, new_name=None, overwrite=False):
         """Upload a file to Google Drive"""
         if not os.path.exists(file_path):
             print(f"❌ File not found: {file_path}")
@@ -157,6 +185,14 @@ class GoogleDriveUploader:
         try:
             file_name = new_name or os.path.basename(file_path)
             file_size = os.path.getsize(file_path)
+            
+            # Check for existing file if overwrite is enabled
+            if overwrite:
+                existing_file_id = self.find_file_by_name(file_name, folder_id)
+                if existing_file_id:
+                    print(f"🔄 File '{file_name}' already exists, overwriting...")
+                    if not self.delete_file(existing_file_id):
+                        print("⚠️  Failed to delete existing file, proceeding with upload anyway")
             
             print(f"📤 Uploading {file_name} ({file_size:,} bytes)...")
             
@@ -265,14 +301,17 @@ def create_config_template():
 def main():
     """Main function"""
     print("=== Google Drive Upload Tool ===")
-    
-    # Check command line arguments
+      # Check command line arguments
     if len(sys.argv) < 2:
         print("Usage:")
-        print("  python upload_to_gdrive.py <file_path> [folder_name]")
+        print("  python upload_to_gdrive.py <file_path> [folder_name] [--overwrite]")
         print("  python upload_to_gdrive.py --setup     # Setup authentication")
-        print("  python upload_to_gdrive.py --backup    # Backup playlist files")
+        print("  python upload_to_gdrive.py --backup    # Backup playlist files (uses config overwrite setting)")
         print("  python upload_to_gdrive.py --list      # List files in Drive")
+        print("")
+        print("Options:")
+        print("  --overwrite  : Replace existing files with the same name")
+        print("")
         return False
     
     # Initialize uploader
@@ -325,10 +364,12 @@ def main():
         if not folder_id:
             print("❌ Failed to create/find backup folder")
             return False
-        
-        # Backup specified files
+          # Backup specified files
         backup_patterns = config.get('backup_files', [])
+        overwrite_existing = config.get('overwrite_existing', False)
         uploaded_files = []
+        
+        print(f"🔧 Overwrite mode: {'✅ Enabled' if overwrite_existing else '❌ Disabled'}")
         
         for pattern in backup_patterns:
             if '*' in pattern:
@@ -341,7 +382,7 @@ def main():
             for file_path in files:
                 if file_path.exists():
                     print(f"\n📤 Backing up {file_path.name}...")
-                    result = uploader.upload_file(str(file_path), folder_id)
+                    result = uploader.upload_file(str(file_path), folder_id, overwrite=overwrite_existing)
                     if result:
                         uploaded_files.append(result)
         
@@ -351,10 +392,10 @@ def main():
         print(f"📏 Total size: {total_size:,} bytes")
         
         return True
-    
-    # Regular file upload
+      # Regular file upload
     file_path = sys.argv[1]
     folder_name = sys.argv[2] if len(sys.argv) > 2 else None
+    overwrite = len(sys.argv) > 3 and sys.argv[3].lower() == "--overwrite"
     
     if not os.path.exists(file_path):
         print(f"❌ File not found: {file_path}")
@@ -368,7 +409,7 @@ def main():
             return False
     
     # Upload the file
-    result = uploader.upload_file(file_path, folder_id)
+    result = uploader.upload_file(file_path, folder_id, overwrite=overwrite)
     
     if result:
         print(f"\n🎉 Upload successful!")
