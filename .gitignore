@@ -496,3 +496,4 @@ gdrive_token.json
 # Temporary files
 *.tmp
 *.temp
+data/gdrive_token_writable.json
