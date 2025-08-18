@@ -111,18 +111,44 @@ def step_filter(skip=False):
     
     if skip:
         print("⏭️  Skipping filter step")
-        return check_file_exists("filtered_playlist_final.m3u", "Filtered playlist")
-      # Check required input files
+        return True
+    
+    # Check required input files
     required_files = [
         ("downloaded_file.m3u", "Main playlist"),
-        ("raw_playlist_AsiaUk.m3u", "Asia UK playlist"),
         ("group_titles_with_flags.json", "Group configuration")
+    ]
+    
+    # Check optional files
+    optional_files = [
+        ("raw_playlist_AsiaUk.m3u", "Asia UK playlist (optional)")
     ]
     
     missing_files = []
     for filepath, description in required_files:
         if not check_file_exists(filepath, description):
             missing_files.append(filepath)
+      # Check optional files and show status but don't fail
+    for filepath, description in optional_files:
+        # For Asia UK playlist, check multiple possible paths
+        if filepath == "raw_playlist_AsiaUk.m3u":
+            asia_paths = [
+                "data/raw_playlist_AsiaUk.m3u",  # Container mount location
+                "raw_playlist_AsiaUk.m3u"        # Local/host location
+            ]
+            asia_found = False
+            for asia_path in asia_paths:
+                if os.path.exists(asia_path):
+                    check_file_exists(asia_path, description)
+                    asia_found = True
+                    break
+            if not asia_found:
+                print(f"⚠️  {description} not found: {filepath} - will be skipped")
+        else:
+            if os.path.exists(filepath):
+                check_file_exists(filepath, description)
+            else:
+                print(f"⚠️  {description} not found: {filepath} - will be skipped")
     
     if missing_files:
         print(f"❌ Missing required files for filtering: {', '.join(missing_files)}")
@@ -144,7 +170,7 @@ def step_filter(skip=False):
     
     return success
 
-def step_credentials(skip=False):
+def step_credentials(skip=False, filter_skipped=False):
     """Step 3: Replace credentials for multiple users"""
     print_banner("STEP 3: REPLACE CREDENTIALS")
     
@@ -152,9 +178,15 @@ def step_credentials(skip=False):
         print("⏭️  Skipping credentials step")
         return True
     
-    # Check required files
-    if not check_file_exists("filtered_playlist_final.m3u", "Filtered playlist"):
-        print("❌ Filtered playlist required for credential replacement")
+    # Determine input file based on whether filter was skipped
+    if filter_skipped:
+        input_file = "downloaded_file.m3u"
+        print("💡 Using downloaded file for credential replacement (filter was skipped)")
+    else:
+        input_file = "filtered_playlist_final.m3u"
+      # Check required files
+    if not check_file_exists(input_file, "Input playlist"):
+        print(f"❌ Input playlist required for credential replacement: {input_file}")
         return False
     
     if not check_file_exists("credentials.json", "Credentials configuration"):
@@ -164,8 +196,8 @@ def step_credentials(skip=False):
     
     print("🔐 Replacing credentials for multiple users...")
     success = run_script("replace_credentials_multi.py", 
-                        [], 
-                        "Replacing credentials for all configured users")
+                        [input_file], 
+                        f"Replacing credentials using {input_file}")
     
     if success:
         # Check for generated files
@@ -237,12 +269,11 @@ def main():
         if skip_gdrive: print("   - Google Drive Backup")
     
     start_time = time.time()
-    
-    # Execute steps
+      # Execute steps
     steps = [
         ("Download", step_download, skip_download),
         ("Filter", step_filter, skip_filter),
-        ("Credentials", step_credentials, skip_credentials),
+        ("Credentials", lambda skip: step_credentials(skip, filter_skipped=skip_filter), skip_credentials),
         ("Google Drive Backup", step_gdrive_backup, skip_gdrive)
     ]
     

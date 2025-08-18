@@ -117,7 +117,14 @@ def main():
     
     # Default file paths
     config_file = "credentials.json"
-    input_file = "filtered_playlist_final.m3u"
+    
+    # Check for command line argument for input file
+    if len(sys.argv) > 1:
+        input_file = sys.argv[1]
+        print(f"💡 Using command line input file: {input_file}")
+    else:
+        input_file = "filtered_playlist_final.m3u"
+        print(f"💡 Using default input file: {input_file}")
     
     # Check if config file exists, if not create a template
     if not os.path.exists(config_file):

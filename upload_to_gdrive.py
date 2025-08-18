@@ -41,7 +41,15 @@ class GoogleDriveUploader:
         else:
             self.credentials_file = credentials_file  # Will fail later with proper error message
         
-        self.token_file = token_file
+        # Check for writable token file (container environment)
+        writable_token = 'gdrive_token_writable.json'
+        if os.path.exists(writable_token):
+            self.token_file = writable_token
+            print(f"📁 Using writable token file: {writable_token}")
+        else:
+            self.token_file = token_file
+            print(f"📁 Using default token file: {token_file}")
+        
         self.service = None
         
     def authenticate(self):

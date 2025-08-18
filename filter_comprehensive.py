@@ -57,19 +57,30 @@ def main():
     except Exception as e:
         print(f"   ✗ Error reading downloaded_file.m3u: {e}")
         return False
+      # Asia UK playlist file    # Asia UK playlist file
+    asia_file_paths = [
+        'data/raw_playlist_AsiaUk.m3u',  # Container mount location
+        'raw_playlist_AsiaUk.m3u'        # Local/host location
+    ]
     
-    # Asia UK playlist file
-    try:
-        with open('raw_playlist_AsiaUk.m3u', 'r', encoding='utf-8') as f:
-            asia_lines = f.readlines()
-        print(f"   ✓ Loaded {len(asia_lines)} lines from raw_playlist_AsiaUk.m3u")
-        available_files.append(('raw_playlist_AsiaUk.m3u', asia_lines))
-    except FileNotFoundError:
+    asia_found = False
+    for asia_path in asia_file_paths:
+        try:
+            with open(asia_path, 'r', encoding='utf-8') as f:
+                asia_lines = f.readlines()
+            print(f"   ✓ Loaded {len(asia_lines)} lines from {asia_path}")
+            available_files.append((asia_path, asia_lines))
+            asia_found = True
+            break
+        except FileNotFoundError:
+            continue
+        except Exception as e:
+            print(f"   ✗ Error reading {asia_path}: {e}")
+            continue
+    
+    if not asia_found:
         print(f"   ⚠️  raw_playlist_AsiaUk.m3u not found")
         asia_lines = []
-    except Exception as e:
-        print(f"   ✗ Error reading raw_playlist_AsiaUk.m3u: {e}")
-        return False    
     if not available_files:
         print(f"   ✗ No playlist files found! Please ensure at least one source file exists.")
         return False

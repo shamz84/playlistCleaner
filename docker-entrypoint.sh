@@ -148,7 +148,7 @@ validate_all_inputs() {
         fi
         
         # Check Asia UK playlist (optional but recommended)
-        if check_file_with_size "/app/raw_playlist_AsiaUk.m3u" "Asia UK playlist (optional)" 100; then
+        if check_file_with_size "/app/data/raw_playlist_AsiaUk.m3u" "Asia UK playlist (optional)" 100; then
             echo "✅ Asia UK content will be included"
         else
             echo "⚠️  Asia UK playlist not found - Asia UK content will be skipped"
@@ -162,11 +162,20 @@ validate_all_inputs() {
         echo "🔍 Credentials step enabled - checking credential requirements:"
         
         if [[ "$SKIP_FILTER" == "--skip-filter" ]]; then
-            # Need existing filtered playlist
-            if ! check_file_with_size "/app/filtered_playlist_final.m3u" "Filtered playlist (required for credentials)" 1000; then
-                echo "❌ No filtered playlist found for credential replacement (filter is skipped)"
-                validation_failed=true
+            # When filter is skipped, we need downloaded file for credentials
+            if [[ "$SKIP_DOWNLOAD" == "--skip-download" ]]; then
+                # If download is also skipped, downloaded file must already exist
+                if ! check_file_with_size "/app/downloaded_file.m3u" "Downloaded playlist (required for credentials when filter skipped)" 1000; then
+                    echo "❌ No downloaded playlist found for credential replacement (both download and filter are skipped)"
+                    validation_failed=true
+                fi
+            else
+                # If download is not skipped, downloaded file will be created during execution
+                echo "✅ Downloaded playlist will be created during download step for credential replacement"
             fi
+        else
+            # When filter is not skipped, we need filtered playlist (will be created during filter step)
+            echo "✅ Filtered playlist will be created during filter step for credential replacement"
         fi
     else
         echo "⏭️  Credentials step skipped"
@@ -255,6 +264,17 @@ setup_config_files() {
     setup_config_file "gdrive_credentials.json" "Google Drive credentials" || echo "⚠️  Google Drive credentials not found (optional)"
     setup_config_file "download_config.json" "Download configuration" || echo "⚠️  Download config not found (optional)"
     setup_config_file "group_titles_with_flags.json" "Group configuration"
+    
+    # Special handling for Google Drive token - copy read-only mount to writable location
+    if [ -f "/app/gdrive_token.json" ]; then
+        echo "✅ Found mounted Google Drive token, copying to writable location"
+        cp "/app/gdrive_token.json" "/app/data/gdrive_token_writable.json"
+        # Create symlink for backward compatibility
+        ln -sf "/app/data/gdrive_token_writable.json" "/app/gdrive_token_writable.json"
+        echo "✅ Google Drive token available at: /app/gdrive_token_writable.json"
+    else
+        echo "⚠️  Google Drive token not found (optional for Google Drive backup)"
+    fi
     
     return 0
 }
