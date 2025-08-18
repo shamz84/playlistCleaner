@@ -225,19 +225,19 @@
     "group_title": "UK| GENERAL ᴴᴰ/ᴿᴬᵂ",
     "channel_count": 190,
     "exclude": "false",
-    "order": 2
+    "order": 12
   },
   {
     "group_title": "UK| KIDS ᴴᴰ/ᴿᴬᵂ",
     "channel_count": 30,
     "exclude": "false",
-    "order": 3
+    "order": 2
   },
   {
     "group_title": "UK| NEWS ᴴᴰ/ᴿᴬᵂ",
     "channel_count": 26,
     "exclude": "false",
-    "order": 4
+    "order": 3
   },
   {
     "group_title": "UK| SPORT ᴿᴬᵂ",
@@ -279,13 +279,13 @@
     "group_title": "UK| EPL PREMIER LEAGUE PPV",
     "channel_count": 29,
     "exclude": "false",
-    "order": 6
+    "order": 4
   },
   {
     "group_title": "UK| EPL PREMIER LEAGUE PPV VIP",
     "channel_count": 37,
     "exclude": "false",
-    "order": 7
+    "order": 5
   },
   {
     "group_title": "UK| ESPN+ PPV",
@@ -339,7 +339,7 @@
     "group_title": "UK| ITV X VIP",
     "channel_count": 16,
     "exclude": "false",
-    "order": 134
+    "order": 11
   },
   {
     "group_title": "UK| LA LIGA TEAM PPV",
@@ -369,7 +369,7 @@
     "group_title": "UK| LIVE FOOTBALL PPV",
     "channel_count": 34,
     "exclude": "false",
-    "order": 139
+    "order": 10
   },
   {
     "group_title": "UK| NATIONAL LEAGUE PPV",
@@ -495,7 +495,7 @@
     "group_title": "UK| SPORT ᴿᴬᵂ ⱽᴵᴾ",
     "channel_count": 50,
     "exclude": "false",
-    "order": 5
+    "order": 6
   },
   {
     "group_title": "UK| TNT SPORT EVENT",
@@ -549,7 +549,7 @@
     "group_title": "UK| VIDIO EPL PPV",
     "channel_count": 36,
     "exclude": "false",
-    "order": 178
+    "order": 8
   },
   {
     "group_title": "UK| VOLLEY BALL WORLD PPV",
@@ -603,7 +603,7 @@
     "group_title": "CW Network (Local Affiliates)",
     "channel_count": 44,
     "exclude": "true",
-    "order": 8
+    "order": 208
   },
   {
     "group_title": "SPECTRUM NETWORK",
