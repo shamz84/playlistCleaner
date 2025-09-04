@@ -24,14 +24,96 @@ def load_exclude_false_groups():
         print(f"Error loading group titles: {e}")
         return set()
 
-def filter_m3u_playlist(input_file, output_file, allowed_groups):
-    """Filter M3U playlist to include only entries from allowed groups."""
+def load_all_groups():
+    """Load all group titles with their exclude status."""
+    try:
+        with open('group_titles_with_flags.json', 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        
+        include_groups = set()
+        exclude_groups = set()
+        
+        for entry in data:
+            group_title = entry.get('group_title')
+            if entry.get('exclude') == 'false':
+                include_groups.add(group_title)
+            else:
+                exclude_groups.add(group_title)
+        
+        return include_groups, exclude_groups
+    except Exception as e:
+        print(f"Error loading group titles: {e}")
+        return set(), set()
+
+def get_unknown_groups(input_file, known_groups):
+    """Find unknown groups in the playlist."""
+    try:
+        with open(input_file, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        groups = re.findall(r'group-title="([^"]+)"', content)
+        from collections import Counter
+        group_counts = Counter(groups)
+        
+        unknown_groups = set(group_counts.keys()) - known_groups
+        return {group: group_counts[group] for group in unknown_groups}
+    except Exception as e:
+        print(f"Error analyzing unknown groups: {e}")
+        return {}
+
+def should_auto_exclude_unknown_group(unknown_group, exclude_groups):
+    """Check if unknown group should be excluded based on patterns."""
+    group_lower = unknown_group.lower()
+    
+    # Common exclusion patterns
+    exclude_patterns = [
+        'tv guide', 'network', 'affiliates', 'adult', 'xxx', ' sd', 'hevc'
+    ]
+    
+    for pattern in exclude_patterns:
+        if pattern in group_lower:
+            # Check if similar pattern exists in exclude_groups
+            similar_excluded = [g for g in exclude_groups if pattern in g.lower()]
+            if similar_excluded:
+                return True, f"Matches excluded pattern: {pattern}"
+    
+    return False, "No matching exclusion patterns"
+
+def filter_m3u_playlist(input_file, output_file, allowed_groups, auto_include_unknown=True):
+    """Filter M3U playlist to include only entries from allowed groups, with auto-include for unknown groups."""
     
     if not os.path.exists(input_file):
         print(f"Error: Input file {input_file} not found!")
         return False
     
     print(f"Loading playlist from {input_file}...")
+    
+    # If auto-include is enabled, analyze unknown groups
+    final_allowed_groups = allowed_groups.copy()
+    
+    if auto_include_unknown:
+        include_groups, exclude_groups = load_all_groups()
+        all_known_groups = include_groups | exclude_groups
+        unknown_groups = get_unknown_groups(input_file, all_known_groups)
+        
+        if unknown_groups:
+            print(f"\n🔍 Found {len(unknown_groups)} unknown groups:")
+            auto_included = []
+            auto_excluded = []
+            
+            for group, count in unknown_groups.items():
+                should_exclude, reason = should_auto_exclude_unknown_group(group, exclude_groups)
+                if should_exclude:
+                    auto_excluded.append((group, count, reason))
+                    print(f"  ❌ EXCLUDE: '{group}' ({count} channels) - {reason}")
+                else:
+                    auto_included.append((group, count))
+                    final_allowed_groups.add(group)
+                    print(f"  ✅ INCLUDE: '{group}' ({count} channels) - Auto-included")
+            
+            print(f"\n📊 Auto-classification:")
+            print(f"  • Auto-included: {len(auto_included)} groups")
+            print(f"  • Auto-excluded: {len(auto_excluded)} groups")
     
     try:
         with open(input_file, 'r', encoding='utf-8') as f:
@@ -66,9 +148,8 @@ def filter_m3u_playlist(input_file, output_file, allowed_groups):
             
             if group_match:
                 group_title = group_match.group(1)
-                
-                # Check if this group should be included
-                if group_title in allowed_groups:
+                  # Check if this group should be included
+                if group_title in final_allowed_groups:
                     # Include this entry (EXTINF line + URL line)
                     filtered_lines.append(lines[i])  # EXTINF line
                     
@@ -104,10 +185,11 @@ def filter_m3u_playlist(input_file, output_file, allowed_groups):
         return False
 
 def main():
-    input_file = "raw_playlist_20.m3u"
-    output_file = "filtered_playlist.m3u"
+    input_file = "data/downloaded_file.m3u"
+    output_file = "filtered_playlist_final.m3u"
     
-    print("🔄 Starting M3U playlist filtering...")
+    print("🔄 Starting Enhanced M3U playlist filtering...")
+    print("   Strategy: Auto-include unknown groups unless they match excluded patterns")
     
     # Load allowed groups (exclude=false)
     print("📋 Loading allowed group titles...")
@@ -117,16 +199,14 @@ def main():
         print("❌ No allowed groups found or error loading JSON file!")
         return
     
-    print(f"✅ Found {len(allowed_groups)} allowed groups:")
-    for i, group in enumerate(sorted(allowed_groups), 1):
-        print(f"   {i:2}. {group}")
+    print(f"✅ Found {len(allowed_groups)} allowed groups")
     
-    # Filter the playlist
-    print(f"\n🔍 Filtering playlist...")
-    success = filter_m3u_playlist(input_file, output_file, allowed_groups)
+    # Filter the playlist with auto-include enabled
+    print(f"\n🔍 Filtering playlist with auto-include for unknown groups...")
+    success = filter_m3u_playlist(input_file, output_file, allowed_groups, auto_include_unknown=True)
     
     if success:
-        print(f"\n🎉 Filtering complete!")
+        print(f"\n🎉 Enhanced filtering complete!")
         print(f"📄 Filtered playlist saved as: {output_file}")
     else:
         print(f"\n❌ Filtering failed!")
