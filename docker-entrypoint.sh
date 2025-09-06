@@ -68,9 +68,9 @@ validate_all_inputs() {
     
     # 1. Check core Python scripts
     echo -e "\n📜 Core Scripts:"
-    check_file "/app/process_playlist_complete.py" "Main orchestrator script" || validation_failed=true
+    check_file "/app/process_playlist_complete_enhanced.py" "Main orchestrator script (enhanced)" || validation_failed=true
     check_file "/app/download_file.py" "Download script" || validation_failed=true
-    check_file "/app/filter_comprehensive.py" "Filter script" || validation_failed=true
+    check_file "/app/filter_m3u_with_auto_include.py" "Enhanced filter script" || validation_failed=true
     check_file "/app/replace_credentials_multi.py" "Credentials script" || validation_failed=true
     
     # 2. Check configuration files with content validation
@@ -333,11 +333,11 @@ cleanup() {
 trap cleanup SIGTERM SIGINT
 
 # Run the main script with arguments
-echo -e "\n🚀 Starting playlist processing pipeline..."
-echo "Command: python process_playlist_complete.py $SKIP_DOWNLOAD $SKIP_FILTER $SKIP_CREDENTIALS $SKIP_GDRIVE"
+echo -e "\n🚀 Starting enhanced playlist processing pipeline..."
+echo "Command: python process_playlist_complete_enhanced.py $SKIP_DOWNLOAD $SKIP_FILTER $SKIP_CREDENTIALS $SKIP_GDRIVE"
 
 # Execute the main command
-python process_playlist_complete.py $SKIP_DOWNLOAD $SKIP_FILTER $SKIP_CREDENTIALS $SKIP_GDRIVE
+python process_playlist_complete_enhanced.py $SKIP_DOWNLOAD $SKIP_FILTER $SKIP_CREDENTIALS $SKIP_GDRIVE
 
 # Copy outputs after successful completion
 copy_outputs

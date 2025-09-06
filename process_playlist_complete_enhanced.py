@@ -84,15 +84,15 @@ def step_download(skip=False):
         print("⏭️  Skipping download step")
         return True
     
-    config_file = "download_config.json"
+    config_file = "data/config/download_config.json"
     if not check_file_exists(config_file, "Download configuration"):
         print("❌ Download configuration missing!")
-        print("💡 Please ensure download_config.json is configured properly")
+        print("💡 Please ensure data/config/download_config.json is configured properly")
         return False
     
     print("📥 Downloading playlist from remote server...")
     success = run_script("download_file.py", 
-                        [], 
+                        ["--config", config_file], 
                         f"Downloading playlist with config: {config_file}")
     
     if success:
@@ -209,12 +209,12 @@ def step_gdrive_backup(skip=False):
     
     print("☁️  Backing up files to Google Drive...")
     success = run_script("upload_to_gdrive.py", 
-                        ["--upload-all"], 
+                        ["--backup"], 
                         "Uploading all generated playlists to Google Drive")
     
     if not success:
         print("⚠️  Google Drive backup failed, but this is optional")
-        print("💡 You can run the backup manually later with: python upload_to_gdrive.py --upload-all")
+        print("💡 You can run the backup manually later with: python upload_to_gdrive.py --backup")
         return True  # Don't fail the pipeline for optional step
     
     return success

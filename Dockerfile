@@ -6,8 +6,10 @@ WORKDIR /app
 
 # Copy all necessary Python scripts and configuration files
 COPY process_playlist_complete.py /app/
+COPY process_playlist_complete_enhanced.py /app/
 COPY download_file.py /app/
 COPY filter_comprehensive.py /app/
+COPY filter_m3u_with_auto_include.py /app/
 COPY replace_credentials_multi.py /app/
 COPY upload_to_gdrive.py /app/
 COPY gdrive_setup.py /app/
