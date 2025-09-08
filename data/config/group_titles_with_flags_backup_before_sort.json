@@ -78,6 +78,12 @@
     "order": 12
   },
   {
+    "group_title": "Music Videos",
+    "channel_count": 46,
+    "exclude": "false",
+    "order": 16
+  },
+  {
     "group_title": "DISNEY+ NETWORK ᴿᴬᵂ",
     "channel_count": 13,
     "exclude": "false",
@@ -96,26 +102,8 @@
     "order": 15
   },
   {
-    "group_title": "Music Videos",
-    "channel_count": 46,
-    "exclude": "false",
-    "order": 16
-  },
-  {
-    "group_title": "UK| SKY MIX SERIES ᴿᴬᵂ",
-    "channel_count": 18,
-    "exclude": "false",
-    "order": 17
-  },
-  {
     "group_title": "PEACOCK NETWORK ᴿᴬᵂ",
     "channel_count": 12,
-    "exclude": "false",
-    "order": 18
-  },
-  {
-    "group_title": "UK| SKY STORE VIP",
-    "channel_count": 31,
     "exclude": "false",
     "order": 18
   },
@@ -132,22 +120,10 @@
     "order": 20
   },
   {
-    "group_title": "UK| UEFA PPV",
-    "channel_count": 32,
-    "exclude": "false",
-    "order": 20
-  },
-  {
     "group_title": "PAY PER VIEW PPV",
     "channel_count": 20,
     "exclude": "false",
     "order": 21
-  },
-  {
-    "group_title": "PPV Event",
-    "channel_count": 52,
-    "exclude": "false",
-    "order": 22
   },
   {
     "group_title": "Sport Networks",
@@ -160,6 +136,12 @@
     "channel_count": 98,
     "exclude": "false",
     "order": 24
+  },
+  {
+    "group_title": "PPV Event",
+    "channel_count": 52,
+    "exclude": "false",
+    "order": 22
   },
   {
     "group_title": "ESPN+ PPV",
@@ -552,6 +534,18 @@
     "order": 156
   },
   {
+    "group_title": "UK| SKY MIX SERIES ᴿᴬᵂ",
+    "channel_count": 18,
+    "exclude": "false",
+    "order": 17
+  },
+  {
+    "group_title": "UK| SKY STORE VIP",
+    "channel_count": 31,
+    "exclude": "false",
+    "order": 18
+  },
+  {
     "group_title": "UK| SPORT ʰᵉᵛᶜ",
     "channel_count": 46,
     "exclude": "false",
@@ -604,6 +598,12 @@
     "channel_count": 17,
     "exclude": "false",
     "order": 173
+  },
+  {
+    "group_title": "UK| UEFA PPV",
+    "channel_count": 32,
+    "exclude": "false",
+    "order": 20
   },
   {
     "group_title": "UK| UFC PPV",

@@ -9,10 +9,23 @@ import re
 import os
 from collections import Counter
 
+def find_config_file(filename):
+    """Find config file using config-first approach (like container)"""
+    config_path = f"data/config/{filename}"
+    root_path = filename
+    
+    if os.path.exists(config_path):
+        return config_path
+    elif os.path.exists(root_path):
+        return root_path
+    else:
+        return filename  # Return filename for error reporting
+
 def load_group_configuration():
     """Load group titles configuration with include/exclude lists."""
     try:
-        with open('group_titles_with_flags.json', 'r', encoding='utf-8') as f:
+        config_file = find_config_file('group_titles_with_flags.json')
+        with open(config_file, 'r', encoding='utf-8') as f:
             data = json.load(f)
         
         include_groups = set()  # exclude=false
