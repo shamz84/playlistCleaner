@@ -30,16 +30,26 @@ SCOPES = ['https://www.googleapis.com/auth/drive.file']
 class GoogleDriveUploader:
     def __init__(self, credentials_file='gdrive_credentials.json', token_file='gdrive_token.json'):
         """Initialize the Google Drive uploader"""
-        # Check for credentials file in config folder first, then root
-        config_creds = os.path.join('config', credentials_file)
-        if os.path.exists(config_creds):
-            self.credentials_file = config_creds
-            print(f"📁 Using credentials from config folder: {config_creds}")
-        elif os.path.exists(credentials_file):
-            self.credentials_file = credentials_file
-            print(f"📁 Using credentials from root folder: {credentials_file}")
+        # Check for token file first (contains both credentials and tokens)
+        config_token = os.path.join('config', token_file)
+        if os.path.exists(config_token):
+            self.token_file = config_token
+            print(f"📁 Using token from config folder: {config_token}")
+        elif os.path.exists(token_file):
+            self.token_file = token_file
+            print(f"📁 Using token from root folder: {token_file}")
         else:
-            self.credentials_file = credentials_file  # Will fail later with proper error message
+            # Fallback to credentials file for initial setup
+            config_creds = os.path.join('config', credentials_file)
+            if os.path.exists(config_creds):
+                self.credentials_file = config_creds
+                print(f"📁 Using credentials from config folder: {config_creds}")
+            elif os.path.exists(credentials_file):
+                self.credentials_file = credentials_file
+                print(f"📁 Using credentials from root folder: {credentials_file}")
+            else:
+                self.credentials_file = credentials_file  # Will fail later with proper error message
+            self.token_file = token_file
         
         # Check for writable token file (container environment)
         writable_token = 'gdrive_token_writable.json'

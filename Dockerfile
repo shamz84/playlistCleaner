@@ -17,7 +17,7 @@ COPY docker-entrypoint.sh /app/
 
 # Copy configuration files (only the ones that are static)
 COPY requirements.txt /app/
-COPY group_titles_with_flags.json /app/
+COPY data/config/group_titles_with_flags.json /app/
 # Note: credentials.json, gdrive_config.json, download_config.json will be mounted at runtime
 
 # Create data and config directories for outputs and mounted configs
