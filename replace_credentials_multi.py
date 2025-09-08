@@ -111,12 +111,24 @@ def process_m3u_file(input_file, output_file, config):
         print(f"   ❌ Error processing file: {e}")
         return False
 
+def find_config_file(filename):
+    """Find config file using config-first approach (like container)"""
+    config_path = f"data/config/{filename}"
+    root_path = filename
+    
+    if os.path.exists(config_path):
+        return config_path
+    elif os.path.exists(root_path):
+        return root_path
+    else:
+        return filename  # Return filename for error reporting
+
 def main():
     """Main function"""
     print("=== M3U Credential Replacement Tool ===")
     
-    # Default file paths
-    config_file = "credentials.json"
+    # Default file paths with config-first approach
+    config_file = find_config_file("credentials.json")
     
     # Check for command line argument for input file
     if len(sys.argv) > 1:

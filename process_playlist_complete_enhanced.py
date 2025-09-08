@@ -26,6 +26,18 @@ def print_banner(title):
     print(f"🚀 {title}")
     print("="*60)
 
+def find_config_file(filename):
+    """Find config file using config-first approach (like container)"""
+    config_path = f"data/config/{filename}"
+    root_path = filename
+    
+    if os.path.exists(config_path):
+        return config_path
+    elif os.path.exists(root_path):
+        return root_path
+    else:
+        return filename  # Return filename for error reporting
+
 def run_script(script_name, args=None, description=""):
     """Run a Python script and return success status"""
     if args is None:
@@ -108,10 +120,10 @@ def step_filter(skip=False):
         print("⏭️  Skipping filter step")
         return True
     
-    # Check required input files
+    # Check required input files with config-first approach
     required_files = [
         ("data/downloaded_file.m3u", "Main playlist"),
-        ("group_titles_with_flags.json", "Group configuration")
+        (find_config_file("group_titles_with_flags.json"), "Group configuration")
     ]
     
     missing_files = []
@@ -163,7 +175,7 @@ def step_credentials(skip=False, filter_skipped=False):
         print(f"❌ Input playlist required for credential replacement: {input_file}")
         return False
     
-    if not check_file_exists("credentials.json", "Credentials configuration"):
+    if not check_file_exists(find_config_file("credentials.json"), "Credentials configuration"):
         print("❌ Credentials configuration required")
         print("💡 Please ensure credentials.json contains user configurations")
         return False
@@ -176,7 +188,8 @@ def step_credentials(skip=False, filter_skipped=False):
     if success:
         # Check for generated files
         try:
-            with open("credentials.json", 'r', encoding='utf-8') as f:
+            credentials_file = find_config_file("credentials.json")
+            with open(credentials_file, 'r', encoding='utf-8') as f:
                 creds = json.load(f)
                 
             if isinstance(creds, list):
