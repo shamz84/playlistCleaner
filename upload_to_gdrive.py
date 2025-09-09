@@ -194,6 +194,66 @@ class GoogleDriveUploader:
             print(f"❌ Error deleting file: {error}")
             return False
 
+    def update_file(self, file_id, file_path):
+        """Update an existing file's content on Google Drive"""
+        try:
+            file_name = os.path.basename(file_path)
+            file_size = os.path.getsize(file_path)
+            
+            print(f"🔄 Updating existing file '{file_name}' (ID: {file_id})...")
+            print(f"📤 Uploading new content ({file_size:,} bytes)...")
+            
+            # Determine MIME type
+            mime_type, _ = mimetypes.guess_type(file_path)
+            if not mime_type:
+                mime_type = 'application/octet-stream'
+            
+            # Create media upload object
+            media = MediaFileUpload(file_path, mimetype=mime_type, resumable=True)
+            
+            # Update the file content
+            start_time = time.time()
+            request = self.service.files().update(
+                fileId=file_id,
+                media_body=media,
+                fields='id,webViewLink,modifiedTime'
+            )
+            
+            response = None
+            while response is None:
+                status, response = request.next_chunk()
+                if status:
+                    progress = int(status.progress() * 100)
+                    print(f"   📊 Update progress: {progress}%")
+            
+            end_time = time.time()
+            update_time = end_time - start_time
+            
+            file_id = response.get('id')
+            web_link = response.get('webViewLink')
+            modified_time = response.get('modifiedTime')
+            
+            print(f"✅ Update completed!")
+            print(f"   📁 File ID: {file_id} (preserved)")
+            print(f"   🔗 Web Link: {web_link}")
+            print(f"   🕒 Modified: {modified_time}")
+            print(f"   ⏱️  Update time: {update_time:.2f} seconds")
+            
+            return {
+                'id': file_id,
+                'name': file_name,
+                'link': web_link,
+                'size': file_size,
+                'updated': True
+            }
+            
+        except HttpError as error:
+            print(f"❌ Update failed: {error}")
+            return None
+        except Exception as e:
+            print(f"❌ Unexpected error during update: {e}")
+            return None
+
     def upload_file(self, file_path, folder_id=None, new_name=None, overwrite=False):
         """Upload a file to Google Drive"""
         if not os.path.exists(file_path):
@@ -208,9 +268,8 @@ class GoogleDriveUploader:
             if overwrite:
                 existing_file_id = self.find_file_by_name(file_name, folder_id)
                 if existing_file_id:
-                    print(f"🔄 File '{file_name}' already exists, overwriting...")
-                    if not self.delete_file(existing_file_id):
-                        print("⚠️  Failed to delete existing file, proceeding with upload anyway")
+                    print(f"🔄 File '{file_name}' already exists, updating content...")
+                    return self.update_file(existing_file_id, file_path)
             
             print(f"📤 Uploading {file_name} ({file_size:,} bytes)...")
             
@@ -298,7 +357,7 @@ def create_config_template():
     config = {
         "default_folder": "PlaylistBackups",
         "auto_create_folders": True,
-        "overwrite_existing": False,
+        "overwrite_existing": True,
         "backup_files": [
             "filtered_playlist_final.m3u",
             "8k_*.m3u",
@@ -384,18 +443,24 @@ def main():
             return False
           # Backup specified files
         backup_patterns = config.get('backup_files', [])
-        overwrite_existing = config.get('overwrite_existing', False)
+        overwrite_existing = config.get('overwrite_existing', True)
         uploaded_files = []
         
         print(f"🔧 Overwrite mode: {'✅ Enabled' if overwrite_existing else '❌ Disabled'}")
         
         for pattern in backup_patterns:
             if '*' in pattern:
-                # Handle wildcard patterns
-                files = list(Path('.').glob(pattern))
+                # Handle wildcard patterns - check data directory first, then current directory as fallback
+                files = list(Path('data').glob(pattern))
+                if not files:  # Only check current directory if no files found in data directory
+                    files = list(Path('.').glob(pattern))
             else:
-                # Handle specific files
-                files = [Path(pattern)] if os.path.exists(pattern) else []
+                # Handle specific files - check data directory first, then current directory as fallback
+                files = []
+                if os.path.exists(f"data/{pattern}"):
+                    files.append(Path(f"data/{pattern}"))
+                elif os.path.exists(pattern):
+                    files.append(Path(pattern))
             
             for file_path in files:
                 if file_path.exists():

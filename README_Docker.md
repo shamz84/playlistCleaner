@@ -2,6 +2,12 @@
 
 This Docker image contains the complete M3U playlist processing pipeline with download, filtering, credential replacement, and optional Google Drive backup capabilities.
 
+## 🆕 Recent Improvements
+- ✅ **Enhanced Google Drive Integration** - File IDs preserved during updates
+- ✅ **Container-Friendly Authentication** - Uses pre-generated token files
+- ✅ **Config-First Architecture** - Unified configuration approach
+- ✅ **Duplicate Prevention** - Smart file discovery prevents duplicate uploads
+
 ## Quick Start
 
 ### Build the Image
@@ -14,15 +20,23 @@ docker build -t playlist-processor .
 # Create data directory for outputs
 mkdir -p data
 
-# Run complete pipeline (skipping Google Drive)
-docker run --rm -v ${PWD}/data:/app/data playlist-processor
+# Recommended: Complete pipeline with Google Drive backup
+podman run --rm \
+  -v "${PWD}/data:/app/data" \
+  -v "${PWD}/gdrive_token.json:/app/gdrive_token.json:ro" \
+  -v "${PWD}/raw_playlist_AsiaUk.m3u:/app/raw_playlist_AsiaUk.m3u:ro" \
+  -e SKIP_DOWNLOAD="" \
+  -e SKIP_FILTER="" \
+  -e SKIP_CREDENTIALS="" \
+  -e SKIP_GDRIVE="" \
+  playlist-processor:latest
 
-# Run with custom configuration
-docker run --rm \
-  -v ${PWD}/data:/app/data \
-  -v ${PWD}/credentials.json:/app/credentials.json:ro \
+# Alternative: Skip Google Drive backup
+podman run --rm \
+  -v "${PWD}/data:/app/data" \
+  -v "${PWD}/raw_playlist_AsiaUk.m3u:/app/raw_playlist_AsiaUk.m3u:ro" \
   -e SKIP_GDRIVE="--skip-gdrive" \
-  playlist-processor
+  playlist-processor:latest
 ```
 
 ## Using Docker Compose
@@ -107,14 +121,35 @@ docker run --rm \
 
 ### 4. With Google Drive Backup
 ```bash
-# First, set up Google Drive credentials on host
+# Recommended: Complete pipeline with Google Drive backup
+# Requires pre-configured gdrive_token.json (run python gdrive_setup.py first)
+podman run --rm \
+  -v "${PWD}/data:/app/data" \
+  -v "${PWD}/gdrive_token.json:/app/gdrive_token.json:ro" \
+  -v "${PWD}/raw_playlist_AsiaUk.m3u:/app/raw_playlist_AsiaUk.m3u:ro" \
+  -e SKIP_DOWNLOAD="" \
+  -e SKIP_FILTER="" \
+  -e SKIP_CREDENTIALS="" \
+  -e SKIP_GDRIVE="" \
+  playlist-processor:latest
+
+# Alternative: Docker syntax (replace 'podman' with 'docker')
 docker run --rm \
   -v ${PWD}/data:/app/data \
-  -v ${PWD}/gdrive_credentials.json:/app/gdrive_credentials.json:ro \
-  -v ${PWD}/gdrive_token.json:/app/gdrive_token.json \
+  -v ${PWD}/gdrive_token.json:/app/gdrive_token.json:ro \
+  -v ${PWD}/raw_playlist_AsiaUk.m3u:/app/raw_playlist_AsiaUk.m3u:ro \
+  -e SKIP_DOWNLOAD="" \
+  -e SKIP_FILTER="" \
+  -e SKIP_CREDENTIALS="" \
   -e SKIP_GDRIVE="" \
-  playlist-processor
+  playlist-processor:latest
 ```
+
+**Important Notes:**
+- ✅ **Google Drive token file is required** for container authentication
+- ✅ **No browser needed** - Uses pre-authenticated token
+- ✅ **File IDs preserved** - Updates existing files instead of creating duplicates
+- ⚠️ **Setup required** - Run `python gdrive_setup.py` first to generate token
 
 ## Output Files
 
