@@ -120,9 +120,64 @@ def step_filter(skip=False):
         print("⏭️  Skipping filter step")
         return True
     
-    # Check required input files with config-first approach
+    # Check for available input files with config-first approach
+    main_playlist = "data/downloaded_file.m3u"
+    asia_playlist = "data/raw_playlist_AsiaUk.m3u"
+    
+    # Check what input files are available
+    has_main = os.path.exists(main_playlist)
+    has_asia = os.path.exists(asia_playlist)
+    
+    if not has_main and not has_asia:
+        print("❌ No input playlist files found!")
+        print("💡 Need either data/downloaded_file.m3u or data/raw_playlist_AsiaUk.m3u")
+        return False
+    
+    # Merge playlists if both are available
+    if has_asia and has_main:
+        print("📋 Both main and AsiaUK playlists available")
+        print("🔄 Merging AsiaUK content with main playlist...")
+        try:
+            # Read main playlist
+            with open(main_playlist, 'r', encoding='utf-8') as f:
+                main_content = f.readlines()
+            
+            # Read AsiaUK playlist
+            with open(asia_playlist, 'r', encoding='utf-8') as f:
+                asia_content = f.readlines()
+            
+            # Remove header from AsiaUK content if present
+            if asia_content and asia_content[0].strip() == '#EXTM3U':
+                asia_content = asia_content[1:]
+            
+            # Merge content
+            merged_content = main_content + asia_content
+            
+            # Write merged content back to main playlist
+            with open(main_playlist, 'w', encoding='utf-8') as f:
+                f.writelines(merged_content)
+            
+            print(f"✅ Merged playlists: {len(main_content)} + {len(asia_content)} lines")
+            
+        except Exception as e:
+            print(f"❌ Failed to merge playlists: {e}")
+            return False
+    elif has_asia and not has_main:
+        print("📋 Using AsiaUK playlist as main input")
+        print(f"🔄 Copying {asia_playlist} to {main_playlist}")
+        try:
+            import shutil
+            shutil.copy2(asia_playlist, main_playlist)
+            print("✅ AsiaUK playlist copied to main input location")
+        except Exception as e:
+            print(f"❌ Failed to copy AsiaUK playlist: {e}")
+            return False
+    else:
+        print("📋 Using main downloaded playlist only")
+    
+    # Check required files
     required_files = [
-        ("data/downloaded_file.m3u", "Main playlist"),
+        (main_playlist, "Main playlist (merged if applicable)"),
         (find_config_file("group_titles_with_flags.json"), "Group configuration")
     ]
     

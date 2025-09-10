@@ -119,7 +119,8 @@ def should_exclude_unknown_group(unknown_group, excluded_groups):
     return False, f"No matching exclusion patterns found for prefix '{unknown_prefix}'"
 
 def filter_m3u_playlist_with_unknown_inclusion(input_file, output_file, include_groups, exclude_groups, auto_include_unknown=True):
-    """Enhanced filter that includes unknown groups by default, but excludes pattern matches."""
+    """Enhanced filter that includes unknown groups by default, but excludes pattern matches.
+    Also sorts output by group order from configuration."""
     
     if not os.path.exists(input_file):
         print(f"❌ Error: Input file {input_file} not found!")
@@ -133,6 +134,17 @@ def filter_m3u_playlist_with_unknown_inclusion(input_file, output_file, include_
     except Exception as e:
         print(f"❌ Error reading input file: {e}")
         return False
+
+    # Load group configuration for ordering
+    config_file = find_config_file('group_titles_with_flags.json')
+    group_order_map = {}
+    try:
+        with open(config_file, 'r', encoding='utf-8') as f:
+            config_data = json.load(f)
+            for entry in config_data:
+                group_order_map[entry['group_title']] = entry.get('order', 9999)
+    except Exception as e:
+        print(f"⚠️  Warning: Could not load group order configuration: {e}")
     
     # Analyze unknown groups
     all_known_groups = include_groups | exclude_groups
@@ -162,22 +174,23 @@ def filter_m3u_playlist_with_unknown_inclusion(input_file, output_file, include_
     print(f"  • Unknown groups auto-excluded: {len(auto_excluded_groups)}")
     print(f"  • Total groups to include: {len(final_include_groups)}")
     
-    # Process the M3U file
-    filtered_lines = []
+    # Process the M3U file - collect channels by group for sorting
+    channels_by_group = {}  # group_title -> [(extinf_line, url_line), ...]
     total_entries = 0
     included_entries = 0
     auto_included_entries = 0
     excluded_entries = 0
+    header_lines = []
     
     # Add M3U header
     if lines and lines[0].strip() == '#EXTM3U':
-        filtered_lines.append(lines[0])
+        header_lines.append(lines[0])
         i = 1
     else:
-        filtered_lines.append('#EXTM3U\n')
+        header_lines.append('#EXTM3U\n')
         i = 0
     
-    # Process entries
+    # Process entries and group them
     while i < len(lines):
         line = lines[i].strip()
         
@@ -193,12 +206,13 @@ def filter_m3u_playlist_with_unknown_inclusion(input_file, output_file, include_
                 
                 # Check if this group should be included
                 if group_title in final_include_groups:
-                    # Include this entry (EXTINF line + URL line)
-                    filtered_lines.append(lines[i])  # EXTINF line
+                    # Collect this entry by group for later sorting
+                    if group_title not in channels_by_group:
+                        channels_by_group[group_title] = []
                     
-                    # Add the URL line (next line)
+                    # Add the channel (EXTINF line + URL line)
                     if i + 1 < len(lines):
-                        filtered_lines.append(lines[i + 1])  # URL line
+                        channels_by_group[group_title].append((lines[i], lines[i + 1]))
                         included_entries += 1
                         
                         # Track if this was auto-included
@@ -217,10 +231,30 @@ def filter_m3u_playlist_with_unknown_inclusion(input_file, output_file, include_
         else:
             i += 1
     
-    # Write filtered playlist
+    # Sort groups by order and write filtered playlist
     try:
         with open(output_file, 'w', encoding='utf-8') as f:
-            f.writelines(filtered_lines)
+            # Write header
+            f.writelines(header_lines)
+            
+            # Sort groups by their configured order
+            sorted_groups = sorted(channels_by_group.keys(), 
+                                 key=lambda group: group_order_map.get(group, 9999))
+            
+            print(f"\n📋 Group Order (first 10):")
+            for i, group in enumerate(sorted_groups[:10]):
+                order = group_order_map.get(group, 'Unknown')
+                count = len(channels_by_group[group])
+                print(f"  {i+1:2d}. {group} (order: {order}, channels: {count})")
+            
+            if len(sorted_groups) > 10:
+                print(f"      ... and {len(sorted_groups) - 10} more groups")
+            
+            # Write channels in group order
+            for group in sorted_groups:
+                for extinf_line, url_line in channels_by_group[group]:
+                    f.write(extinf_line)
+                    f.write(url_line)
         
         print(f"\n✅ Successfully created filtered playlist: {output_file}")
         print(f"\n📈 Results:")
@@ -230,6 +264,7 @@ def filter_m3u_playlist_with_unknown_inclusion(input_file, output_file, include_
         print(f"  • Total entries included: {included_entries}")
         print(f"  • Entries excluded: {excluded_entries}")
         print(f"  • Inclusion rate: {included_entries/total_entries*100:.1f}%")
+        print(f"  • Groups in output: {len(sorted_groups)} (sorted by order)")
         
         if auto_included_groups:
             print(f"\n🎉 Auto-included unknown groups:")
