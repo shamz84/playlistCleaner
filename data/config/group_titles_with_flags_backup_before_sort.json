@@ -18,8 +18,8 @@
     "order": 2
   },
   {
-    "group_title": "Kids Channels",
-    "channel_count": 20,
+    "group_title": "UK| KIDS ᴴᴰ/ᴿᴬᵂ",
+    "channel_count": 30,
     "exclude": "false",
     "order": 3
   },
@@ -78,18 +78,6 @@
     "order": 12
   },
   {
-    "group_title": "Music Videos",
-    "channel_count": 46,
-    "exclude": "false",
-    "order": 16
-  },
-  {
-    "group_title": "DISNEY+ NETWORK ᴿᴬᵂ",
-    "channel_count": 13,
-    "exclude": "false",
-    "order": 13
-  },
-  {
     "group_title": "UK| BBC I PLAYER ᴿᴬᵂ",
     "channel_count": 117,
     "exclude": "false",
@@ -102,8 +90,26 @@
     "order": 15
   },
   {
+    "group_title": "Music Videos",
+    "channel_count": 46,
+    "exclude": "false",
+    "order": 16
+  },
+  {
+    "group_title": "UK| SKY MIX SERIES ᴿᴬᵂ",
+    "channel_count": 18,
+    "exclude": "false",
+    "order": 17
+  },
+  {
     "group_title": "PEACOCK NETWORK ᴿᴬᵂ",
     "channel_count": 12,
+    "exclude": "false",
+    "order": 18
+  },
+  {
+    "group_title": "UK| SKY STORE ⱽᴵᴾ ᴿᴬᵂ",
+    "channel_count": 32,
     "exclude": "false",
     "order": 18
   },
@@ -120,10 +126,22 @@
     "order": 20
   },
   {
+    "group_title": "UK| UEFA PPV",
+    "channel_count": 32,
+    "exclude": "false",
+    "order": 20
+  },
+  {
     "group_title": "PAY PER VIEW PPV",
     "channel_count": 20,
     "exclude": "false",
     "order": 21
+  },
+  {
+    "group_title": "PPV Event",
+    "channel_count": 52,
+    "exclude": "false",
+    "order": 22
   },
   {
     "group_title": "Sport Networks",
@@ -138,10 +156,46 @@
     "order": 24
   },
   {
-    "group_title": "PPV Event",
-    "channel_count": 52,
+    "group_title": "Hulu Originals",
+    "channel_count": 20,
     "exclude": "false",
-    "order": 22
+    "order": 30
+  },
+  {
+    "group_title": "HBO Max Originals",
+    "channel_count": 18,
+    "exclude": "false",
+    "order": 31
+  },
+  {
+    "group_title": "Disney+ Originals",
+    "channel_count": 13,
+    "exclude": "false",
+    "order": 33
+  },
+  {
+    "group_title": "Peacock Originals",
+    "channel_count": 12,
+    "exclude": "false",
+    "order": 34
+  },
+  {
+    "group_title": "Paramount+ Originals",
+    "channel_count": 11,
+    "exclude": "false",
+    "order": 35
+  },
+  {
+    "group_title": "STARZ Originals",
+    "channel_count": 11,
+    "exclude": "false",
+    "order": 36
+  },
+  {
+    "group_title": "AMC+ Originals",
+    "channel_count": 10,
+    "exclude": "false",
+    "order": 37
   },
   {
     "group_title": "ESPN+ PPV",
@@ -322,12 +376,6 @@
     "channel_count": 50,
     "exclude": "false",
     "order": 108
-  },
-  {
-    "group_title": "UK| KIDS ᴴᴰ/ᴿᴬᵂ",
-    "channel_count": 30,
-    "exclude": "false",
-    "order": 113
   },
   {
     "group_title": "UK| NEWS ᴴᴰ/ᴿᴬᵂ",
@@ -534,18 +582,6 @@
     "order": 156
   },
   {
-    "group_title": "UK| SKY MIX SERIES ᴿᴬᵂ",
-    "channel_count": 18,
-    "exclude": "false",
-    "order": 17
-  },
-  {
-    "group_title": "UK| SKY STORE VIP",
-    "channel_count": 31,
-    "exclude": "false",
-    "order": 18
-  },
-  {
     "group_title": "UK| SPORT ʰᵉᵛᶜ",
     "channel_count": 46,
     "exclude": "false",
@@ -598,12 +634,6 @@
     "channel_count": 17,
     "exclude": "false",
     "order": 173
-  },
-  {
-    "group_title": "UK| UEFA PPV",
-    "channel_count": 32,
-    "exclude": "false",
-    "order": 20
   },
   {
     "group_title": "UK| UFC PPV",
@@ -762,6 +792,12 @@
     "order": 217
   },
   {
+    "group_title": "UK| SKY STORE VIP",
+    "channel_count": 31,
+    "exclude": "false",
+    "order": 218
+  },
+  {
     "group_title": "UK| SPORT ᴿᴬᵂ ⱽᴵᴾ ᴰᴼᴸᴮʸ ᴬᵁᴰᴵᴼ",
     "channel_count": 41,
     "exclude": "false",
@@ -820,12 +856,6 @@
     "channel_count": 32,
     "exclude": "false",
     "order": 228
-  },
-  {
-    "group_title": "UK| SKY STORE ⱽᴵᴾ ᴿᴬᵂ",
-    "channel_count": 32,
-    "exclude": "false",
-    "order": 229
   },
   {
     "group_title": "NHL Real",
@@ -894,12 +924,6 @@
     "order": 243
   },
   {
-    "group_title": "Hulu Originals",
-    "channel_count": 20,
-    "exclude": "false",
-    "order": 245
-  },
-  {
     "group_title": "NBA Real",
     "channel_count": 19,
     "exclude": "false",
@@ -910,12 +934,6 @@
     "channel_count": 19,
     "exclude": "false",
     "order": 247
-  },
-  {
-    "group_title": "HBO Max Originals",
-    "channel_count": 18,
-    "exclude": "false",
-    "order": 249
   },
   {
     "group_title": "Rugby",
@@ -942,22 +960,10 @@
     "order": 255
   },
   {
-    "group_title": "Disney+ Originals",
-    "channel_count": 13,
-    "exclude": "false",
-    "order": 257
-  },
-  {
     "group_title": "UFC Fight Pass",
     "channel_count": 12,
     "exclude": "false",
     "order": 258
-  },
-  {
-    "group_title": "Peacock Originals",
-    "channel_count": 12,
-    "exclude": "false",
-    "order": 259
   },
   {
     "group_title": "AU| OPTUS PPV",
@@ -972,18 +978,6 @@
     "order": 262
   },
   {
-    "group_title": "Paramount+ Originals",
-    "channel_count": 11,
-    "exclude": "false",
-    "order": 264
-  },
-  {
-    "group_title": "STARZ Originals",
-    "channel_count": 11,
-    "exclude": "false",
-    "order": 265
-  },
-  {
     "group_title": "CA| CINEMA ᴴᴰ/ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
     "channel_count": 11,
     "exclude": "false",
@@ -994,12 +988,6 @@
     "channel_count": 11,
     "exclude": "false",
     "order": 267
-  },
-  {
-    "group_title": "AMC+ Originals",
-    "channel_count": 10,
-    "exclude": "false",
-    "order": 268
   },
   {
     "group_title": "AU| AFL PPV",
@@ -1024,6 +1012,12 @@
     "channel_count": 6,
     "exclude": "false",
     "order": 273
+  },
+  {
+    "group_title": "Kids Channels",
+    "channel_count": 20,
+    "exclude": "false",
+    "order": 300
   },
   {
     "group_title": "TV Guide (USA)",

@@ -191,6 +191,16 @@ def step_filter(skip=False):
         print("💡 You may need to ensure all source files are available")
         return False
     
+    # Check if we need to merge categorized 24/7 channels
+    print("🔍 Checking if 24/7 channel categorization is needed...")
+    merge_success = run_script("merge_247_channels.py", 
+                              [], 
+                              "Applying 24/7 channel categorization if needed")
+    
+    if not merge_success:
+        print("❌ 24/7 channel merge failed")
+        return False
+    
     print("🔍 Processing and filtering playlists with ENHANCED AUTO-INCLUDE...")
     print("💡 This enhanced filter automatically includes unknown groups")
     print("   unless they match patterns of excluded content types")

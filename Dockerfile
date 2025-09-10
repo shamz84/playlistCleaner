@@ -13,6 +13,8 @@ COPY filter_m3u_with_auto_include.py /app/
 COPY replace_credentials_multi.py /app/
 COPY upload_to_gdrive.py /app/
 COPY gdrive_setup.py /app/
+COPY analyze_247_channels.py /app/
+COPY merge_247_channels.py /app/
 COPY docker-entrypoint.sh /app/
 
 # Copy configuration files (only the ones that are static)

@@ -5,23 +5,41 @@
     "exclude": "false",
     "order": 0
   },
-  {
-    "group_title": "24/7 Channels",
-    "channel_count": 2019,
+    {
+    "group_title": "24/7 Kids",
+    "channel_count": 65,
     "exclude": "false",
     "order": 1
+  },
+  {
+    "group_title": "24/7 Movies",
+    "channel_count": 413,
+    "exclude": "false",
+    "order": 2
+  },
+  {
+    "group_title": "24/7 TV Shows",
+    "channel_count": 376,
+    "exclude": "false",
+    "order": 3
+  },
+  {
+    "group_title": "24/7 Other",
+    "channel_count": 2019,
+    "exclude": "false",
+    "order": 4
   },
   {
     "group_title": "UK| GENERAL ᴴᴰ/ᴿᴬᵂ",
     "channel_count": 190,
     "exclude": "false",
-    "order": 2
+    "order": 5
   },
   {
-    "group_title": "Kids Channels",
-    "channel_count": 20,
+    "group_title": "UK| KIDS ᴴᴰ/ᴿᴬᵂ",
+    "channel_count": 30,
     "exclude": "false",
-    "order": 3
+    "order": 1
   },
   {
     "group_title": "UK| SPORT ᴿᴬᵂ ⱽᴵᴾ",
@@ -78,12 +96,6 @@
     "order": 12
   },
   {
-    "group_title": "DISNEY+ NETWORK ᴿᴬᵂ",
-    "channel_count": 13,
-    "exclude": "false",
-    "order": 13
-  },
-  {
     "group_title": "UK| BBC I PLAYER ᴿᴬᵂ",
     "channel_count": 117,
     "exclude": "false",
@@ -114,8 +126,8 @@
     "order": 18
   },
   {
-    "group_title": "UK| SKY STORE VIP",
-    "channel_count": 31,
+    "group_title": "UK| SKY STORE ⱽᴵᴾ ᴿᴬᵂ",
+    "channel_count": 32,
     "exclude": "false",
     "order": 18
   },
@@ -160,6 +172,48 @@
     "channel_count": 98,
     "exclude": "false",
     "order": 24
+  },
+  {
+    "group_title": "Hulu Originals",
+    "channel_count": 20,
+    "exclude": "false",
+    "order": 30
+  },
+  {
+    "group_title": "HBO Max Originals",
+    "channel_count": 18,
+    "exclude": "false",
+    "order": 31
+  },
+  {
+    "group_title": "Disney+ Originals",
+    "channel_count": 13,
+    "exclude": "false",
+    "order": 33
+  },
+  {
+    "group_title": "Peacock Originals",
+    "channel_count": 12,
+    "exclude": "false",
+    "order": 34
+  },
+  {
+    "group_title": "Paramount+ Originals",
+    "channel_count": 11,
+    "exclude": "false",
+    "order": 35
+  },
+  {
+    "group_title": "STARZ Originals",
+    "channel_count": 11,
+    "exclude": "false",
+    "order": 36
+  },
+  {
+    "group_title": "AMC+ Originals",
+    "channel_count": 10,
+    "exclude": "false",
+    "order": 37
   },
   {
     "group_title": "ESPN+ PPV",
@@ -340,12 +394,6 @@
     "channel_count": 50,
     "exclude": "false",
     "order": 108
-  },
-  {
-    "group_title": "UK| KIDS ᴴᴰ/ᴿᴬᵂ",
-    "channel_count": 30,
-    "exclude": "false",
-    "order": 113
   },
   {
     "group_title": "UK| NEWS ᴴᴰ/ᴿᴬᵂ",
@@ -762,6 +810,12 @@
     "order": 217
   },
   {
+    "group_title": "UK| SKY STORE VIP",
+    "channel_count": 31,
+    "exclude": "false",
+    "order": 218
+  },
+  {
     "group_title": "UK| SPORT ᴿᴬᵂ ⱽᴵᴾ ᴰᴼᴸᴮʸ ᴬᵁᴰᴵᴼ",
     "channel_count": 41,
     "exclude": "false",
@@ -820,12 +874,6 @@
     "channel_count": 32,
     "exclude": "false",
     "order": 228
-  },
-  {
-    "group_title": "UK| SKY STORE ⱽᴵᴾ ᴿᴬᵂ",
-    "channel_count": 32,
-    "exclude": "false",
-    "order": 229
   },
   {
     "group_title": "NHL Real",
@@ -894,12 +942,6 @@
     "order": 243
   },
   {
-    "group_title": "Hulu Originals",
-    "channel_count": 20,
-    "exclude": "false",
-    "order": 245
-  },
-  {
     "group_title": "NBA Real",
     "channel_count": 19,
     "exclude": "false",
@@ -910,12 +952,6 @@
     "channel_count": 19,
     "exclude": "false",
     "order": 247
-  },
-  {
-    "group_title": "HBO Max Originals",
-    "channel_count": 18,
-    "exclude": "false",
-    "order": 249
   },
   {
     "group_title": "Rugby",
@@ -942,22 +978,10 @@
     "order": 255
   },
   {
-    "group_title": "Disney+ Originals",
-    "channel_count": 13,
-    "exclude": "false",
-    "order": 257
-  },
-  {
     "group_title": "UFC Fight Pass",
     "channel_count": 12,
     "exclude": "false",
     "order": 258
-  },
-  {
-    "group_title": "Peacock Originals",
-    "channel_count": 12,
-    "exclude": "false",
-    "order": 259
   },
   {
     "group_title": "AU| OPTUS PPV",
@@ -972,18 +996,6 @@
     "order": 262
   },
   {
-    "group_title": "Paramount+ Originals",
-    "channel_count": 11,
-    "exclude": "false",
-    "order": 264
-  },
-  {
-    "group_title": "STARZ Originals",
-    "channel_count": 11,
-    "exclude": "false",
-    "order": 265
-  },
-  {
     "group_title": "CA| CINEMA ᴴᴰ/ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
     "channel_count": 11,
     "exclude": "false",
@@ -994,12 +1006,6 @@
     "channel_count": 11,
     "exclude": "false",
     "order": 267
-  },
-  {
-    "group_title": "AMC+ Originals",
-    "channel_count": 10,
-    "exclude": "false",
-    "order": 268
   },
   {
     "group_title": "AU| AFL PPV",
@@ -1024,6 +1030,12 @@
     "channel_count": 6,
     "exclude": "false",
     "order": 273
+  },
+  {
+    "group_title": "Kids Channels",
+    "channel_count": 20,
+    "exclude": "false",
+    "order": 300
   },
   {
     "group_title": "TV Guide (USA)",
