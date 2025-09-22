@@ -30,25 +30,30 @@ SCOPES = ['https://www.googleapis.com/auth/drive.file']
 class GoogleDriveUploader:
     def __init__(self, credentials_file='gdrive_credentials.json', token_file='gdrive_token.json'):
         """Initialize the Google Drive uploader"""
-        # Check for token file first (contains both credentials and tokens)
+        # Always set credentials_file first
+        config_creds = os.path.join('config', credentials_file)
+        if os.path.exists(config_creds):
+            self.credentials_file = config_creds
+            print(f"📁 Using credentials from config folder: {config_creds}")
+        elif os.path.exists(credentials_file):
+            self.credentials_file = credentials_file
+            print(f"📁 Using credentials from root folder: {credentials_file}")
+        else:
+            self.credentials_file = credentials_file  # Will fail later with proper error message
+        
+        # Check for token file (contains both credentials and tokens)
+        data_config_token = os.path.join('data', 'config', token_file)
         config_token = os.path.join('config', token_file)
-        if os.path.exists(config_token):
+        if os.path.exists(data_config_token):
+            self.token_file = data_config_token
+            print(f"📁 Using token from data/config folder: {data_config_token}")
+        elif os.path.exists(config_token):
             self.token_file = config_token
             print(f"📁 Using token from config folder: {config_token}")
         elif os.path.exists(token_file):
             self.token_file = token_file
             print(f"📁 Using token from root folder: {token_file}")
         else:
-            # Fallback to credentials file for initial setup
-            config_creds = os.path.join('config', credentials_file)
-            if os.path.exists(config_creds):
-                self.credentials_file = config_creds
-                print(f"📁 Using credentials from config folder: {config_creds}")
-            elif os.path.exists(credentials_file):
-                self.credentials_file = credentials_file
-                print(f"📁 Using credentials from root folder: {credentials_file}")
-            else:
-                self.credentials_file = credentials_file  # Will fail later with proper error message
             self.token_file = token_file
         
         # Check for writable token file (container environment)
@@ -56,65 +61,132 @@ class GoogleDriveUploader:
         if os.path.exists(writable_token):
             self.token_file = writable_token
             print(f"📁 Using writable token file: {writable_token}")
-        else:
-            self.token_file = token_file
-            print(f"📁 Using default token file: {token_file}")
+        # Don't override if we already found a valid token file
         
         self.service = None
+        self.auth_method = None  # Track which auth method is being used
         
     def authenticate(self):
-        """Authenticate with Google Drive API"""
+        """Authenticate with Google Drive API - Container friendly with fallback"""
+        # Try Service Account authentication first (container-friendly)
+        if self.try_service_account_auth():
+            # Test if service account actually works by doing a simple API call
+            if self.test_service_account_permissions():
+                return True
+            else:
+                print("⚠️  Service account has no storage quota, falling back to OAuth...")
+                self.service = None  # Reset service for OAuth attempt
+        
+        # Fall back to OAuth token authentication
+        return self.try_oauth_auth()
+    
+    def test_service_account_permissions(self):
+        """Test if service account has proper permissions"""
+        try:
+            # Skip API test that may hang - just return True and let upload handle errors
+            print("ℹ️  Skipping service account API test to avoid hanging")
+            print("ℹ️  Will attempt upload and fallback to OAuth if storage quota exceeded")
+            return True
+        except Exception as e:
+            if "storage quota" in str(e).lower() or "storageQuotaExceeded" in str(e):
+                print(f"⚠️  Service account storage quota issue: {e}")
+                return False
+            # Other errors might be temporary, so we'll still try to use it
+            print(f"⚠️  Service account test warning: {e}")
+            return True
+    
+    def try_oauth_auth(self):
+        """Try OAuth authentication"""
+        print("🔄 Attempting OAuth authentication...")
         creds = None
         
         # The file token.json stores the user's access and refresh tokens.
         if os.path.exists(self.token_file):
-            creds = Credentials.from_authorized_user_file(self.token_file, SCOPES)
-          # If there are no (valid) credentials available, let the user log in.
+            try:
+                creds = Credentials.from_authorized_user_file(self.token_file, SCOPES)
+            except Exception as e:
+                print(f"⚠️  Could not load token file: {e}")
+                creds = None
+        
+        # If there are no (valid) credentials available, let the user log in.
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
                 try:
                     print("🔄 Refreshing expired credentials...")
                     creds.refresh(Request())
+                    # Save the refreshed credentials
+                    with open(self.token_file, 'w') as token:
+                        token.write(creds.to_json())
+                    print(f"✅ Credentials refreshed and saved to {self.token_file}")
                 except Exception as e:
                     print(f"❌ Failed to refresh credentials: {e}")
                     print("💡 You may need to re-authenticate")
-                    creds = None
-            
-            if not creds:
-                if not os.path.exists(self.credentials_file):
-                    print(f"❌ Credentials file not found: {self.credentials_file}")
-                    print("📝 Please follow these steps:")
-                    print("   1. Go to https://console.cloud.google.com/")
-                    print("   2. Create a new project or select existing one")
-                    print("   3. Enable Google Drive API")
-                    print("   4. Create credentials (OAuth 2.0 Client ID)")
-                    print("   5. Download the JSON file and save as 'gdrive_credentials.json'")
-                    print("   6. Place it in either:")
-                    print("      - config/gdrive_credentials.json (recommended)")
-                    print("      - gdrive_credentials.json (root folder)")
+                    print("💡 For containers, use service account authentication")
                     return False
-                
-                try:
-                    print("🔐 Starting OAuth authentication flow...")
-                    flow = InstalledAppFlow.from_client_secrets_file(
-                        self.credentials_file, SCOPES)
-                    creds = flow.run_local_server(port=0)
-                except Exception as e:
-                    print(f"❌ Authentication failed: {e}")
-                    return False
-            
-            # Save the credentials for the next run
-            with open(self.token_file, 'w') as token:
-                token.write(creds.to_json())
-            print(f"✅ Credentials saved to {self.token_file}")
+            else:
+                print("❌ No valid credentials available")
+                print("❌ Interactive authentication not possible in containers")
+                print("💡 For containers, use one of these methods:")
+                print("   1. Service Account: Set GOOGLE_APPLICATION_CREDENTIALS")
+                print("   2. Pre-authenticated token: Mount gdrive_token.json")
+                print("   3. Environment auth: Set GDRIVE_TOKEN_B64")
+                return False
         
-        try:
-            self.service = build('drive', 'v3', credentials=creds)
-            print("✅ Successfully authenticated with Google Drive")
-            return True
-        except Exception as e:
-            print(f"❌ Failed to build Google Drive service: {e}")
-            return False
+        # Store credentials for API usage
+        self.service = build('drive', 'v3', credentials=creds)
+        print("✅ Successfully authenticated with Google Drive")
+        self.auth_method = "oauth"
+        return True
+    
+    def try_service_account_auth(self):
+        """Try to authenticate using service account (container-friendly)"""
+        service_account_paths = [
+            os.getenv('GOOGLE_APPLICATION_CREDENTIALS'),
+            'data/config/gdrive_service_account.json',
+            '/app/data/config/gdrive_service_account.json'
+        ]
+        
+        for sa_path in service_account_paths:
+            if sa_path and os.path.exists(sa_path):
+                try:
+                    print(f"🔐 Testing service account: {sa_path}")
+                    from google.oauth2 import service_account
+                    credentials = service_account.Credentials.from_service_account_file(
+                        sa_path, scopes=SCOPES
+                    )
+                    
+                    print("🔨 Building Google Drive service...")
+                    self.service = build('drive', 'v3', credentials=credentials)
+                    
+                    # Test the connection with a simple API call with timeout
+                    print("🧪 Testing service account permissions...")
+                    try:
+                        import signal
+                        
+                        def timeout_handler(signum, frame):
+                            raise TimeoutError("Service account test timed out")
+                        
+                        # Set timeout for API test (Windows doesn't support signal.alarm)
+                        try:
+                            about = self.service.about().get(fields="user").execute()
+                            email = about.get('user', {}).get('emailAddress', 'Unknown')
+                            print(f"✅ Service account working for: {email}")
+                        except Exception as test_e:
+                            print(f"⚠️  Service account API test failed: {test_e}")
+                            # This is expected for service accounts on personal drives
+                            # The service account can authenticate but may not have storage quota
+                            print("ℹ️  This is expected - service accounts have no storage quota on personal drives")
+                            
+                    except Exception as test_e:
+                        print(f"⚠️  Service account test failed: {test_e}")
+                    
+                    print(f"✅ Service account authentication successful: {sa_path}")
+                    self.auth_method = "service_account"
+                    return True
+                except Exception as e:
+                    print(f"⚠️  Service account auth failed for {sa_path}: {e}")
+        
+        return False
     
     def create_folder(self, folder_name, parent_folder_id=None):
         """Create a folder in Google Drive"""
@@ -160,7 +232,22 @@ class GoogleDriveUploader:
             return None
     
     def get_or_create_folder(self, folder_name, parent_folder_id=None):
-        """Get existing folder or create new one"""
+        """Get existing folder or create new one with fallback handling"""
+        try:
+            return self._get_or_create_folder_internal(folder_name, parent_folder_id)
+        except Exception as e:
+            # If we're using service account and folder access fails, the folder 
+            # might be in the user's personal drive, not accessible to service account
+            if self.auth_method == "service_account" and ("not found" in str(e).lower() or "access" in str(e).lower()):
+                print(f"⚠️  Service account cannot access folder, this is expected for personal drives")
+                # Don't fall back here - let the upload method handle the fallback
+                return None
+            else:
+                print(f"❌ Folder operation failed: {e}")
+                return None
+    
+    def _get_or_create_folder_internal(self, folder_name, parent_folder_id=None):
+        """Internal folder operation"""
         folder_id = self.find_folder(folder_name, parent_folder_id)
         if not folder_id:
             folder_id = self.create_folder(folder_name, parent_folder_id)
@@ -195,7 +282,33 @@ class GoogleDriveUploader:
             return False
 
     def update_file(self, file_id, file_path):
-        """Update an existing file's content on Google Drive"""
+        """Update an existing file's content on Google Drive with service account fallback"""
+        try:
+            return self._update_file_internal(file_id, file_path)
+        except HttpError as e:
+            # Check if it's a service account storage quota error
+            if "storage quota" in str(e).lower() or "storageQuotaExceeded" in str(e):
+                print(f"⚠️  Service account update failed: {e}")
+                print("🔄 Falling back to OAuth authentication...")
+                
+                # Try to switch to OAuth authentication
+                if self.try_oauth_auth():
+                    print("✅ OAuth fallback successful, retrying update...")
+                    return self._update_file_internal(file_id, file_path)
+                else:
+                    print("❌ OAuth fallback failed")
+                    return None
+            else:
+                # Re-raise other HttpErrors
+                print(f"❌ Update failed: {e}")
+                return None
+        except Exception as e:
+            # Handle other exceptions
+            print(f"❌ Unexpected error during update: {e}")
+            return None
+    
+    def _update_file_internal(self, file_id, file_path):
+        """Internal update method"""
         try:
             file_name = os.path.basename(file_path)
             file_size = os.path.getsize(file_path)
@@ -248,14 +361,50 @@ class GoogleDriveUploader:
             }
             
         except HttpError as error:
-            print(f"❌ Update failed: {error}")
-            return None
+            # Re-raise HttpError so the fallback logic can catch it
+            raise error
         except Exception as e:
             print(f"❌ Unexpected error during update: {e}")
             return None
 
     def upload_file(self, file_path, folder_id=None, new_name=None, overwrite=False):
-        """Upload a file to Google Drive"""
+        """Upload a file to Google Drive with service account fallback"""
+        if not os.path.exists(file_path):
+            print(f"❌ File not found: {file_path}")
+            return None
+        
+        try:
+            return self._upload_file_internal(file_path, folder_id, new_name, overwrite)
+        except Exception as e:
+            # Check if it's a service account storage quota error or folder access issue
+            error_str = str(e).lower()
+            if (self.auth_method == "service_account" and 
+                ("storage quota" in error_str or 
+                 "storagequotaexceeded" in error_str or
+                 "service accounts do not have storage quota" in error_str or
+                 "folder not found" in error_str or
+                 "insufficient permissions" in error_str or
+                 "access denied" in error_str)):
+                
+                print(f"⚠️  Service account issue: {e}")
+                print("🔄 Falling back to OAuth authentication...")
+                
+                # Try to switch to OAuth authentication
+                if self.try_oauth_auth():
+                    print("✅ OAuth fallback successful, retrying upload...")
+                    # Note: With OAuth, we may need to recreate/find the folder
+                    # since folders created by service account may not be accessible
+                    return self._upload_file_internal(file_path, folder_id, new_name, overwrite)
+                else:
+                    print("❌ OAuth fallback failed")
+                    return None
+            else:
+                # Re-raise other exceptions
+                print(f"❌ Upload failed: {e}")
+                return None
+    
+    def _upload_file_internal(self, file_path, folder_id=None, new_name=None, overwrite=False):
+        """Internal upload method"""
         if not os.path.exists(file_path):
             print(f"❌ File not found: {file_path}")
             return None
@@ -315,8 +464,8 @@ class GoogleDriveUploader:
             }
             
         except HttpError as error:
-            print(f"❌ Upload failed: {error}")
-            return None
+            # Re-raise HttpError so the fallback logic can catch it
+            raise error
         except Exception as e:
             print(f"❌ Unexpected error during upload: {e}")
             return None

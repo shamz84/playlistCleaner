@@ -17,6 +17,15 @@ COPY analyze_247_channels.py /app/
 COPY merge_247_channels.py /app/
 COPY docker-entrypoint.sh /app/
 
+# Copy Google Drive authentication setup files
+COPY setup_container_gdrive_auth.py /app/
+COPY setup_gdrive_for_container.py /app/
+COPY setup_service_account_gdrive.py /app/
+COPY setup_env_gdrive.py /app/
+COPY check_gdrive_token_usage.py /app/
+COPY create_never_expiring_auth.py /app/
+COPY token_refresh_manager.py /app/
+
 # Copy configuration files (only the ones that are static)
 COPY requirements.txt /app/
 COPY data/config/group_titles_with_flags.json /app/

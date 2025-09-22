@@ -1,0 +1,14 @@
+[Unit]
+Description=Google Drive Token Refresh Service
+After=network.target
+
+[Service]
+Type=simple
+User=appuser
+WorkingDirectory=C:\dev\training\PlaylistCleaner
+ExecStart=/usr/bin/python3 C:\dev\training\PlaylistCleaner\token_refresh_service.py
+Restart=always
+RestartSec=60
+
+[Install]
+WantedBy=multi-user.target

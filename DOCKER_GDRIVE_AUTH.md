@@ -154,9 +154,9 @@ OAuth 2.0 authentication requires a browser, but Docker containers run headless 
 2. **Use Service Account in Container**:
    ```bash
    podman run --rm \
-     -v ./service-account-key.json:/app/gdrive_service_account.json:ro \
+     -v ./data/config/gdrive_service_account.json:/app/data/config/gdrive_service_account.json:ro \
      -v ./data:/app/data \
-     -e GDRIVE_SERVICE_ACCOUNT="/app/gdrive_service_account.json" \
+     -e GDRIVE_SERVICE_ACCOUNT="/app/data/config/gdrive_service_account.json" \
      playlist-processor:latest
    ```
 

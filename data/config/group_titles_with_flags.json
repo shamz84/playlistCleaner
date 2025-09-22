@@ -554,7 +554,7 @@
   {
     "group_title": "UK| PRIME PPV ᵃᵐᶻ",
     "channel_count": 50,
-    "exclude": "false",
+    "exclude": "true",
     "order": 147
   },
   {
@@ -776,7 +776,7 @@
   {
     "group_title": "AU| PRIME PPV ᴿᴬᵂ",
     "channel_count": 51,
-    "exclude": "false",
+    "exclude": "true",
     "order": 212
   },
   {

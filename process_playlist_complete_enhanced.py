@@ -19,6 +19,7 @@ import os
 import json
 import time
 from pathlib import Path
+from datetime import datetime
 
 def print_banner(title):
     """Print a formatted banner"""
@@ -279,10 +280,52 @@ def step_gdrive_backup(skip=False):
         print("⏭️  Skipping Google Drive backup step")
         return True
     
-    # Check if Google Drive is configured
-    if not check_file_exists("gdrive_credentials.json", "Google Drive credentials"):
-        print("⚠️  Google Drive not configured - skipping backup")
-        print("💡 To enable backups, run: python gdrive_setup.py")
+    # Container-friendly authentication setup
+    container_auth_success = setup_container_gdrive_auth()
+    
+    # Check and refresh token if needed
+    if not container_auth_success:
+        print("🔄 Checking token status and refreshing if needed...")
+        token_refreshed = check_and_refresh_token()
+    
+    # Check if Google Drive is configured and has valid token
+    gdrive_creds = find_config_file("gdrive_credentials.json")
+    gdrive_token = find_config_file("gdrive_token.json")
+    
+    if not check_file_exists(gdrive_creds, "Google Drive credentials"):
+        print("⚠️  Google Drive credentials not configured - skipping backup")
+        print("💡 For containers, see container authentication options:")
+        print("   - Service Account: python setup_service_account_gdrive.py")
+        print("   - Pre-auth mount: python setup_gdrive_for_container.py")
+        print("   - Environment vars: python setup_env_gdrive.py")
+        return True
+    
+    # Check if token exists and is not expired
+    if not gdrive_token or not os.path.exists(gdrive_token):
+        print("⚠️  Google Drive token not found - authentication required")
+        if container_auth_success:
+            print("✅ Container authentication was applied - retrying...")
+        else:
+            print("💡 For manual setup: python gdrive_setup.py")
+            print("💡 For containers: python setup_gdrive_for_container.py")
+            print("🔄 Skipping Google Drive backup to avoid blocking pipeline")
+            return True
+    
+    # Check if token is valid by trying to read it
+    try:
+        with open(gdrive_token, 'r') as f:
+            token_data = json.load(f)
+        if not token_data.get('refresh_token'):
+            print("⚠️  Google Drive token missing refresh token - re-authentication needed")
+            print("💡 For manual setup: python gdrive_setup.py")
+            print("💡 For containers: use service account or pre-authenticated token")
+            print("🔄 Skipping Google Drive backup to avoid blocking pipeline")
+            return True
+    except Exception as e:
+        print(f"⚠️  Cannot read Google Drive token: {e}")
+        print("💡 For manual setup: python gdrive_setup.py")
+        print("💡 For containers: python setup_gdrive_for_container.py")
+        print("🔄 Skipping Google Drive backup to avoid blocking pipeline")
         return True
     
     print("☁️  Backing up files to Google Drive...")
@@ -293,9 +336,98 @@ def step_gdrive_backup(skip=False):
     if not success:
         print("⚠️  Google Drive backup failed, but this is optional")
         print("💡 You can run the backup manually later with: python upload_to_gdrive.py --backup")
-        return True  # Don't fail the pipeline for optional step
+        print("💡 If authentication is needed:")
+        print("   - Manual: python gdrive_setup.py")
+        print("   - Container: python setup_gdrive_for_container.py")
+        return True  # Always return True for optional step to not block pipeline
     
-    return success
+    return True  # Always return True for optional step
+
+def check_and_refresh_token():
+    """Check token expiry and refresh if needed"""
+    # Use the same logic as the main function to find token
+    gdrive_token = find_config_file("gdrive_token.json")
+    
+    if not gdrive_token or not os.path.exists(gdrive_token):
+        return False
+        
+    try:
+        with open(gdrive_token, 'r') as f:
+            token_data = json.load(f)
+        
+        if 'expiry' in token_data and token_data['expiry']:
+            expiry_time = datetime.fromisoformat(token_data['expiry'].replace('Z', '+00:00'))
+            now = datetime.now(expiry_time.tzinfo)
+            time_left = expiry_time - now
+            
+            # If expires in less than 10 minutes, try to refresh
+            if time_left.total_seconds() < 600:
+                print(f"⚠️  Token expires soon: {time_left}")
+                
+                if token_data.get('refresh_token'):
+                    print("🔄 Attempting automatic token refresh...")
+                    try:
+                        # Import here to avoid dependency issues
+                        from google.auth.transport.requests import Request
+                        from google.oauth2.credentials import Credentials
+                        
+                        creds = Credentials.from_authorized_user_file(gdrive_token)
+                        if creds.expired and creds.refresh_token:
+                            creds.refresh(Request())
+                            
+                            # Save refreshed token
+                            with open(gdrive_token, 'w') as f:
+                                f.write(creds.to_json())
+                            
+                            print(f"✅ Token refreshed successfully!")
+                            return True
+                            
+                    except Exception as e:
+                        print(f"❌ Auto-refresh failed: {e}")
+                        print("💡 Consider using service account for containers")
+                        return False
+                else:
+                    print("❌ No refresh token available")
+                    print("💡 Manual re-authentication required")
+                    return False
+            else:
+                print(f"✅ Token valid for: {time_left}")
+                return True
+                        
+    except Exception as e:
+        print(f"❌ Error checking token {gdrive_token}: {e}")
+    
+    return False
+
+def setup_container_gdrive_auth():
+    """Setup Google Drive authentication for container environments (no browser)"""
+    container_indicators = [
+        os.path.exists('/.dockerenv'),  # Docker container
+        os.getenv('KUBERNETES_SERVICE_HOST'),  # Kubernetes
+        os.getenv('CONTAINER') == 'true',  # Generic container indicator
+        os.path.exists('/proc/1/cgroup')  # Linux container check
+    ]
+    
+    # Check if we're in a container
+    is_container = any(container_indicators)
+    
+    if is_container:
+        print("🐳 Container environment detected")
+        print("🚫 Browser authentication not available in containers")
+        print("🔧 Using container-friendly authentication methods...")
+        
+        try:
+            # Run the container authentication setup
+            result = run_script("setup_container_gdrive_auth.py", 
+                               [], 
+                               "Setting up container-friendly Google Drive authentication")
+            return result
+        except Exception as e:
+            print(f"⚠️  Container auth setup failed: {e}")
+            return False
+    else:
+        print("💻 Local environment detected - standard authentication available")
+        return False
 
 def main():
     """Main pipeline orchestrator"""

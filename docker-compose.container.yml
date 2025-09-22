@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  # Service Account Authentication (Recommended for containers)
+  playlist-cleaner-service:
+    build: .
+    volumes:
+      - ./data:/app/data
+      - ./data/config:/app/data/config
+      # Mount your service account JSON file from config folder
+      - ./data/config/gdrive_service_account.json:/app/data/config/gdrive_service_account.json:ro
+    environment:
+      - PYTHONUNBUFFERED=1
+      - CONTAINER=true
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/data/config/gdrive_service_account.json
+      - SKIP_GDRIVE=""  # Enable Google Drive with service account
+    restart: unless-stopped
+    command: ["python", "process_playlist_complete_enhanced.py"]
+    
+  # Pre-authenticated Token (Easiest setup)
+  playlist-cleaner-token:
+    build: .
+    volumes:
+      - ./data:/app/data
+      - ./data/config:/app/data/config
+      # Mount your pre-authenticated token
+      - ./gdrive_token.json:/app/gdrive_token.json:ro
+      - ./gdrive_credentials.json:/app/gdrive_credentials.json:ro
+    environment:
+      - PYTHONUNBUFFERED=1
+      - CONTAINER=true
+      - SKIP_GDRIVE=""  # Enable Google Drive with token
+    restart: unless-stopped
+    command: ["python", "process_playlist_complete_enhanced.py"]
+    
+  # Environment Variable Authentication
+  playlist-cleaner-env:
+    build: .
+    volumes:
+      - ./data:/app/data
+      - ./data/config:/app/data/config
+    environment:
+      - PYTHONUNBUFFERED=1
+      - CONTAINER=true
+      - SKIP_GDRIVE=""  # Enable Google Drive with env var
+      - GDRIVE_TOKEN_B64=${GDRIVE_TOKEN_B64}  # Set this in .env file
+    restart: unless-stopped
+    command: ["python", "process_playlist_complete_enhanced.py"]
+    
+  # No Google Drive (Skip backup entirely)
+  playlist-cleaner-no-gdrive:
+    build: .
+    volumes:
+      - ./data:/app/data
+      - ./data/config:/app/data/config
+    environment:
+      - PYTHONUNBUFFERED=1
+      - CONTAINER=true
+    restart: unless-stopped
+    command: ["python", "process_playlist_complete_enhanced.py", "--skip-gdrive"]

@@ -62,6 +62,7 @@ def replace_credentials(line, config):
     """Replace DNS, USERNAME, and PASSWORD in a single line"""
     # Replace placeholders with actual values
     line = line.replace('DNS', config['dns'])
+    line = line.replace('http://wealth76175.cdn-akm.me', config['dns'])
     line = line.replace('USERNAME', config['username'])
     line = line.replace('PASSWORD', config['password'])
     

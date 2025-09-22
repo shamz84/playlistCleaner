@@ -62,8 +62,8 @@ services:
 ```powershell
 podman run --rm `
   -v "${PWD}/data:/app/data" `
-  -v "${PWD}/service-account-key.json:/app/gdrive_service_account.json:ro" `
-  -e GDRIVE_SERVICE_ACCOUNT="/app/gdrive_service_account.json" `
+  -v "${PWD}/data/config/gdrive_service_account.json:/app/data/config/gdrive_service_account.json:ro" `
+  -e GDRIVE_SERVICE_ACCOUNT="/app/data/config/gdrive_service_account.json" `
   playlist-cleaner:latest
 ```
 

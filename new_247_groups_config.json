@@ -1,19 +1,19 @@
 [
   {
     "group_title": "24/7 Kids",
-    "channel_count": 65,
+    "channel_count": 67,
     "exclude": "false",
     "order": 19
   },
   {
     "group_title": "24/7 Movies",
-    "channel_count": 413,
+    "channel_count": 442,
     "exclude": "false",
     "order": 20
   },
   {
     "group_title": "24/7 TV Shows",
-    "channel_count": 376,
+    "channel_count": 464,
     "exclude": "false",
     "order": 21
   }

@@ -1,11 +1,17 @@
-# Docker Compose override for Google Drive enabled runs
-# Usage: docker-compose -f docker-compose.yml -f docker-compose.gdrive.yml up --rm playlist-processor
 version: '3.8'
 
 services:
-  playlist-processor:
-    environment:
-      - SKIP_GDRIVE=""  # Enable Google Drive backup
+  playlist-cleaner:
+    build: .
     volumes:
-      # Ensure Google Drive token is mounted
-      - ./gdrive_token.json:/app/gdrive_token.json:ro
+      # Mount pre-authenticated Google Drive credentials (read-only)
+      - C:\dev\training\PlaylistCleaner\container_gdrive:/app/gdrive_auth:ro
+      # Mount data directory for processing
+      - ./data:/app/data
+      # Mount config directory
+      - ./data/config:/app/data/config
+    environment:
+      - GDRIVE_AUTH_DIR=/app/gdrive_auth
+      - PYTHONPATH=/app
+    command: python process_playlist_complete_enhanced.py
+    restart: unless-stopped
