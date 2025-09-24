@@ -112,33 +112,25 @@ def check_environment_token():
 
 def check_mounted_token():
     """Check if pre-authenticated token is mounted"""
-    print("🔍 Checking for mounted authentication files...")
+    print("🔍 Checking for mounted token files...")
     
-    mounted_paths = [
-        '/app/data/config/gdrive_service_account.json'
+    mounted_token_paths = [
+        '/app/gdrive_auth/gdrive_token.json',
+        '/app/data/config/gdrive_token.json'
     ]
     
-    for mounted_path in mounted_paths:
+    for mounted_path in mounted_token_paths:
         if os.path.exists(mounted_path):
             try:
-                # Determine file type and copy appropriately
-                if 'service_account' in mounted_path:
-                    # Copy service account file
-                    import shutil
-                    shutil.copy2(mounted_path, 'data/config/gdrive_service_account.json')
-                    print(f"✅ Copied service account from: {mounted_path}")
-                    os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'data/config/gdrive_service_account.json'
-                    return True
-                else:
-                    # Copy token file
-                    import shutil
-                    shutil.copy2(mounted_path, 'gdrive_token.json')
-                    print(f"✅ Copied token from: {mounted_path}")
-                    return True
+                # Copy token file to working directory
+                import shutil
+                shutil.copy2(mounted_path, 'gdrive_token.json')
+                print(f"✅ Copied token from: {mounted_path}")
+                return True
             except Exception as e:
                 print(f"⚠️  Failed to copy {mounted_path}: {e}")
     
-    print("❌ No mounted authentication files found")
+    print("❌ No mounted token files found")
     return False
 
 def print_setup_instructions():

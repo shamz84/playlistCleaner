@@ -12,6 +12,12 @@
     "order": 1
   },
   {
+    "group_title": "UK| KIDS ᴴᴰ/ᴿᴬᵂ",
+    "channel_count": 30,
+    "exclude": "false",
+    "order": 1
+  },
+  {
     "group_title": "24/7 Movies",
     "channel_count": 413,
     "exclude": "false",
@@ -30,22 +36,16 @@
     "order": 4
   },
   {
-    "group_title": "UK| GENERAL ᴴᴰ/ᴿᴬᵂ",
-    "channel_count": 190,
-    "exclude": "false",
-    "order": 5
-  },
-  {
-    "group_title": "UK| KIDS ᴴᴰ/ᴿᴬᵂ",
-    "channel_count": 30,
-    "exclude": "false",
-    "order": 1
-  },
-  {
     "group_title": "UK| SPORT ᴿᴬᵂ ⱽᴵᴾ",
     "channel_count": 50,
     "exclude": "false",
     "order": 4
+  },
+  {
+    "group_title": "UK| GENERAL ᴴᴰ/ᴿᴬᵂ",
+    "channel_count": 190,
+    "exclude": "false",
+    "order": 5
   },
   {
     "group_title": "UK| SKY CINEMA ᴴᴰ/ᴿᴬᵂ",
@@ -552,12 +552,6 @@
     "order": 146
   },
   {
-    "group_title": "UK| PRIME PPV ᵃᵐᶻ",
-    "channel_count": 50,
-    "exclude": "true",
-    "order": 147
-  },
-  {
     "group_title": "UK| RALLY PPV",
     "channel_count": 30,
     "exclude": "false",
@@ -772,12 +766,6 @@
     "channel_count": 51,
     "exclude": "false",
     "order": 211
-  },
-  {
-    "group_title": "AU| PRIME PPV ᴿᴬᵂ",
-    "channel_count": 51,
-    "exclude": "true",
-    "order": 212
   },
   {
     "group_title": "Amazon Prime PPV",
@@ -1036,6 +1024,102 @@
     "channel_count": 20,
     "exclude": "false",
     "order": 300
+  },
+  {
+    "group_title": "FLO ⱽᴵᴾ",
+    "channel_count": 991,
+    "exclude": "false",
+    "order": 301
+  },
+  {
+    "group_title": "Tubi TV Channels",
+    "channel_count": 153,
+    "exclude": "false",
+    "order": 302
+  },
+  {
+    "group_title": "AU| STAN PPV",
+    "channel_count": 122,
+    "exclude": "false",
+    "order": 303
+  },
+  {
+    "group_title": "UK| BBC IPLAYER ᴿᴬᵂ",
+    "channel_count": 117,
+    "exclude": "false",
+    "order": 304
+  },
+  {
+    "group_title": "UK| VISION+",
+    "channel_count": 115,
+    "exclude": "false",
+    "order": 305
+  },
+  {
+    "group_title": "CA| VICTORY+ PPV",
+    "channel_count": 101,
+    "exclude": "false",
+    "order": 307
+  },
+  {
+    "group_title": "AU| 9NOW ᴿᴬᵂ",
+    "channel_count": 81,
+    "exclude": "false",
+    "order": 308
+  },
+  {
+    "group_title": "ASIA| UK",
+    "channel_count": 59,
+    "exclude": "false",
+    "order": 309
+  },
+  {
+    "group_title": "UK| VIDIO",
+    "channel_count": 58,
+    "exclude": "false",
+    "order": 310
+  },
+  {
+    "group_title": "BTN+ PPV",
+    "channel_count": 51,
+    "exclude": "false",
+    "order": 311
+  },
+  {
+    "group_title": "UK| NETFLIX ORIGINAL ᴿᴬᵂ",
+    "channel_count": 32,
+    "exclude": "false",
+    "order": 312
+  },
+  {
+    "group_title": "UK| REALITY SHOW TV ᴿᴬᵂ",
+    "channel_count": 19,
+    "exclude": "false",
+    "order": 313
+  },
+  {
+    "group_title": "ESPN Channels",
+    "channel_count": 12,
+    "exclude": "false",
+    "order": 315
+  },
+  {
+    "group_title": "UK| APPLE TV+ SERIES ᴿᴬᵂ",
+    "channel_count": 12,
+    "exclude": "false",
+    "order": 316
+  },
+  {
+    "group_title": "UK| PRIME VIDEO SERIES ᴿᴬᵂ",
+    "channel_count": 12,
+    "exclude": "false",
+    "order": 317
+  },
+  {
+    "group_title": "UK| BBC IPLAYER SERIES ᴿᴬᵂ",
+    "channel_count": 10,
+    "exclude": "false",
+    "order": 318
   },
   {
     "group_title": "TV Guide (USA)",
@@ -1470,6 +1554,12 @@
     "order": 142
   },
   {
+    "group_title": "UK| PRIME PPV ᵃᵐᶻ",
+    "channel_count": 50,
+    "exclude": "true",
+    "order": 147
+  },
+  {
     "group_title": "UK| SKY CINEMA ʰᵉᵛᶜ",
     "channel_count": 40,
     "exclude": "true",
@@ -1590,6 +1680,12 @@
     "order": 207
   },
   {
+    "group_title": "AU| PRIME PPV ᴿᴬᵂ",
+    "channel_count": 51,
+    "exclude": "true",
+    "order": 212
+  },
+  {
     "group_title": "CA| CINEMA FR ᴴᴰ/ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
     "channel_count": 23,
     "exclude": "true",
@@ -1654,5 +1750,17 @@
     "channel_count": 4,
     "exclude": "true",
     "order": 274
+  },
+  {
+    "group_title": "UK| SOCCER REPLAY ᴿᴬᵂ",
+    "channel_count": 108,
+    "exclude": "true",
+    "order": 306
+  },
+  {
+    "group_title": "ASIA| UK HEVC",
+    "channel_count": 14,
+    "exclude": "true",
+    "order": 314
   }
 ]
