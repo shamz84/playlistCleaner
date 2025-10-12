@@ -18,9 +18,9 @@ def analyze_247_channels():
         r'\bpeppa pig\b', r'\bbaby\b', r'\btoddler\b', r'\bpreschool\b',
         r'\bfamily friendly\b', r'\ball ages\b', r'\byoung\b', r'\bjunior\b',
         r'\bteenage mutant ninja turtles\b', r'\bscooby doo?\b', r'\brugrats\b', r'\bpokemon\b',
-        r'\bmr bean\b', r'\bmickey mouse clubhouse\b', r'\btiny toon?\b', r'\bthundercats\b', r'\bflintstones?\b'
-    ]
-    
+        r'\bmr bean\b', r'\bmickey mouse clubhouse\b', r'\btiny toon?\b', r'\bthundercats\b', r'\bflintstones?\b',
+        r'\bjetsons?\b', r'\btransformers?\b']
+
     movies_patterns = [
         r'\bmovies?\b', r'\bfilms?\b', r'\bcinema\b', r'\bhollywood\b',
         r'\bbox office\b', r'\bblockbuster\b', r'\bclassic\b', r'\baction\b',
@@ -67,7 +67,7 @@ def analyze_247_channels():
         r'\bdodgeball\b', r'\bold school\b', r'\btalladega nights\b', r'\bthe other guys\b',
         r'\bnetflix\b', r'\bhbo\b', r'\bhulu\b', r'\bamazon\b', r'\bapple tv\b',
         r'\bdisney\b', r'\bshowtime\b', r'\bstarz\b', r'\bepix\b', r'\bcinemax\b',
-        r'\bamc\b', r'\bparamount\b', r'\bpeacock\b', r'\bmgm\b'
+        r'\bamc\b', r'\bparamount\b', r'\bpeacock\b', r'\bmgm\b', r'\bdie hard\b', r'\brush hour\b'
     ]
     
     # Additional patterns for better classification

@@ -1,6 +1,6 @@
 [
   {
-    "group_title": "TV Guide (UK)",
+    "group_title": "🇬🇧 TV Guide (UK)",
     "channel_count": 156,
     "exclude": "false",
     "order": 0
@@ -75,10 +75,16 @@
     "group_title": "ASIA| UK",
     "channel_count": 238,
     "exclude": "false",
-    "order": 10
+    "order": 5
   }, 
+    {
+    "group_title": "ASIA| UK HEVC",
+    "channel_count": 14,
+    "exclude": "true",
+    "order": 1
+  },
   {
-    "group_title": "TV Guide (USA)",
+    "group_title": "🇺🇸 TV Guide (USA)",
     "channel_count": 238,
     "exclude": "false",
     "order": 10
@@ -292,6 +298,54 @@
     "channel_count": 49,
     "exclude": "false",
     "order": 120
+  },
+    {
+    "group_title": "Amazon Prime Live",
+    "channel_count": 797,
+    "exclude": "false",
+    "order": 12
+  },
+  {
+    "group_title": "UK| SKY STORE ⱽᴵᴾ ᴿᴬᵂ",
+    "channel_count": 32,
+    "exclude": "false",
+    "order": 30
+  },
+  {
+    "group_title": "4K| UHD 3840P",
+    "channel_count": 29,
+    "exclude": "false",
+    "order": 71
+  },
+  {
+    "group_title": "Peacock Live",
+    "channel_count": 76,
+    "exclude": "false",
+    "order": 197
+  },
+  {
+    "group_title": "Tubi TV Channels",
+    "channel_count": 153,
+    "exclude": "false",
+    "order": 302
+  },
+  {
+    "group_title": "TV Guide (Canada)",
+    "channel_count": 197,
+    "exclude": "true",
+    "order": 3
+  },
+  {
+    "group_title": "NHL Center Ice",
+    "channel_count": 30,
+    "exclude": "true",
+    "order": 30
+  },
+  {
+    "group_title": "TV Guide (Australia)",
+    "channel_count": 60,
+    "exclude": "true",
+    "order": 203
   },
   {
     "group_title": "UK| DAZN PPV",
@@ -894,12 +948,6 @@
     "order": 308
   },
   {
-    "group_title": "ASIA| UK",
-    "channel_count": 59,
-    "exclude": "false",
-    "order": 309
-  },
-  {
     "group_title": "UK| VIDIO",
     "channel_count": 58,
     "exclude": "false",
@@ -1300,11 +1348,5 @@
     "channel_count": 4,
     "exclude": "true",
     "order": 274
-  },
-  {
-    "group_title": "ASIA| UK HEVC",
-    "channel_count": 14,
-    "exclude": "true",
-    "order": 314
   }
 ]
