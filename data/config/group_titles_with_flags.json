@@ -48,6 +48,12 @@
     "order": 5
   },
   {
+    "group_title": "ASIA| UK",
+    "channel_count": 238,
+    "exclude": "false",
+    "order": 5
+  },
+  {
     "group_title": "UK| EPL PREMIER LEAGUE PPV ⱽᴵᴾ ᴿᴬᵂ",
     "channel_count": 37,
     "exclude": "false",
@@ -70,18 +76,6 @@
     "channel_count": 112,
     "exclude": "false",
     "order": 10
-  },
-  {
-    "group_title": "ASIA| UK",
-    "channel_count": 238,
-    "exclude": "false",
-    "order": 5
-  }, 
-    {
-    "group_title": "ASIA| UK HEVC",
-    "channel_count": 14,
-    "exclude": "true",
-    "order": 1
   },
   {
     "group_title": "🇺🇸 TV Guide (USA)",
@@ -156,6 +150,12 @@
     "order": 26
   },
   {
+    "group_title": "24/7 Streaming Services",
+    "channel_count": 71,
+    "exclude": "false",
+    "order": 27
+  },
+  {
     "group_title": "UK| APPLE TV+ SERIES ᴿᴬᵂ",
     "channel_count": 12,
     "exclude": "false",
@@ -187,6 +187,18 @@
   },
   {
     "group_title": "UK| NETFLIX ORIGINAL ᴿᴬᵂ",
+    "channel_count": 32,
+    "exclude": "false",
+    "order": 30
+  },
+  {
+    "group_title": "UK| SKY STORE ⱽᴵᴾ ᴿᴬᵂ",
+    "channel_count": 32,
+    "exclude": "false",
+    "order": 30
+  },
+  {
+    "group_title": "UK| SKY STORE ᴿᴬᵂ",
     "channel_count": 32,
     "exclude": "false",
     "order": 30
@@ -252,6 +264,12 @@
     "order": 71
   },
   {
+    "group_title": "4K| UHD 3840P",
+    "channel_count": 29,
+    "exclude": "false",
+    "order": 71
+  },
+  {
     "group_title": "Entertainment Channels",
     "channel_count": 206,
     "exclude": "false",
@@ -298,54 +316,6 @@
     "channel_count": 49,
     "exclude": "false",
     "order": 120
-  },
-    {
-    "group_title": "Amazon Prime Live",
-    "channel_count": 797,
-    "exclude": "false",
-    "order": 12
-  },
-  {
-    "group_title": "UK| SKY STORE ⱽᴵᴾ ᴿᴬᵂ",
-    "channel_count": 32,
-    "exclude": "false",
-    "order": 30
-  },
-  {
-    "group_title": "4K| UHD 3840P",
-    "channel_count": 29,
-    "exclude": "false",
-    "order": 71
-  },
-  {
-    "group_title": "Peacock Live",
-    "channel_count": 76,
-    "exclude": "false",
-    "order": 197
-  },
-  {
-    "group_title": "Tubi TV Channels",
-    "channel_count": 153,
-    "exclude": "false",
-    "order": 302
-  },
-  {
-    "group_title": "TV Guide (Canada)",
-    "channel_count": 197,
-    "exclude": "true",
-    "order": 3
-  },
-  {
-    "group_title": "NHL Center Ice",
-    "channel_count": 30,
-    "exclude": "true",
-    "order": 30
-  },
-  {
-    "group_title": "TV Guide (Australia)",
-    "channel_count": 60,
-    "exclude": "true",
-    "order": 203
   },
   {
     "group_title": "UK| DAZN PPV",
@@ -604,6 +574,12 @@
     "channel_count": 82,
     "exclude": "false",
     "order": 196
+  },
+  {
+    "group_title": "Peacock Live",
+    "channel_count": 76,
+    "exclude": "false",
+    "order": 197
   },
   {
     "group_title": "Peacock Live",
@@ -918,6 +894,12 @@
     "order": 302
   },
   {
+    "group_title": "Tubi TV Channels",
+    "channel_count": 153,
+    "exclude": "false",
+    "order": 302
+  },
+  {
     "group_title": "AU| STAN PPV",
     "channel_count": 122,
     "exclude": "false",
@@ -964,6 +946,96 @@
     "channel_count": 12,
     "exclude": "false",
     "order": 315
+  },
+  {
+    "group_title": "Sling TV Channels",
+    "channel_count": 840,
+    "exclude": "false",
+    "order": 316
+  },
+  {
+    "group_title": "Prime Channels",
+    "channel_count": 796,
+    "exclude": "false",
+    "order": 317
+  },
+  {
+    "group_title": "Roku Channels",
+    "channel_count": 653,
+    "exclude": "false",
+    "order": 318
+  },
+  {
+    "group_title": "24/7 Cinemania",
+    "channel_count": 376,
+    "exclude": "false",
+    "order": 319
+  },
+  {
+    "group_title": "DirecTV GO Channels",
+    "channel_count": 313,
+    "exclude": "false",
+    "order": 320
+  },
+  {
+    "group_title": "Tubi Channels",
+    "channel_count": 153,
+    "exclude": "false",
+    "order": 323
+  },
+  {
+    "group_title": "Netflix Originals ᴼᴺ ᴬᴵᴿ",
+    "channel_count": 135,
+    "exclude": "false",
+    "order": 324
+  },
+  {
+    "group_title": "24/7 Oneplay",
+    "channel_count": 125,
+    "exclude": "false",
+    "order": 325
+  },
+  {
+    "group_title": "4K Channels",
+    "channel_count": 81,
+    "exclude": "false",
+    "order": 326
+  },
+  {
+    "group_title": "Peacock Channels",
+    "channel_count": 44,
+    "exclude": "false",
+    "order": 329
+  },
+  {
+    "group_title": "Westerns",
+    "channel_count": 31,
+    "exclude": "false",
+    "order": 331
+  },
+  {
+    "group_title": "NHL Teams",
+    "channel_count": 31,
+    "exclude": "false",
+    "order": 332
+  },
+  {
+    "group_title": "Ganja Release Update",
+    "channel_count": 1,
+    "exclude": "false",
+    "order": 333
+  },
+  {
+    "group_title": "ASIA| UK HEVC",
+    "channel_count": 14,
+    "exclude": "true",
+    "order": 1
+  },
+  {
+    "group_title": "TV Guide (Canada)",
+    "channel_count": 197,
+    "exclude": "true",
+    "order": 3
   },
   {
     "group_title": "TV Guide (Canada)",
@@ -1036,6 +1108,12 @@
     "channel_count": 10,
     "exclude": "true",
     "order": 28
+  },
+  {
+    "group_title": "NHL Center Ice",
+    "channel_count": 30,
+    "exclude": "true",
+    "order": 30
   },
   {
     "group_title": "NHL Center Ice",
@@ -1260,6 +1338,12 @@
     "order": 203
   },
   {
+    "group_title": "TV Guide (Australia)",
+    "channel_count": 60,
+    "exclude": "true",
+    "order": 203
+  },
+  {
     "group_title": "Spectrum Network",
     "channel_count": 57,
     "exclude": "true",
@@ -1348,5 +1432,23 @@
     "channel_count": 4,
     "exclude": "true",
     "order": 274
+  },
+  {
+    "group_title": "🇨🇦 TV Guide (Canada)",
+    "channel_count": 214,
+    "exclude": "true",
+    "order": 321
+  },
+  {
+    "group_title": "DirecTV GO Local Channels",
+    "channel_count": 208,
+    "exclude": "true",
+    "order": 322
+  },
+  {
+    "group_title": "🇦🇺 TV Guide (Australia)",
+    "channel_count": 64,
+    "exclude": "true",
+    "order": 328
   }
 ]
