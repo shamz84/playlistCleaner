@@ -1,0 +1,26 @@
+{
+  "_comment": "Group title override mappings - these will replace group titles in the playlist",
+  "_instructions": [
+    "Add entries to override group titles with standardized names",
+    "Format: 'original_title': 'new_standardized_title'",
+    "Use exact case-sensitive matching for original titles",
+    "New titles should follow your preferred naming convention"
+  ],
+  "_examples": {
+    "UK Entertainment": "🇬🇧 UK Entertainment",
+    "Movies HD": "🎬 Movies HD",
+    "24/7 Comedy": "😂 24/7 Comedy"
+  },
+  "overrides": {
+    "UK": "🇬🇧 United Kingdom",
+    "USA": "🇺🇸 United States",
+    "CA": "🇨🇦 Canada",
+    "Movies": "🎬 Movies",
+    "TV Shows": "📺 TV Shows",
+    "Sports": "⚽ Sports",
+    "News": "📰 News",
+    "Kids": "👶 Kids",
+    "Music": "🎵 Music",
+    "Documentary": "📖 Documentary"
+  }
+}

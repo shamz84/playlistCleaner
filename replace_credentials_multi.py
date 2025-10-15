@@ -176,7 +176,7 @@ def main():
         return False
     
     print(f"🔧 Found {len(configs)} credential set(s) to process")
-    print(f"📥 Input file: {input_file}")
+    print(f"❌ Input file: {input_file}")
     
     # Process each credential set
     all_success = True
@@ -212,7 +212,7 @@ def main():
     print(f"   Failed: {len(configs) - len(created_files)}")
     
     if created_files:
-        print(f"\n🎉 Files created:")
+        print(f"\n✅ Files created:")
         for file in created_files:
             print(f"   ✅ {file}")
     

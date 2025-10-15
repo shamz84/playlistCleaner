@@ -4,11 +4,13 @@ Complete Playlist Processing Pipeline - Enhanced Version
 This script orchestrates the complete workflow with enhanced filtering:
 1. Downloads playlist from remote server
 2. Filters and processes the downloaded playlist using ENHANCED AUTO-INCLUDE filtering
+   (now includes group title overrides during filtering)
 3. Replaces credentials for multiple users
 4. Backs up files to Google Drive (optional)
 
 Key Enhancement: Now uses filter_m3u_with_auto_include.py which automatically
-includes unknown groups unless they match exclusion patterns.
+includes unknown groups unless they match exclusion patterns, and applies
+group title overrides during filtering for maximum efficiency.
 
 Usage:
     python process_playlist_complete_enhanced.py [--skip-download] [--skip-filter] [--skip-credentials] [--skip-gdrive]
@@ -50,24 +52,208 @@ def run_script(script_name, args=None, description=""):
     print(f"📝 Command: {' '.join(cmd)}")
     
     try:
-        result = subprocess.run(cmd, 
-                              capture_output=False, 
-                              text=True, 
-                              cwd=os.getcwd())
+        # Set environment for proper Unicode handling on Windows
+        env = os.environ.copy()
+        env['PYTHONIOENCODING'] = 'utf-8'
         
-        if result.returncode == 0:
-            print(f"✅ {script_name} completed successfully")
-            return True
-        else:
-            print(f"❌ {script_name} failed with return code: {result.returncode}")
-            return False
-            
-    except FileNotFoundError:
-        print(f"❌ Script not found: {script_name}")
+        result = subprocess.run(cmd, check=True, capture_output=True, text=True, 
+                               encoding='utf-8', errors='replace', env=env)
+        print(f"✅ {description} completed successfully")
+        if result.stdout:
+            print("📤 Output:")
+            print(result.stdout)
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"❌ {description} failed with exit code {e.returncode}")
+        if e.stdout:
+            print("📤 Output:")
+            print(e.stdout)
+        if e.stderr:
+            print("❌ Error:")
+            print(e.stderr)
         return False
     except Exception as e:
-        print(f"❌ Error running {script_name}: {e}")
+        print(f"❌ {description} failed with error: {e}")
         return False
+
+def check_file_exists(filepath, description="File"):
+    """Check if a file exists and report the result"""
+    if os.path.exists(filepath):
+        size = os.path.getsize(filepath)
+        print(f"✅ {description} found: {filepath} ({size:,} bytes)")
+        return True
+    else:
+        print(f"❌ {description} not found: {filepath}")
+        return False
+
+def get_file_info(filepath):
+    """Get file size and line count"""
+    try:
+        size = os.path.getsize(filepath)
+        with open(filepath, 'r', encoding='utf-8') as f:
+            lines = sum(1 for _ in f)
+        return size, lines
+    except:
+        return 0, 0
+
+def step_download(skip=False):
+    """Step 1: Download playlist from remote server"""
+    print_banner("STEP 1: DOWNLOAD PLAYLIST")
+    
+    if skip:
+        print("⏭️  Skipping download step")
+        return True
+    
+    config_file = "data/config/download_config.json"
+    if not check_file_exists(config_file, "Download configuration"):
+        print("❌ Download configuration missing!")
+        print("💡 Please ensure data/config/download_config.json is configured properly")
+        return False
+    
+    print("❌ Downloading playlist from remote server...")
+    success = run_script("download_file.py", 
+                        ["--config", config_file], 
+                        f"Downloading playlist with config: {config_file}")
+    
+    if success:
+        check_file_exists("data/downloaded_file.m3u", "Downloaded playlist")
+    
+    return success
+
+def step_filter(skip=False):
+    """Step 2: Filter and process playlists using ENHANCED filtering"""
+    print_banner("STEP 2: ENHANCED FILTER AND PROCESS PLAYLISTS")
+    
+    if skip:
+        print("⏭️  Skipping filter step")
+        return True
+    
+    # Check for available input files with config-first approach
+    main_playlist = "data/downloaded_file.m3u"
+    asia_playlist = "data/raw_playlist_AsiaUk.m3u"
+    
+    # Check what input files are available
+    has_main = os.path.exists(main_playlist)
+    has_asia = os.path.exists(asia_playlist)
+    
+    print(f"📋 Input files available:")
+    print(f"  • Main playlist: {'✅' if has_main else '❌'} {main_playlist}")
+    print(f"  • AsiaUK playlist: {'✅' if has_asia else '❌'} {asia_playlist}")
+    
+    if not has_main and not has_asia:
+        print("❌ No input playlists found!")
+        print("💡 You may need to download a playlist first or place files manually")
+        return False
+    
+    # If we have AsiaUK but no main, copy AsiaUK to main location
+    if has_asia and not has_main:
+        print("📋 Using AsiaUK playlist as main input...")
+        try:
+            import shutil
+            shutil.copy2(asia_playlist, main_playlist)
+            print("✅ AsiaUK playlist copied to main input location")
+        except Exception as e:
+            print(f"❌ Failed to copy AsiaUK playlist: {e}")
+            return False
+    else:
+        print("📋 Using main downloaded playlist only")
+    
+    # Check required files
+    required_files = [
+        (main_playlist, "Main playlist (merged if applicable)"),
+        (find_config_file("group_titles_with_flags.json"), "Group configuration")
+    ]
+    
+    missing_files = []
+    for filepath, description in required_files:
+        if not check_file_exists(filepath, description):
+            missing_files.append(filepath)
+    
+    if missing_files:
+        print(f"❌ Missing required files for filtering: {', '.join(missing_files)}")
+        print("💡 You may need to ensure all source files are available")
+        return False
+    
+    # Check if we need to merge categorized 24/7 channels
+    print("🔍 Checking if 24/7 channel categorization is needed...")
+    merge_success = run_script("merge_247_channels.py", 
+                              [], 
+                              "Applying 24/7 channel categorization if needed")
+    
+    if not merge_success:
+        print("❌ 24/7 channel merge failed")
+        return False
+    
+    print("🔍 Processing and filtering playlists with ENHANCED AUTO-INCLUDE...")
+    print("💡 This enhanced filter automatically includes unknown groups")
+    print("   unless they match patterns of excluded content types")
+    print("🏷️  Group title overrides will be applied during filtering")
+    
+    success = run_script("filter_m3u_with_auto_include.py", 
+                        [], 
+                        "Running enhanced playlist filter with auto-include for unknown groups")
+    
+    if success:
+        check_file_exists("filtered_playlist_final.m3u", "Enhanced filtered playlist")
+        
+        # Show filtering results
+        size, lines = get_file_info("filtered_playlist_final.m3u")
+        if size > 0:
+            print(f"📊 Enhanced filtered playlist: {lines:,} lines, {size:,} bytes")
+            print("✅ Unknown groups were automatically analyzed and included/excluded intelligently!")
+    
+    return success
+
+def step_credentials(skip=False, filter_skipped=False):
+    """Step 3: Replace credentials for multiple users"""
+    print_banner("STEP 3: REPLACE CREDENTIALS")
+    
+    if skip:
+        print("⏭️  Skipping credentials step")
+        return True
+    
+    # Determine input file based on whether filter was skipped
+    if filter_skipped:
+        input_file = "data/downloaded_file.m3u"
+        print("💡 Using downloaded file for credential replacement (filter was skipped)")
+    else:
+        input_file = "filtered_playlist_final.m3u"
+    
+    # Check required files
+    if not check_file_exists(input_file, "Input playlist"):
+        print(f"❌ Input playlist required for credential replacement: {input_file}")
+        return False
+    
+    if not check_file_exists(find_config_file("credentials.json"), "Credentials configuration"):
+        print("❌ Credentials configuration required")
+        print("💡 Please ensure credentials.json contains user configurations")
+        return False
+    
+    print("🔄 Replacing credentials for multiple users...")
+    success = run_script("replace_credentials_multi.py", 
+                        [], 
+                        "Replacing credentials for all configured users")
+    
+    if success:
+        # Check for generated files
+        try:
+            credentials_file = find_config_file("credentials.json")
+            with open(credentials_file, 'r', encoding='utf-8') as f:
+                creds = json.load(f)
+                
+            if isinstance(creds, list):
+                for cred in creds:
+                    if 'username' in cred:
+                        output_file = f"8k_{cred['username']}.m3u"
+                        check_file_exists(output_file, f"Personalized playlist for {cred['username']}")
+            elif isinstance(creds, dict) and 'username' in creds:
+                output_file = f"8k_{creds['username']}.m3u"
+                check_file_exists(output_file, f"Personalized playlist for {creds['username']}")
+                
+        except Exception as e:
+            print(f"⚠️  Could not verify generated playlists: {e}")
+    
+    return success
 
 def check_file_exists(filepath, description="File"):
     """Check if a file exists and show file info"""
@@ -103,7 +289,7 @@ def step_download(skip=False):
         print("💡 Please ensure data/config/download_config.json is configured properly")
         return False
     
-    print("📥 Downloading playlist from remote server...")
+    print("❌ Downloading playlist from remote server...")
     success = run_script("download_file.py", 
                         ["--config", config_file], 
                         f"Downloading playlist with config: {config_file}")
@@ -205,10 +391,11 @@ def step_filter(skip=False):
     print("🔍 Processing and filtering playlists with ENHANCED AUTO-INCLUDE...")
     print("💡 This enhanced filter automatically includes unknown groups")
     print("   unless they match patterns of excluded content types")
+    print("🏷️  Group title overrides will be applied during filtering")
     
     success = run_script("filter_m3u_with_auto_include.py", 
                         [], 
-                        "Running enhanced playlist filter with auto-include for unknown groups")
+                        "Running enhanced playlist filter with auto-include and group title overrides")
     
     if success:
         check_file_exists("filtered_playlist_final.m3u", "Enhanced filtered playlist")
@@ -217,7 +404,7 @@ def step_filter(skip=False):
         size, lines = get_file_info("filtered_playlist_final.m3u")
         if size > 0:
             print(f"📊 Enhanced filtered playlist: {lines:,} lines, {size:,} bytes")
-            print("🎉 Unknown groups were automatically analyzed and included/excluded intelligently!")
+            print("✅ Unknown groups were automatically analyzed and included/excluded intelligently!")
     
     return success
 
@@ -246,7 +433,7 @@ def step_credentials(skip=False, filter_skipped=False):
         print("💡 Please ensure credentials.json contains user configurations")
         return False
     
-    print("🔐 Replacing credentials for multiple users...")
+    print("🔄 Replacing credentials for multiple users...")
     success = run_script("replace_credentials_multi.py", 
                         [], 
                         "Replacing credentials for all configured users")
@@ -435,7 +622,7 @@ def main():
     print("🎯 Enhanced with intelligent auto-include filtering!")
     print("📋 Processing stages:")
     print("   1. Download playlist from remote server")
-    print("   2. Enhanced filtering with auto-include for unknown groups")
+    print("   2. Enhanced filtering with auto-include and group title overrides")
     print("   3. Replace credentials for multiple users")
     print("   4. Backup to Google Drive (optional)")
     
@@ -449,7 +636,7 @@ def main():
     if skip_download:
         print("⚠️  Download will be skipped")
     if skip_filter:
-        print("⚠️  Enhanced filtering will be skipped")
+        print("⚠️  Enhanced filtering (including overrides) will be skipped")
     if skip_credentials:
         print("⚠️  Credential replacement will be skipped")
     if skip_gdrive:
@@ -513,7 +700,7 @@ def main():
         
         return False
     else:
-        print(f"🎉 ALL STEPS COMPLETED SUCCESSFULLY!")
+        print(f"✅ ALL STEPS COMPLETED SUCCESSFULLY!")
         print(f"🌟 Enhanced filtering included unknown groups intelligently!")
         print(f"\n📁 Generated files:")
         
@@ -531,7 +718,7 @@ def main():
         if os.path.exists("filtered_playlist_final.m3u"):
             size, lines = get_file_info("filtered_playlist_final.m3u")
             print(f"   - filtered_playlist_final.m3u ({size:,} bytes, {lines:,} lines)")
-            print(f"     📈 Enhanced with auto-included unknown groups!")
+            print(f"     📊 Enhanced with auto-included unknown groups!")
         
         return True
 

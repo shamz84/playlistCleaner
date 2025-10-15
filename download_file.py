@@ -208,7 +208,7 @@ def download_google_drive_file(file_id, output_filename, timeout=30):
                     # Show progress for large files
                     if content_length and total_downloaded % (chunk_size * 100) == 0:
                         progress = (total_downloaded / content_length) * 100
-                        print(f"📥 Progress: {progress:.1f}% ({total_downloaded:,}/{content_length:,} bytes)", end='\r')
+                        print(f"❌ Progress: {progress:.1f}% ({total_downloaded:,}/{content_length:,} bytes)", end='\r')
         
         end_time = time.time()
         download_time = end_time - start_time
@@ -235,7 +235,7 @@ def show_file_preview(filename, file_size):
     
     # Only show preview for reasonably sized text files
     if file_size > 1024 * 1024:  # Skip preview for files > 1MB
-        print(f"📄 File too large for preview")
+        print(f"📁 File too large for preview")
         return
     
     try:
@@ -255,16 +255,16 @@ def show_file_preview(filename, file_size):
                 lines = f.readlines()[:5]
                 total_lines = len(open(filename, 'r', encoding='utf-8').readlines())
                 
-                print(f"\n📄 File preview (first 5 lines):")
+                print(f"\n📁 File preview (first 5 lines):")
                 for i, line in enumerate(lines, 1):
                     print(f"   {i}. {line.rstrip()[:80]}")
                 if total_lines > 5:
                     print(f"   ... ({total_lines} total lines)")
         else:
-            print(f"📄 Binary file - no preview available")
+            print(f"📁 Binary file - no preview available")
             
     except Exception as e:
-        print(f"📄 Could not preview file: {e}")
+        print(f"📁 Could not preview file: {e}")
 
 def download_file(config):
     """Download file using the provided configuration"""
@@ -495,7 +495,7 @@ def main():
             return False
     
     if success:
-        print(f"\n🎉 Download completed successfully!")
+        print(f"\n✅ Download completed successfully!")
     else:
         print(f"\n💥 Download failed!")
     

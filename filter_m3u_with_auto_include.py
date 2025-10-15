@@ -22,7 +22,7 @@ def find_config_file(filename):
         return filename  # Return filename for error reporting
 
 def load_group_configuration():
-    """Load group titles configuration with include/exclude lists."""
+    """Load group titles configuration with include/exclude lists and overrides."""
     try:
         config_file = find_config_file('group_titles_with_flags.json')
         with open(config_file, 'r', encoding='utf-8') as f:
@@ -31,26 +31,45 @@ def load_group_configuration():
         include_groups = set()  # exclude=false
         exclude_groups = set()  # exclude=true
         all_groups = {}
+        group_overrides = {}  # original_title -> override_title
         
         for entry in data:
             group_title = entry.get('group_title')
             exclude_flag = entry.get('exclude')
+            override_title = entry.get('override_title')
             
-            all_groups[group_title] = {
+            # Store override mapping if specified
+            if override_title and override_title != group_title:
+                group_overrides[group_title] = override_title
+                # Use the override title for all subsequent processing
+                effective_title = override_title
+            else:
+                effective_title = group_title
+            
+            all_groups[effective_title] = {
+                'original_title': group_title,
                 'exclude': exclude_flag,
                 'order': entry.get('order'),
                 'channel_count': entry.get('channel_count', 0)
             }
             
             if exclude_flag == 'false':
-                include_groups.add(group_title)
+                include_groups.add(effective_title)
             else:
-                exclude_groups.add(group_title)
+                exclude_groups.add(effective_title)
         
-        return include_groups, exclude_groups, all_groups
+        # Show override summary if any were found
+        if group_overrides:
+            print(f"\n🏷️  Group Title Overrides: {len(group_overrides)} configured")
+            for i, (original, override) in enumerate(list(group_overrides.items())[:5]):
+                print(f"   '{original}' → '{override}'")
+            if len(group_overrides) > 5:
+                print(f"   ... and {len(group_overrides) - 5} more")
+        
+        return include_groups, exclude_groups, all_groups, group_overrides
     except Exception as e:
         print(f"Error loading group titles: {e}")
-        return set(), set(), {}
+        return set(), set(), {}, {}
 
 def analyze_unknown_groups(playlist_file, all_known_groups):
     """Find unknown groups in the playlist."""
@@ -118,9 +137,13 @@ def should_exclude_unknown_group(unknown_group, excluded_groups):
     
     return False, f"No matching exclusion patterns found for prefix '{unknown_prefix}'"
 
-def filter_m3u_playlist_with_unknown_inclusion(input_file, output_file, include_groups, exclude_groups, auto_include_unknown=True):
+def filter_m3u_playlist_with_unknown_inclusion(input_file, output_file, include_groups, exclude_groups, group_overrides=None, auto_include_unknown=True):
     """Enhanced filter that includes unknown groups by default, but excludes pattern matches.
-    Also sorts output by group order from configuration."""
+    Also sorts output by group order from configuration.
+    Now includes group title override functionality."""
+    
+    if group_overrides is None:
+        group_overrides = {}
     
     if not os.path.exists(input_file):
         print(f"❌ Error: Input file {input_file} not found!")
@@ -142,7 +165,9 @@ def filter_m3u_playlist_with_unknown_inclusion(input_file, output_file, include_
         with open(config_file, 'r', encoding='utf-8') as f:
             config_data = json.load(f)
             for entry in config_data:
-                group_order_map[entry['group_title']] = entry.get('order', 9999)
+                # Use override title if available, otherwise use original title
+                effective_title = entry.get('override_title', entry['group_title'])
+                group_order_map[effective_title] = entry.get('order', 9999)
     except Exception as e:
         print(f"⚠️  Warning: Could not load group order configuration: {e}")
     
@@ -202,7 +227,16 @@ def filter_m3u_playlist_with_unknown_inclusion(input_file, output_file, include_
             group_match = re.search(r'group-title="([^"]*)"', line)
             
             if group_match:
-                group_title = group_match.group(1)
+                original_group_title = group_match.group(1)
+                
+                # Apply group title override if configured
+                if original_group_title in group_overrides:
+                    override_title = group_overrides[original_group_title]
+                    # Replace the group title in the line
+                    line = re.sub(r'group-title="[^"]*"', f'group-title="{override_title}"', line)
+                    group_title = override_title
+                else:
+                    group_title = original_group_title
                 
                 # Check if this group should be included
                 if group_title in final_include_groups:
@@ -210,9 +244,9 @@ def filter_m3u_playlist_with_unknown_inclusion(input_file, output_file, include_
                     if group_title not in channels_by_group:
                         channels_by_group[group_title] = []
                     
-                    # Add the channel (EXTINF line + URL line)
+                    # Add the channel (EXTINF line + URL line) - use the modified line
                     if i + 1 < len(lines):
-                        channels_by_group[group_title].append((lines[i], lines[i + 1]))
+                        channels_by_group[group_title].append((line + '\n', lines[i + 1]))
                         included_entries += 1
                         
                         # Track if this was auto-included
@@ -257,7 +291,7 @@ def filter_m3u_playlist_with_unknown_inclusion(input_file, output_file, include_
                     f.write(url_line)
         
         print(f"\n✅ Successfully created filtered playlist: {output_file}")
-        print(f"\n📈 Results:")
+        print(f"\n📊 Results:")
         print(f"  • Total entries processed: {total_entries}")
         print(f"  • Entries included (known groups): {included_entries - auto_included_entries}")
         print(f"  • Entries included (auto-included unknown): {auto_included_entries}")
@@ -267,7 +301,7 @@ def filter_m3u_playlist_with_unknown_inclusion(input_file, output_file, include_
         print(f"  • Groups in output: {len(sorted_groups)} (sorted by order)")
         
         if auto_included_groups:
-            print(f"\n🎉 Auto-included unknown groups:")
+            print(f"\n✅ Auto-included unknown groups:")
             for group in sorted(auto_included_groups):
                 count = unknown_groups.get(group, 0)
                 print(f"  • {group} ({count} channels)")
@@ -349,7 +383,7 @@ def main():
     
     # Load configuration
     print("📋 Loading group configuration...")
-    include_groups, exclude_groups, all_groups = load_group_configuration()
+    include_groups, exclude_groups, all_groups, group_overrides = load_group_configuration()
     
     if not include_groups and not exclude_groups:
         print("❌ No groups found in configuration!")
@@ -358,6 +392,8 @@ def main():
     print(f"✅ Configuration loaded:")
     print(f"  • Groups to include (exclude=false): {len(include_groups)}")
     print(f"  • Groups to exclude (exclude=true): {len(exclude_groups)}")
+    if group_overrides:
+        print(f"  • Group title overrides: {len(group_overrides)}")
     
     # Check input file
     if not os.path.exists(input_file):
@@ -366,12 +402,12 @@ def main():
     
     # Run enhanced filtering
     success = filter_m3u_playlist_with_unknown_inclusion(
-        input_file, output_file, include_groups, exclude_groups, auto_include_unknown=True
+        input_file, output_file, include_groups, exclude_groups, group_overrides, auto_include_unknown=True
     )
     
     if success:
-        print(f"\n🎉 Enhanced filtering completed successfully!")
-        print(f"📄 Output saved to: {output_file}")
+        print(f"\n✅ Enhanced filtering completed successfully!")
+        print(f"📁 Output saved to: {output_file}")
         
         # Ask about updating config
         print(f"\n💡 To make these changes permanent, review and replace:")

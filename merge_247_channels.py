@@ -42,7 +42,7 @@ def merge_categorized_247_channels():
             break
     
     if not has_247_channels:
-        print("ℹ️  No '24/7 Channels' group found in downloaded file")
+        print("📋 No '24/7 Channels' group found in downloaded file")
         print("✅ No merge needed - file already properly categorized or doesn't contain 24/7 content")
         return True  # This is not an error, just nothing to do
     
@@ -124,7 +124,7 @@ def merge_categorized_247_channels():
     print(f"✅ Removed {removed_count} original 24/7 Channels entries")
     
     # Read and append categorized channels
-    print("📥 Reading categorized channels...")
+    print("❌ Reading categorized channels...")
     total_added = 0
     
     for cat_file in categorized_files:
@@ -171,7 +171,7 @@ def merge_categorized_247_channels():
         return False
     
     # Summary
-    print(f"\n🎉 Merge Summary:")
+    print(f"\n✅ Merge Summary:")
     print(f"   ✅ Removed {removed_count} original '24/7 Channels' entries")
     print(f"   ✅ Added {total_added} categorized entries:")
     
@@ -200,7 +200,7 @@ if __name__ == "__main__":
     print("🔧 Merging categorized 24/7 channels back into main playlist...")
     success = merge_categorized_247_channels()
     if success:
-        print("\n🎉 Merge completed successfully!")
+        print("\n✅ Merge completed successfully!")
     else:
         print("\n❌ Merge failed!")
     exit(0 if success else 1)
