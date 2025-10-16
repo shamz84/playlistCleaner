@@ -499,3 +499,4 @@ gdrive_token.json
 data/gdrive_token_writable.json
 data/config/gdrive_service_account.json
 247_channels*.m3u
+xtream_api_config*.json
