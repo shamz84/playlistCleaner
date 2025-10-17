@@ -5,15 +5,21 @@ Xtream Codes API to M3U Converter
 This script fetches channel data from Xtream Codes player_api.php endpoint
 and converts the JSON response to M3U playlist format.
 
+The script checks if existing M3U files are older than 24 hours before running.
+Use --force to bypass this check.
+
 Usage:
-    python api_to_m3u_converter.py
+    python api_to_m3u_converter.py         # Normal run with age check
+    python api_to_m3u_converter.py --force # Force run regardless of file age
 """
 
 import json
 import requests
 import os
+import glob
+import sys
 from urllib.parse import urljoin
-from datetime import datetime
+from datetime import datetime, timedelta
 
 def load_config():
     """Load server configuration from file or prompt user"""
@@ -58,6 +64,54 @@ def load_config():
         print(f"⚠️  Could not save config: {e}")
     
     return config
+
+def check_existing_files_age(config):
+    """Check if existing M3U files are older than 24 hours"""
+    if not config.get('categories'):
+        return True  # No categories configured, proceed
+    
+    # Get unique category names
+    unique_categories = set(cat['category_name'] for cat in config['categories'])
+    
+    # Check each expected output file
+    all_files_recent = True
+    files_status = []
+    
+    for cat_name in unique_categories:
+        # Create expected filename pattern
+        safe_category = "".join(c for c in cat_name if c.isalnum() or c in (' ', '-', '_')).rstrip()
+        safe_category = safe_category.replace(' ', '_')
+        filename = f"{safe_category}.m3u"
+        
+        # Check if file exists
+        if not os.path.exists(filename):
+            files_status.append(f"❌ {cat_name}: No existing file found ({filename})")
+            all_files_recent = False
+            continue
+        
+        # Check file age
+        file_age = datetime.now() - datetime.fromtimestamp(os.path.getmtime(filename))
+        
+        if file_age > timedelta(hours=24):
+            files_status.append(f"⏰ {cat_name}: {filename} is {file_age.days}d {file_age.seconds//3600}h old (needs update)")
+            all_files_recent = False
+        else:
+            hours_old = file_age.seconds // 3600
+            minutes_old = (file_age.seconds % 3600) // 60
+            files_status.append(f"✅ {cat_name}: {filename} is {hours_old}h {minutes_old}m old (recent)")
+    
+    # Display status
+    print("\n📅 Existing file age check:")
+    for status in files_status:
+        print(f"  {status}")
+    
+    if all_files_recent:
+        print("\n🕐 All files are less than 24 hours old. Skipping export.")
+        print("💡 Use --force to override this check.")
+        return False
+    else:
+        print(f"\n⚡ Some files are older than 24 hours. Proceeding with export...")
+        return True
 
 def save_config(config):
     """Save configuration back to file"""
@@ -287,11 +341,21 @@ def main():
     print("🚀 Xtream Codes API to M3U Converter")
     print("=" * 50)
     
+    # Check for force flag
+    force_run = "--force" in sys.argv
+    if force_run:
+        print("🔧 Force mode enabled - skipping age check")
+    
     # Load configuration
     config = load_config()
     if not config:
         print("❌ Failed to load configuration")
         return
+    
+    # Check if we need to run based on file ages (unless forced)
+    if not force_run:
+        if not check_existing_files_age(config):
+            return  # Exit if files are recent
     
     # Show available options
     print("\n📋 Available actions:")
@@ -377,7 +441,6 @@ def main():
             
             # Group categories by name and combine channels
             category_groups = {}
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             
             # First pass: collect all channels by category name
             for cat in config['categories']:
@@ -413,7 +476,7 @@ def main():
                     # Create filename for this category group
                     safe_category = "".join(c for c in cat_name if c.isalnum() or c in (' ', '-', '_')).rstrip()
                     safe_category = safe_category.replace(' ', '_')
-                    filename = f"{safe_category}_{timestamp}.m3u"
+                    filename = f"{safe_category}.m3u"
                     
                     if save_m3u_file(m3u_content, filename):
                         generated_files.append(filename)
@@ -449,16 +512,15 @@ def main():
         return
     
     # Save to file
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     
-    # Create filename with category name and timestamp
+    # Create filename with category name (no timestamp)
     if 'category_name' in locals() and category_name:
         # Clean category name for filename (remove invalid characters)
         safe_category = "".join(c for c in category_name if c.isalnum() or c in (' ', '-', '_')).rstrip()
         safe_category = safe_category.replace(' ', '_')
-        filename = f"{safe_category}_{timestamp}.m3u"
+        filename = f"{safe_category}.m3u"
     else:
-        filename = f"api_playlist_{timestamp}.m3u"
+        filename = f"api_playlist.m3u"
     
     if save_m3u_file(m3u_content, filename):
         print(f"\n🎉 Conversion completed successfully!")
