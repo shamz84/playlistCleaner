@@ -44,8 +44,13 @@
     "order": 5
   },
   {
-    "group_title": "ASIA| UK",
-    "override_title": "Indian Channels",
+    "group_title": "Indian Channels",
+    "channel_count": 238,
+    "exclude": "false",
+    "order": 5
+  },
+  {
+    "group_title": "8K Sports",
     "channel_count": 238,
     "exclude": "false",
     "order": 5

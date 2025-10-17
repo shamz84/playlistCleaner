@@ -2,6 +2,7 @@
 """
 Complete Playlist Processing Pipeline - Enhanced Version
 This script orchestrates the complete workflow with enhanced filtering:
+0. Generates API playlists from Xtream Codes servers (optional)
 1. Downloads playlist from remote server
 2. Filters and processes the downloaded playlist using ENHANCED AUTO-INCLUDE filtering
    (now includes group title overrides during filtering)
@@ -13,7 +14,7 @@ includes unknown groups unless they match exclusion patterns, and applies
 group title overrides during filtering for maximum efficiency.
 
 Usage:
-    python process_playlist_complete_enhanced.py [--skip-download] [--skip-filter] [--skip-credentials] [--skip-gdrive]
+    python process_playlist_complete_enhanced.py [--skip-api] [--skip-download] [--skip-filter] [--skip-credentials] [--skip-gdrive]
 """
 import subprocess
 import sys
@@ -315,40 +316,87 @@ def step_filter(skip=False):
     has_main = os.path.exists(main_playlist)
     has_asia = os.path.exists(asia_playlist)
     
-    if not has_main and not has_asia:
+    # Find API-generated files in data directory
+    api_files = []
+    data_dir = "data"
+    if os.path.exists(data_dir):
+        for file in os.listdir(data_dir):
+            if file.startswith("xstream_api_") and file.endswith(".m3u"):
+                api_files.append(os.path.join(data_dir, file))
+    
+    print(f"📋 Input files available:")
+    print(f"  • Main playlist: {'✅' if has_main else '❌'} {main_playlist}")
+    print(f"  • AsiaUK playlist: {'✅' if has_asia else '❌'} {asia_playlist}")
+    if api_files:
+        print(f"  • API-generated files: ✅ {len(api_files)} files found")
+        for api_file in api_files[:5]:  # Show first 5
+            size = os.path.getsize(api_file) if os.path.exists(api_file) else 0
+            filename = os.path.basename(api_file)
+            print(f"    - {filename} ({size:,} bytes)")
+        if len(api_files) > 5:
+            print(f"    ... and {len(api_files) - 5} more")
+    else:
+        print(f"  • API-generated files: ❌ None found")
+    
+    if not has_main and not has_asia and not api_files:
         print("❌ No input playlist files found!")
-        print("💡 Need either data/downloaded_file.m3u or data/raw_playlist_AsiaUk.m3u")
+        print("💡 Need either:")
+        print("   - data/downloaded_file.m3u (from download step)")
+        print("   - data/raw_playlist_AsiaUk.m3u (manual)")
+        print("   - API-generated files (from API converter step)")
         return False
     
-    # Merge playlists if both are available
-    if has_asia and has_main:
-        print("📋 Both main and AsiaUK playlists available")
-        print("🔄 Merging AsiaUK content with main playlist...")
+    # Merge playlists if multiple sources are available
+    playlists_to_merge = []
+    
+    if has_main:
+        playlists_to_merge.append((main_playlist, "Main downloaded"))
+    
+    if has_asia:
+        playlists_to_merge.append((asia_playlist, "AsiaUK"))
+    
+    # Add API-generated files
+    for api_file in api_files:
+        filename = os.path.basename(api_file)
+        playlists_to_merge.append((api_file, f"API: {filename}"))
+    
+    if len(playlists_to_merge) > 1:
+        print(f"📋 Multiple playlists available ({len(playlists_to_merge)} sources)")
+        print("🔄 Merging all playlists into main input...")
+        
         try:
-            # Read main playlist
-            with open(main_playlist, 'r', encoding='utf-8') as f:
-                main_content = f.readlines()
+            all_content = []
+            total_lines = 0
             
-            # Read AsiaUK playlist
-            with open(asia_playlist, 'r', encoding='utf-8') as f:
-                asia_content = f.readlines()
+            # Add M3U header
+            all_content.append("#EXTM3U\n")
             
-            # Remove header from AsiaUK content if present
-            if asia_content and asia_content[0].strip() == '#EXTM3U':
-                asia_content = asia_content[1:]
+            for playlist_path, description in playlists_to_merge:
+                print(f"  📁 Reading {description}: {playlist_path}")
+                
+                with open(playlist_path, 'r', encoding='utf-8') as f:
+                    content = f.readlines()
+                
+                # Remove header if present
+                if content and content[0].strip() == '#EXTM3U':
+                    content = content[1:]
+                
+                all_content.extend(content)
+                total_lines += len(content)
+                
+                size = os.path.getsize(playlist_path)
+                print(f"    ✅ Added {len(content)} lines ({size:,} bytes)")
             
-            # Merge content
-            merged_content = main_content + asia_content
-            
-            # Write merged content back to main playlist
+            # Write merged content to main playlist
             with open(main_playlist, 'w', encoding='utf-8') as f:
-                f.writelines(merged_content)
+                f.writelines(all_content)
             
-            print(f"✅ Merged playlists: {len(main_content)} + {len(asia_content)} lines")
+            print(f"✅ Merged {len(playlists_to_merge)} playlists: {total_lines} total lines")
             
         except Exception as e:
             print(f"❌ Failed to merge playlists: {e}")
             return False
+    
     elif has_asia and not has_main:
         print("📋 Using AsiaUK playlist as main input")
         print(f"🔄 Copying {asia_playlist} to {main_playlist}")
@@ -359,8 +407,38 @@ def step_filter(skip=False):
         except Exception as e:
             print(f"❌ Failed to copy AsiaUK playlist: {e}")
             return False
+    
+    elif api_files and not has_main and not has_asia:
+        print("📋 Using API-generated files as main input")
+        print(f"🔄 Merging {len(api_files)} API files to {main_playlist}")
+        try:
+            all_content = ["#EXTM3U\n"]
+            
+            for api_file in api_files:
+                with open(api_file, 'r', encoding='utf-8') as f:
+                    content = f.readlines()
+                
+                # Remove header if present
+                if content and content[0].strip() == '#EXTM3U':
+                    content = content[1:]
+                
+                all_content.extend(content)
+            
+            # Ensure data directory exists
+            os.makedirs("data", exist_ok=True)
+            
+            # Write merged API content to main playlist
+            with open(main_playlist, 'w', encoding='utf-8') as f:
+                f.writelines(all_content)
+            
+            print(f"✅ API files merged to main input: {len(all_content)} lines")
+            
+        except Exception as e:
+            print(f"❌ Failed to merge API files: {e}")
+            return False
+    
     else:
-        print("📋 Using main downloaded playlist only")
+        print("📋 Using existing main downloaded playlist")
     
     # Check required files
     required_files = [
@@ -621,6 +699,7 @@ def main():
     print_banner("ENHANCED PLAYLIST PROCESSING PIPELINE")
     print("🎯 Enhanced with intelligent auto-include filtering!")
     print("📋 Processing stages:")
+    print("   0. Generate API playlists from Xtream Codes servers")
     print("   1. Download playlist from remote server")
     print("   2. Enhanced filtering with auto-include and group title overrides")
     print("   3. Replace credentials for multiple users")
@@ -628,11 +707,14 @@ def main():
     
     # Parse command line arguments
     args = sys.argv[1:]
+    skip_api = "--skip-api" in args
     skip_download = "--skip-download" in args
     skip_filter = "--skip-filter" in args
     skip_credentials = "--skip-credentials" in args
     skip_gdrive = "--skip-gdrive" in args
     
+    if skip_api:
+        print("⚠️  API converter will be skipped")
     if skip_download:
         print("⚠️  Download will be skipped")
     if skip_filter:
@@ -645,6 +727,7 @@ def main():
     # Pipeline execution
     start_time = time.time()
     steps = [
+        ("API Converter", lambda: step_api_converter(skip_api)),
         ("Download", lambda: step_download(skip_download)),
         ("Enhanced Filter", lambda: step_filter(skip_filter)),
         ("Credentials", lambda: step_credentials(skip_credentials, skip_filter)),
@@ -681,7 +764,12 @@ def main():
     if failed_step:
         print(f"❌ Failed at step: {failed_step}")
         print(f"\n💡 Troubleshooting tips:")
-        if failed_step == "Download":
+        if failed_step == "API Converter":
+            print("   - Check xtream_api_config.json configuration")
+            print("   - Verify server connection and credentials")
+            print("   - Run api_to_m3u_converter.py manually to test")
+            print("   - Files older than 24 hours will trigger regeneration")
+        elif failed_step == "Download":
             print("   - Check internet connection")
             print("   - Verify server is accessible")
             print("   - Check download_file.py configuration")
@@ -721,6 +809,46 @@ def main():
             print(f"     📊 Enhanced with auto-included unknown groups!")
         
         return True
+
+def step_api_converter(skip=False):
+    """Step 0: Generate API playlists from Xtream Codes servers"""
+    print_banner("STEP 0: API TO M3U CONVERTER")
+    
+    if skip:
+        print("⏭️  Skipping API converter step")
+        return True
+    
+    config_file = "data/config/xtream_api_config.json"
+    if not check_file_exists(config_file, "API configuration"):
+        print("❌ API configuration missing!")
+        print("💡 Please ensure data/config/xtream_api_config.json is configured properly")
+        print("💡 Run api_to_m3u_converter.py manually first to set up configuration")
+        return True  # Return True to continue pipeline even if API config is missing
+    
+    print("🌐 Converting API data to M3U playlists...")
+    success = run_script("api_to_m3u_converter.py", 
+                        [], 
+                        "Converting Xtream API data to M3U playlists")
+    
+    if success:
+        # Check for generated files in data directory
+        api_files = []
+        data_dir = "data"
+        if os.path.exists(data_dir):
+            for file in os.listdir(data_dir):
+                if file.startswith("xstream_api_") and file.endswith(".m3u"):
+                    api_files.append(os.path.join(data_dir, file))
+        
+        if api_files:
+            print(f"✅ Generated {len(api_files)} API playlists:")
+            for file in api_files:
+                size, lines = get_file_info(file)
+                filename = os.path.basename(file)
+                print(f"  📁 {filename} ({size:,} bytes, {lines:,} lines)")
+        else:
+            print("⚠️  No API playlists were generated (may be due to 24-hour age check)")
+    
+    return success
 
 if __name__ == "__main__":
     success = main()

@@ -71,8 +71,8 @@ def load_group_configuration():
         print(f"Error loading group titles: {e}")
         return set(), set(), {}, {}
 
-def analyze_unknown_groups(playlist_file, all_known_groups):
-    """Find unknown groups in the playlist."""
+def analyze_unknown_groups(playlist_file, all_known_groups, group_overrides=None):
+    """Find unknown groups in the playlist, considering group overrides."""
     try:
         with open(playlist_file, 'r', encoding='utf-8') as f:
             content = f.read()
@@ -81,9 +81,15 @@ def analyze_unknown_groups(playlist_file, all_known_groups):
         groups = re.findall(r'group-title="([^"]+)"', content)
         group_counts = Counter(groups)
         
+        # Create set of all known groups including original titles with overrides
+        extended_known_groups = set(all_known_groups)
+        if group_overrides:
+            # Add original titles that have overrides
+            extended_known_groups.update(group_overrides.keys())
+        
         # Find unknown groups
         playlist_groups = set(group_counts.keys())
-        unknown_groups = playlist_groups - all_known_groups
+        unknown_groups = playlist_groups - extended_known_groups
         
         return {group: group_counts[group] for group in unknown_groups}
     except Exception as e:
@@ -173,7 +179,7 @@ def filter_m3u_playlist_with_unknown_inclusion(input_file, output_file, include_
     
     # Analyze unknown groups
     all_known_groups = include_groups | exclude_groups
-    unknown_groups = analyze_unknown_groups(input_file, all_known_groups)
+    unknown_groups = analyze_unknown_groups(input_file, all_known_groups, group_overrides)
     
     auto_included_groups = set()
     auto_excluded_groups = set()

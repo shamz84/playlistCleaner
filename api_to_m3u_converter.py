@@ -68,7 +68,8 @@ def load_config():
 def check_existing_files_age(config):
     """Check if existing M3U files are older than 24 hours"""
     if not config.get('categories'):
-        return True  # No categories configured, proceed
+        # No categories configured, return tuple: (should_proceed, has_existing_files)
+        return True, False
     
     # Get unique category names
     unique_categories = set(cat['category_name'] for cat in config['categories'])
@@ -76,21 +77,24 @@ def check_existing_files_age(config):
     # Check each expected output file
     all_files_recent = True
     files_status = []
+    has_existing_files = False
     
     for cat_name in unique_categories:
         # Create expected filename pattern
         safe_category = "".join(c for c in cat_name if c.isalnum() or c in (' ', '-', '_')).rstrip()
         safe_category = safe_category.replace(' ', '_')
-        filename = f"{safe_category}.m3u"
+        filename = f"xstream_api_{safe_category}.m3u"
+        filepath = os.path.join("data", filename)
         
         # Check if file exists
-        if not os.path.exists(filename):
+        if not os.path.exists(filepath):
             files_status.append(f"❌ {cat_name}: No existing file found ({filename})")
             all_files_recent = False
             continue
         
+        has_existing_files = True
         # Check file age
-        file_age = datetime.now() - datetime.fromtimestamp(os.path.getmtime(filename))
+        file_age = datetime.now() - datetime.fromtimestamp(os.path.getmtime(filepath))
         
         if file_age > timedelta(hours=24):
             files_status.append(f"⏰ {cat_name}: {filename} is {file_age.days}d {file_age.seconds//3600}h old (needs update)")
@@ -105,13 +109,16 @@ def check_existing_files_age(config):
     for status in files_status:
         print(f"  {status}")
     
-    if all_files_recent:
+    if all_files_recent and has_existing_files:
         print("\n🕐 All files are less than 24 hours old. Skipping export.")
         print("💡 Use --force to override this check.")
-        return False
+        return False, has_existing_files
     else:
-        print(f"\n⚡ Some files are older than 24 hours. Proceeding with export...")
-        return True
+        if not has_existing_files:
+            print(f"\n⚡ No existing files found. Proceeding with export...")
+        else:
+            print(f"\n⚡ Some files are older than 24 hours. Proceeding with export...")
+        return True, has_existing_files
 
 def save_config(config):
     """Save configuration back to file"""
@@ -281,16 +288,23 @@ def convert_to_m3u(channels, config, category_name="API Channels"):
     return ''.join(m3u_content)
 
 def save_m3u_file(m3u_content, filename):
-    """Save M3U content to file"""
+    """Save M3U content to file in data directory"""
     try:
-        with open(filename, 'w', encoding='utf-8') as f:
+        # Ensure data directory exists
+        data_dir = "data"
+        os.makedirs(data_dir, exist_ok=True)
+        
+        # Construct full path
+        filepath = os.path.join(data_dir, filename)
+        
+        with open(filepath, 'w', encoding='utf-8') as f:
             f.write(m3u_content)
         
         # Get file size
-        file_size = os.path.getsize(filename)
+        file_size = os.path.getsize(filepath)
         line_count = len(m3u_content.split('\n'))
         
-        print(f"✅ M3U playlist saved: {filename}")
+        print(f"✅ M3U playlist saved: {filepath}")
         print(f"📊 File size: {file_size:,} bytes")
         print(f"📏 Lines: {line_count:,}")
         
@@ -353,24 +367,37 @@ def main():
         return
     
     # Check if we need to run based on file ages (unless forced)
+    should_proceed = True
+    has_existing_files = False
+    
     if not force_run:
-        if not check_existing_files_age(config):
+        should_proceed, has_existing_files = check_existing_files_age(config)
+        if not should_proceed:
             return  # Exit if files are recent
     
-    # Show available options
-    print("\n📋 Available actions:")
-    print("1. Use pre-configured categories")
-    print("2. Live TV channels (get_live_streams) [DEFAULT]")
-    print("3. Movies (get_vod_streams)")
-    print("4. TV Series (get_series)")
-    print("5. Browse categories first")
+    # Determine if we should auto-select option 2 (no interaction needed)
+    # This happens when: no existing files found (first run, fresh export needed)
+    auto_select_default = not has_existing_files
     
-    choice = input("\nSelect option (1-5) [press Enter for option 2]: ").strip()
-    
-    # Default to option 2 if no input
-    if not choice:
+    if auto_select_default:
+        # Auto-select option 2 for pipeline compatibility when no files exist
         choice = "2"
-        print("Using default option 2: Live TV channels")
+        print("\n🤖 No existing files found. Auto-selecting default: Live TV channels (get_live_streams)")
+    else:
+        # Show available options for interactive mode
+        print("\n📋 Available actions:")
+        print("1. Use pre-configured categories")
+        print("2. Live TV channels (get_live_streams) [DEFAULT]")
+        print("3. Movies (get_vod_streams)")
+        print("4. TV Series (get_series)")
+        print("5. Browse categories first")
+        
+        choice = input("\nSelect option (1-5) [press Enter for option 2]: ").strip()
+        
+        # Default to option 2 if no input
+        if not choice:
+            choice = "2"
+            print("Using default option 2: Live TV channels")
     
     if choice == "1":
         # Use pre-configured categories
@@ -476,7 +503,7 @@ def main():
                     # Create filename for this category group
                     safe_category = "".join(c for c in cat_name if c.isalnum() or c in (' ', '-', '_')).rstrip()
                     safe_category = safe_category.replace(' ', '_')
-                    filename = f"{safe_category}.m3u"
+                    filename = f"xstream_api_{safe_category}.m3u"
                     
                     if save_m3u_file(m3u_content, filename):
                         generated_files.append(filename)
@@ -518,13 +545,13 @@ def main():
         # Clean category name for filename (remove invalid characters)
         safe_category = "".join(c for c in category_name if c.isalnum() or c in (' ', '-', '_')).rstrip()
         safe_category = safe_category.replace(' ', '_')
-        filename = f"{safe_category}.m3u"
+        filename = f"xstream_api_{safe_category}.m3u"
     else:
-        filename = f"api_playlist.m3u"
+        filename = f"xstream_api_playlist.m3u"
     
     if save_m3u_file(m3u_content, filename):
         print(f"\n🎉 Conversion completed successfully!")
-        print(f"📁 Output file: {filename}")
+        print(f"📁 Output file: data/{filename}")
     else:
         print("❌ Failed to save M3U file")
 

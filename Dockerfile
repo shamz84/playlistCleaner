@@ -16,6 +16,7 @@ COPY gdrive_setup.py /app/
 COPY analyze_247_channels.py /app/
 COPY merge_247_channels.py /app/
 COPY docker-entrypoint.sh /app/
+COPY api_to_m3u_converter.py /app/
 
 # Copy Google Drive authentication setup files
 COPY setup_container_gdrive_auth.py /app/
