@@ -1,0 +1,94 @@
+[
+  {
+    "group_title": "UK| EPL PREMIER LEAGUE PPV ᴿᴬᵂ",
+    "override_title": "EPL PPV2",
+    "channel_count": 30,
+    "exclude": "false",
+    "order": 8
+  },
+  {
+    "group_title": "UK| HUB PREMIER PPV",
+    "override_title": "PREMIER PPV",
+    "channel_count": 13,
+    "exclude": "false",
+    "order": 25
+  },
+  {
+    "group_title": "Amazon Prime Live",
+    "channel_count": 797,
+    "exclude": "false",
+    "order": 42
+  },
+  {
+    "group_title": "4K| UHD 3840P",
+    "channel_count": 29,
+    "exclude": "false",
+    "order": 71
+  },
+  {
+    "group_title": "Peacock Live",
+    "channel_count": 76,
+    "exclude": "false",
+    "order": 197
+  },
+  {
+    "group_title": "NHL Real",
+    "channel_count": 31,
+    "exclude": "false",
+    "order": 230
+  },
+  {
+    "group_title": "MLB Real",
+    "channel_count": 28,
+    "exclude": "false",
+    "order": 235
+  },
+  {
+    "group_title": "Tubi TV Channels",
+    "channel_count": 153,
+    "exclude": "false",
+    "order": 302
+  },
+  {
+    "group_title": "Tubi TV Channels",
+    "channel_count": 153,
+    "exclude": "false",
+    "order": 302
+  },
+  {
+    "group_title": "TV Guide (Canada)",
+    "channel_count": 197,
+    "exclude": "true",
+    "order": 3
+  },
+  {
+    "group_title": "TV Guide (Canada)",
+    "channel_count": 197,
+    "exclude": "true",
+    "order": 3
+  },
+  {
+    "group_title": "NHL Center Ice",
+    "channel_count": 30,
+    "exclude": "true",
+    "order": 30
+  },
+  {
+    "group_title": "NHL Center Ice",
+    "channel_count": 30,
+    "exclude": "true",
+    "order": 30
+  },
+  {
+    "group_title": "TV Guide (Australia)",
+    "channel_count": 60,
+    "exclude": "true",
+    "order": 203
+  },
+  {
+    "group_title": "TV Guide (Australia)",
+    "channel_count": 60,
+    "exclude": "true",
+    "order": 203
+  }
+]

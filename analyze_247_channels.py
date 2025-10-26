@@ -19,7 +19,7 @@ def analyze_247_channels():
         r'\bfamily friendly\b', r'\ball ages\b', r'\byoung\b', r'\bjunior\b',
         r'\bteenage mutant ninja turtles\b', r'\bscooby doo?\b', r'\brugrats\b', r'\bpokemon\b',
         r'\bmr bean\b', r'\bmickey mouse clubhouse\b', r'\btiny toon?\b', r'\bthundercats\b', r'\bflintstones?\b',
-        r'\bjetsons?\b', r'\btransformers?\b']
+        r'\bjetsons?\b', r'\btransformers?\b' , r'\bbluey\b', r'\bcare bears\b', r'\bteletubbies\b',]
 
     movies_patterns = [
         r'\bmovies?\b', r'\bfilms?\b', r'\bcinema\b', r'\bhollywood\b',
