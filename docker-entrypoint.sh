@@ -233,6 +233,7 @@ validate_all_inputs() {
 echo "📋 Configuration:"
 echo "   SKIP_DOWNLOAD: ${SKIP_DOWNLOAD:-'(not set)'}"
 echo "   SKIP_FILTER: ${SKIP_FILTER:-'(not set)'}"
+echo "   SKIP_UK_OVERRIDE: ${SKIP_UK_OVERRIDE:-'(not set)'}"
 echo "   SKIP_CREDENTIALS: ${SKIP_CREDENTIALS:-'(not set)'}"
 echo "   SKIP_GDRIVE: ${SKIP_GDRIVE:-'(not set)'}"
 
@@ -334,10 +335,10 @@ trap cleanup SIGTERM SIGINT
 
 # Run the main script with arguments
 echo -e "\n🚀 Starting enhanced playlist processing pipeline..."
-echo "Command: python process_playlist_complete_enhanced.py $SKIP_DOWNLOAD $SKIP_FILTER $SKIP_CREDENTIALS $SKIP_GDRIVE"
+echo "Command: python process_playlist_complete_enhanced.py $SKIP_DOWNLOAD $SKIP_FILTER $SKIP_UK_OVERRIDE $SKIP_CREDENTIALS $SKIP_GDRIVE"
 
 # Execute the main command
-python process_playlist_complete_enhanced.py $SKIP_DOWNLOAD $SKIP_FILTER $SKIP_CREDENTIALS $SKIP_GDRIVE
+python process_playlist_complete_enhanced.py $SKIP_DOWNLOAD $SKIP_FILTER $SKIP_UK_OVERRIDE $SKIP_CREDENTIALS $SKIP_GDRIVE
 
 # Copy outputs after successful completion
 copy_outputs
