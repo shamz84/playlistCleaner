@@ -26,11 +26,11 @@
   {
     "group_title": "24/7 Other",
     "channel_count": 2019,
-    "exclude": "false",
+    "exclude": "true",
     "order": 4
   },
   {
-    "group_title": "UK| KIDS ᴴᴰ/ᴿᴬᵂ",
+    "group_title": "UK| Kids",
     "override_title": "KIDS",
     "channel_count": 30,
     "exclude": "false",
@@ -71,22 +71,22 @@
   },
   {
     "group_title": "UK| EPL PREMIER LEAGUE PPV ⱽᴵᴾ ᴿᴬᵂ",
-    "override_title": "EPL PPV",
+    "override_title": "EPL Live",
     "channel_count": 37,
     "exclude": "false",
     "order": 7
   },
   {
-    "group_title": "UK| HUB PREMIER",
-    "override_title": "PREMIER Sports",
-    "channel_count": 13,
+    "group_title": "UK| EPL PREMIER LEAGUE TEAMS",
+    "override_title": "EPL Live Teams",
+    "channel_count": 30,
     "exclude": "false",
     "order": 7
   },
   {
-    "group_title": "UK| EPL PREMIER LEAGUE TEAMS",
-    "override_title": "EPL PPV2",
-    "channel_count": 30,
+    "group_title": "UK| HUB PREMIER",
+    "override_title": "Premier Hub Sports",
+    "channel_count": 13,
     "exclude": "false",
     "order": 8
   },
@@ -94,6 +94,27 @@
     "group_title": "UK| SOCCER REPLAY ᴿᴬᵂ",
     "override_title": "EPL REPLAY",
     "channel_count": 108,
+    "exclude": "false",
+    "order": 9
+  },
+  {
+    "group_title": "UK| PPV EVENT",
+    "override_title": "PPV Events",
+    "channel_count": 69,
+    "exclude": "false",
+    "order": 9
+  },
+
+  {
+    "group_title": "UK| SKY SPORT+ PPV ᴿᴬᵂ",
+    "override_title": "SKY SPORT+",
+    "channel_count": 70,
+    "exclude": "false",
+    "order": 9
+  },
+  {
+    "group_title": "UK| TNT SPORT EVENT",
+    "channel_count": 19,
     "exclude": "false",
     "order": 9
   },
@@ -434,13 +455,6 @@
     "order": 143
   },
   {
-    "group_title": "UK| PPV EVENT",
-    "override_title": "PPV Events",
-    "channel_count": 69,
-    "exclude": "false",
-    "order": 144
-  },
-  {
     "group_title": "UK| PRIME PPV ᴿᴬᵂ",
     "override_title": "PRIME PPV",
     "channel_count": 50,
@@ -472,23 +486,10 @@
     "order": 151
   },
   {
-    "group_title": "UK| SKY SPORT+ PPV ᴿᴬᵂ",
-    "override_title": "SKY SPORT+",
-    "channel_count": 70,
-    "exclude": "false",
-    "order": 152
-  },
-  {
     "group_title": "UK| SKY MIX DOCS ᴿᴬᵂ",
     "channel_count": 17,
     "exclude": "false",
     "order": 156
-  },
-  {
-    "group_title": "UK| TNT SPORT EVENT",
-    "channel_count": 19,
-    "exclude": "false",
-    "order": 165
   },
   {
     "group_title": "UK| TRILLER TV PPV",
@@ -778,7 +779,7 @@
   {
     "group_title": "UK| TNT SPORT ᴿᴬᵂ ⱽᴵᴾ ᴰᴼᴸᴮʸ ᴬᵁᴰᴵᴼ",
     "channel_count": 15,
-    "exclude": "false",
+    "exclude": "true",
     "order": 254
   },
   {
@@ -839,7 +840,7 @@
   {
     "group_title": "FLO ⱽᴵᴾ",
     "channel_count": 991,
-    "exclude": "false",
+    "exclude": "true",
     "order": 301
   },
   {
@@ -905,7 +906,7 @@
   {
     "group_title": "Sling TV Channels",
     "channel_count": 840,
-    "exclude": "false",
+    "exclude": "true",
     "order": 316
   },
   {
@@ -929,7 +930,7 @@
   {
     "group_title": "DirecTV GO Channels",
     "channel_count": 313,
-    "exclude": "false",
+    "exclude": "true",
     "order": 320
   },
   {
@@ -947,7 +948,7 @@
   {
     "group_title": "24/7 Oneplay",
     "channel_count": 125,
-    "exclude": "false",
+    "exclude": "true",
     "order": 325
   },
   {
@@ -1491,9 +1492,63 @@
     "order": 328
   },
   {
+    "group_title": "🇨🇦 TV Guide (Canada)",
+    "channel_count": 214,
+    "exclude": "true",
+    "order": 321
+  },
+  {
+    "group_title": "DirecTV GO Local Channels",
+    "channel_count": 208,
+    "exclude": "true",
+    "order": 322
+  },
+  {
+    "group_title": "🇦🇺 TV Guide (Australia)",
+    "channel_count": 64,
+    "exclude": "true",
+    "order": 328
+  },
+  {
+    "group_title": "World Sports ᴼᴺ ᴬᴵᴿ",
+    "channel_count": 551,
+    "exclude": "true",
+    "order": 328
+  },
+  {
     "group_title": "Westerns",
     "channel_count": 31,
     "exclude": "true",
     "order": 331
+  },
+  {
+    "group_title": "UK| Sports ᴳᴬᴺᴶᴬ",
+    "channel_count": 67,
+    "exclude": "true",
+    "order": 337
+  },
+  {
+    "group_title": "Westerns ᴳᴬᴺᴶᴬ",
+    "channel_count": 31,
+    "exclude": "true",
+    "order": 341
+  },
+  {
+    "group_title": "🇨🇦 Canada ⬇️",
+    "channel_count": 1,
+    "exclude": "true",
+    "order": 343
+  },
+  {
+    "group_title": "🇬🇧 United Kingdom ⬇️",
+    "channel_count": 1,
+    "exclude": "true",
+    "order": 344
+  },
+  {
+    "group_title": "🇦🇺 Australia ⬇️",
+    "channel_count": 1,
+    "exclude": "true",
+    "order": 345
   }
 ]
