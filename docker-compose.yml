@@ -19,6 +19,7 @@ services:
       # Pipeline control - set to --skip-<step> to skip that step
       - SKIP_DOWNLOAD=
       - SKIP_FILTER=
+      - SKIP_UK_OVERRIDE=
       - SKIP_CREDENTIALS=
       - SKIP_GDRIVE=--skip-gdrive  # Change to "" to enable Google Drive backup
     networks:
@@ -35,6 +36,7 @@ services:
     environment:
       - SKIP_DOWNLOAD=
       - SKIP_FILTER=--skip-filter
+      - SKIP_UK_OVERRIDE=--skip-uk-override
       - SKIP_CREDENTIALS=--skip-credentials
       - SKIP_GDRIVE=--skip-gdrive
     networks:
@@ -52,6 +54,7 @@ services:
     environment:
       - SKIP_DOWNLOAD=--skip-download
       - SKIP_FILTER=
+      - SKIP_UK_OVERRIDE=
       - SKIP_CREDENTIALS=--skip-credentials
       - SKIP_GDRIVE=--skip-gdrive
     networks:

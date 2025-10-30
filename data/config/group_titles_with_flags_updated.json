@@ -12,18 +12,6 @@
     "order": 1
   },
   {
-    "group_title": "ASIA| UK HEVC",
-    "channel_count": 14,
-    "exclude": "true",
-    "order": 1
-  },
-  {
-    "group_title": "ASIA| UK",
-    "channel_count": 14,
-    "exclude": "true",
-    "order": 1
-  },
-  {
     "group_title": "24/7 Kids",
     "channel_count": 65,
     "exclude": "false",
@@ -36,31 +24,7 @@
     "order": 3
   },
   {
-    "group_title": "TV Guide (Canada)",
-    "channel_count": 197,
-    "exclude": "true",
-    "order": 3
-  },
-  {
-    "group_title": "TV Guide (Canada)",
-    "channel_count": 197,
-    "exclude": "true",
-    "order": 3
-  },
-  {
-    "group_title": "24/7 Other",
-    "channel_count": 2019,
-    "exclude": "false",
-    "order": 4
-  },
-  {
-    "group_title": "NBC Network (Local Affiliates)",
-    "channel_count": 318,
-    "exclude": "true",
-    "order": 4
-  },
-  {
-    "group_title": "UK| KIDS ᴴᴰ/ᴿᴬᵂ",
+    "group_title": "UK| Kids",
     "override_title": "KIDS",
     "channel_count": 30,
     "exclude": "false",
@@ -94,21 +58,9 @@
     "order": 5
   },
   {
-    "group_title": "ABC Network (Local Affiliates)",
-    "channel_count": 126,
-    "exclude": "true",
-    "order": 5
-  },
-  {
     "group_title": "8K Sports",
     "channel_count": 238,
     "exclude": "false",
-    "order": 6
-  },
-  {
-    "group_title": "CBS Network (Local Affiliates)",
-    "channel_count": 225,
-    "exclude": "true",
     "order": 6
   },
   {
@@ -126,22 +78,10 @@
     "order": 7
   },
   {
-    "group_title": "FOX Network (Local Affiliates)",
-    "channel_count": 235,
-    "exclude": "true",
-    "order": 7
-  },
-  {
     "group_title": "UK| EPL PREMIER LEAGUE TEAMS",
     "override_title": "EPL PPV2",
     "channel_count": 30,
     "exclude": "false",
-    "order": 8
-  },
-  {
-    "group_title": "CW Network (Local Affiliates)",
-    "channel_count": 44,
-    "exclude": "true",
     "order": 8
   },
   {
@@ -172,23 +112,11 @@
     "order": 10
   },
   {
-    "group_title": "FanDuel Sports Network",
-    "channel_count": 40,
-    "exclude": "true",
-    "order": 12
-  },
-  {
     "group_title": "UK| SKY MIX SERIES ᴿᴬᵂ",
     "override_title": "SKY MIX SERIES",
     "channel_count": 18,
     "exclude": "false",
     "order": 17
-  },
-  {
-    "group_title": "NFL Sunday Ticket",
-    "channel_count": 18,
-    "exclude": "true",
-    "order": 19
   },
   {
     "group_title": "UK| UEFA PPV",
@@ -207,12 +135,6 @@
     "group_title": "Paramount+ PPV",
     "channel_count": 401,
     "exclude": "false",
-    "order": 20
-  },
-  {
-    "group_title": "NFL Team Local Networks",
-    "channel_count": 155,
-    "exclude": "true",
     "order": 20
   },
   {
@@ -236,12 +158,6 @@
     "order": 25
   },
   {
-    "group_title": "NBA League Pass",
-    "channel_count": 120,
-    "exclude": "true",
-    "order": 25
-  },
-  {
     "group_title": "UK| DISCOVERY+ ᴴᴰ/ᴿᴬᵂ",
     "channel_count": 16,
     "exclude": "false",
@@ -252,12 +168,6 @@
     "channel_count": 71,
     "exclude": "false",
     "order": 27
-  },
-  {
-    "group_title": "WNBA League Pass",
-    "channel_count": 10,
-    "exclude": "true",
-    "order": 28
   },
   {
     "group_title": "UK| PAY PER VIEW PPV",
@@ -308,18 +218,6 @@
     "order": 30
   },
   {
-    "group_title": "NHL Center Ice",
-    "channel_count": 30,
-    "exclude": "true",
-    "order": 30
-  },
-  {
-    "group_title": "NHL Center Ice",
-    "channel_count": 30,
-    "exclude": "true",
-    "order": 30
-  },
-  {
     "group_title": "HBO Max Originals",
     "channel_count": 18,
     "exclude": "false",
@@ -338,12 +236,6 @@
     "order": 34
   },
   {
-    "group_title": "NHL Game Replays",
-    "channel_count": 17,
-    "exclude": "true",
-    "order": 34
-  },
-  {
     "group_title": "Paramount+ Originals",
     "channel_count": 11,
     "exclude": "false",
@@ -353,12 +245,6 @@
     "group_title": "STARZ Originals",
     "channel_count": 11,
     "exclude": "false",
-    "order": 36
-  },
-  {
-    "group_title": "MLB Extra Innings",
-    "channel_count": 30,
-    "exclude": "true",
     "order": 36
   },
   {
@@ -388,18 +274,6 @@
     "order": 42
   },
   {
-    "group_title": "ESPN Play",
-    "channel_count": 208,
-    "exclude": "true",
-    "order": 42
-  },
-  {
-    "group_title": "Big Brother",
-    "channel_count": 5,
-    "exclude": "true",
-    "order": 68
-  },
-  {
     "group_title": "Zen Channels ☼",
     "channel_count": 47,
     "exclude": "false",
@@ -419,34 +293,10 @@
     "order": 95
   },
   {
-    "group_title": "CA| PRIME ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
-    "channel_count": 161,
-    "exclude": "true",
-    "order": 97
-  },
-  {
-    "group_title": "CA| CANADA WEST PPV",
-    "channel_count": 50,
-    "exclude": "true",
-    "order": 98
-  },
-  {
-    "group_title": "CA| CBC PPV",
-    "channel_count": 50,
-    "exclude": "true",
-    "order": 99
-  },
-  {
     "group_title": "UK| PRIME ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
     "override_title": "PRIME ⁶⁰ᶠᵖˢ",
     "channel_count": 112,
     "exclude": "false",
-    "order": 100
-  },
-  {
-    "group_title": "CA| CFL PPV",
-    "channel_count": 5,
-    "exclude": "true",
     "order": 100
   },
   {
@@ -456,76 +306,16 @@
     "order": 101
   },
   {
-    "group_title": "CA| OHL PPV",
-    "channel_count": 41,
-    "exclude": "true",
-    "order": 102
-  },
-  {
-    "group_title": "CA| PRIME PPV",
-    "channel_count": 151,
-    "exclude": "true",
-    "order": 103
-  },
-  {
-    "group_title": "CA| PRIME PPV ᴿᴬᵂ",
-    "channel_count": 151,
-    "exclude": "true",
-    "order": 104
-  },
-  {
-    "group_title": "CA| QMJHL PPV",
-    "channel_count": 40,
-    "exclude": "true",
-    "order": 105
-  },
-  {
     "group_title": "CA| SPORTSNET+ PPV",
     "channel_count": 57,
     "exclude": "false",
     "order": 106
   },
   {
-    "group_title": "CA| WHL PPV",
-    "channel_count": 41,
-    "exclude": "true",
-    "order": 107
-  },
-  {
     "group_title": "CA| SPORTSNET PPV",
     "channel_count": 50,
     "exclude": "false",
     "order": 108
-  },
-  {
-    "group_title": "CA| TSN+ PPV",
-    "channel_count": 50,
-    "exclude": "true",
-    "order": 109
-  },
-  {
-    "group_title": "UK| GENERAL ʰᵉᵛᶜ",
-    "channel_count": 31,
-    "exclude": "true",
-    "order": 110
-  },
-  {
-    "group_title": "UK| KIDS ʰᵉᵛᶜ",
-    "channel_count": 10,
-    "exclude": "true",
-    "order": 112
-  },
-  {
-    "group_title": "UK| NEWS ʰᵉᵛᶜ",
-    "channel_count": 6,
-    "exclude": "true",
-    "order": 114
-  },
-  {
-    "group_title": "UK| SPORT ᴿᴬᵂ",
-    "channel_count": 40,
-    "exclude": "true",
-    "order": 116
   },
   {
     "group_title": "UK| MUSIC ᴴᴰ/ᴿᴬᵂ",
@@ -584,23 +374,11 @@
     "order": 127
   },
   {
-    "group_title": "UK| FLORUGBY PPV",
-    "channel_count": 9,
-    "exclude": "true",
-    "order": 128
-  },
-  {
     "group_title": "UK| FORMULA 1 PPV",
     "override_title": "FORMULA 1",
     "channel_count": 94,
     "exclude": "false",
     "order": 129
-  },
-  {
-    "group_title": "UK| DOCUMENTARY ʰᵉᵛᶜ",
-    "channel_count": 18,
-    "exclude": "true",
-    "order": 132
   },
   {
     "group_title": "UK| DOCUMENTARY ᴴᴰ/ᴿᴬᵂ",
@@ -641,12 +419,6 @@
     "channel_count": 77,
     "exclude": "false",
     "order": 140
-  },
-  {
-    "group_title": "UK| PDC BOARD PPV",
-    "channel_count": 8,
-    "exclude": "true",
-    "order": 142
   },
   {
     "group_title": "UK| PEACOCK PPV",
@@ -701,94 +473,16 @@
     "order": 152
   },
   {
-    "group_title": "UK| SKY CINEMA ʰᵉᵛᶜ",
-    "channel_count": 40,
-    "exclude": "true",
-    "order": 153
-  },
-  {
-    "group_title": "UK| SKY GO SPORT VIP",
-    "channel_count": 38,
-    "exclude": "true",
-    "order": 155
-  },
-  {
     "group_title": "UK| SKY MIX DOCS ᴿᴬᵂ",
     "channel_count": 17,
     "exclude": "false",
     "order": 156
   },
   {
-    "group_title": "UK| SPORT SD",
-    "channel_count": 19,
-    "exclude": "true",
-    "order": 159
-  },
-  {
-    "group_title": "UK| SPORT SD ⱽᴵᴾ",
-    "channel_count": 33,
-    "exclude": "true",
-    "order": 160
-  },
-  {
-    "group_title": "UK| SPORT ʰᵉᵛᶜ",
-    "channel_count": 46,
-    "exclude": "true",
-    "order": 161
-  },
-  {
-    "group_title": "UK| SPORT ᴴᴰ",
-    "channel_count": 35,
-    "exclude": "true",
-    "order": 162
-  },
-  {
-    "group_title": "UK| SPORT ᴴᴰ ⱽᴵᴾ",
-    "channel_count": 32,
-    "exclude": "true",
-    "order": 163
-  },
-  {
     "group_title": "UK| TNT SPORT EVENT",
     "channel_count": 19,
     "exclude": "false",
     "order": 165
-  },
-  {
-    "group_title": "UK| TNT SPORT SD ⱽᴵᴾ",
-    "channel_count": 26,
-    "exclude": "true",
-    "order": 166
-  },
-  {
-    "group_title": "UK| TNT SPORT ᴴᴰ ⱽᴵᴾ",
-    "channel_count": 8,
-    "exclude": "true",
-    "order": 167
-  },
-  {
-    "group_title": "UK| TNT SPORT ᵃᵐᶻ SD",
-    "channel_count": 6,
-    "exclude": "true",
-    "order": 169
-  },
-  {
-    "group_title": "UK| TNT SPORT ᵃᵐᶻ ᴴᴰ",
-    "channel_count": 6,
-    "exclude": "true",
-    "order": 170
-  },
-  {
-    "group_title": "UK| TNT SPORT ᵃᵐᶻ ᴿᴬᵂ",
-    "channel_count": 6,
-    "exclude": "true",
-    "order": 171
-  },
-  {
-    "group_title": "UK| SUPER LEAGUE PLUS PPV",
-    "channel_count": 6,
-    "exclude": "true",
-    "order": 172
   },
   {
     "group_title": "UK| TRILLER TV PPV",
@@ -803,22 +497,10 @@
     "order": 173
   },
   {
-    "group_title": "UK| TT RACES PPV",
-    "channel_count": 6,
-    "exclude": "true",
-    "order": 174
-  },
-  {
     "group_title": "UK| UFC PPV",
     "channel_count": 11,
     "exclude": "false",
     "order": 176
-  },
-  {
-    "group_title": "UK| VIAPLAY PPV",
-    "channel_count": 16,
-    "exclude": "true",
-    "order": 177
   },
   {
     "group_title": "UK| VIDIO EPL PPV",
@@ -831,18 +513,6 @@
     "channel_count": 31,
     "exclude": "false",
     "order": 179
-  },
-  {
-    "group_title": "UK| MXGP PPV",
-    "channel_count": 31,
-    "exclude": "true",
-    "order": 180
-  },
-  {
-    "group_title": "ADULT CONTENT 18+",
-    "channel_count": 748,
-    "exclude": "true",
-    "order": 183
   },
   {
     "group_title": "ESPN+",
@@ -863,46 +533,16 @@
     "order": 187
   },
   {
-    "group_title": "Telemundo Networks",
-    "channel_count": 112,
-    "exclude": "true",
-    "order": 189
-  },
-  {
-    "group_title": "MILB",
-    "channel_count": 110,
-    "exclude": "true",
-    "order": 190
-  },
-  {
     "group_title": "CA| TSN SPORT ᴴᴰ/ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
     "channel_count": 104,
     "exclude": "false",
     "order": 191
   },
   {
-    "group_title": "Flo College",
-    "channel_count": 101,
-    "exclude": "true",
-    "order": 192
-  },
-  {
-    "group_title": "MILB VIP",
-    "channel_count": 101,
-    "exclude": "true",
-    "order": 193
-  },
-  {
     "group_title": "AU| ESPN PLAY PPV",
     "channel_count": 101,
     "exclude": "false",
     "order": 194
-  },
-  {
-    "group_title": "College Football",
-    "channel_count": 86,
-    "exclude": "true",
-    "order": 195
   },
   {
     "group_title": "AU| AUSTRALIA ⱽᴵᴾ ᴴᴰ/ᴿᴬᵂ",
@@ -924,64 +564,10 @@
     "order": 198
   },
   {
-    "group_title": "CA| GENERAL ᴴᴰ/ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
-    "channel_count": 68,
-    "exclude": "true",
-    "order": 199
-  },
-  {
-    "group_title": "Movie Networks",
-    "channel_count": 63,
-    "exclude": "true",
-    "order": 200
-  },
-  {
     "group_title": "UK| NOW TV ENTERTAINMENT ᴴᴰ/ᴿᴬᵂ",
     "channel_count": 63,
     "exclude": "false",
     "order": 201
-  },
-  {
-    "group_title": "CA| GENERAL FR ᴴᴰ/ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
-    "channel_count": 62,
-    "exclude": "true",
-    "order": 202
-  },
-  {
-    "group_title": "TV Guide (Australia)",
-    "channel_count": 60,
-    "exclude": "true",
-    "order": 203
-  },
-  {
-    "group_title": "TV Guide (Australia)",
-    "channel_count": 60,
-    "exclude": "true",
-    "order": 203
-  },
-  {
-    "group_title": "Spectrum Network",
-    "channel_count": 57,
-    "exclude": "true",
-    "order": 204
-  },
-  {
-    "group_title": "B1G+",
-    "channel_count": 51,
-    "exclude": "true",
-    "order": 205
-  },
-  {
-    "group_title": "College Basketball",
-    "channel_count": 51,
-    "exclude": "true",
-    "order": 206
-  },
-  {
-    "group_title": "MLS VIP",
-    "channel_count": 51,
-    "exclude": "true",
-    "order": 207
   },
   {
     "group_title": "FIFA+",
@@ -1000,12 +586,6 @@
     "channel_count": 51,
     "exclude": "false",
     "order": 211
-  },
-  {
-    "group_title": "AU| PRIME PPV ᴿᴬᵂ",
-    "channel_count": 51,
-    "exclude": "true",
-    "order": 212
   },
   {
     "group_title": "Amazon Prime PPV",
@@ -1093,12 +673,6 @@
     "order": 226
   },
   {
-    "group_title": "UEFA",
-    "channel_count": 33,
-    "exclude": "true",
-    "order": 227
-  },
-  {
     "group_title": "CA| DAZN PPV",
     "channel_count": 32,
     "exclude": "false",
@@ -1148,18 +722,6 @@
     "order": 237
   },
   {
-    "group_title": "CA| CINEMA FR ᴴᴰ/ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
-    "channel_count": 23,
-    "exclude": "true",
-    "order": 238
-  },
-  {
-    "group_title": "CA| NEWS ᴴᴰ/ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
-    "channel_count": 23,
-    "exclude": "true",
-    "order": 239
-  },
-  {
     "group_title": "NHL",
     "channel_count": 21,
     "exclude": "false",
@@ -1184,12 +746,6 @@
     "order": 243
   },
   {
-    "group_title": "Flo Sports VIP",
-    "channel_count": 20,
-    "exclude": "true",
-    "order": 244
-  },
-  {
     "group_title": "NBA Real",
     "channel_count": 19,
     "exclude": "false",
@@ -1200,12 +756,6 @@
     "channel_count": 19,
     "exclude": "false",
     "order": 247
-  },
-  {
-    "group_title": "CA| KIDS FR ᴴᴰ/ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
-    "channel_count": 19,
-    "exclude": "true",
-    "order": 248
   },
   {
     "group_title": "Rugby",
@@ -1220,46 +770,16 @@
     "order": 251
   },
   {
-    "group_title": "Miami Florida Local Networks",
-    "channel_count": 15,
-    "exclude": "true",
-    "order": 252
-  },
-  {
-    "group_title": "CA| DOCUMENTARY FR ᴴᴰ/ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
-    "channel_count": 15,
-    "exclude": "true",
-    "order": 253
-  },
-  {
-    "group_title": "UK| TNT SPORT ᴿᴬᵂ ⱽᴵᴾ ᴰᴼᴸᴮʸ ᴬᵁᴰᴵᴼ",
-    "channel_count": 15,
-    "exclude": "false",
-    "order": 254
-  },
-  {
     "group_title": "CA| KIDS ᴴᴰ/ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
     "channel_count": 14,
     "exclude": "false",
     "order": 255
   },
   {
-    "group_title": "B/R Max Sports",
-    "channel_count": 13,
-    "exclude": "true",
-    "order": 256
-  },
-  {
     "group_title": "UFC Fight Pass",
     "channel_count": 12,
     "exclude": "false",
     "order": 258
-  },
-  {
-    "group_title": "CA| MUSIC FR ᴴᴰ/ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
-    "channel_count": 12,
-    "exclude": "true",
-    "order": 260
   },
   {
     "group_title": "AU| OPTUS PPV",
@@ -1272,12 +792,6 @@
     "channel_count": 12,
     "exclude": "false",
     "order": 262
-  },
-  {
-    "group_title": "Dirtvision",
-    "channel_count": 11,
-    "exclude": "true",
-    "order": 263
   },
   {
     "group_title": "CA| CINEMA ᴴᴰ/ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
@@ -1299,40 +813,16 @@
     "order": 269
   },
   {
-    "group_title": "CA| DOCUMENTARY ᴴᴰ/ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
-    "channel_count": 9,
-    "exclude": "true",
-    "order": 270
-  },
-  {
-    "group_title": "CA| SPORTS FR ᴴᴰ/ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
-    "channel_count": 9,
-    "exclude": "true",
-    "order": 271
-  },
-  {
     "group_title": "CA| SPORTS ᴴᴰ/ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
     "channel_count": 6,
     "exclude": "false",
     "order": 272
   },
   {
-    "group_title": "Supercross",
-    "channel_count": 4,
-    "exclude": "true",
-    "order": 274
-  },
-  {
     "group_title": "Kids Channels",
     "channel_count": 20,
     "exclude": "false",
     "order": 300
-  },
-  {
-    "group_title": "FLO ⱽᴵᴾ",
-    "channel_count": 991,
-    "exclude": "false",
-    "order": 301
   },
   {
     "group_title": "Tubi TV Channels",
@@ -1395,12 +885,6 @@
     "order": 315
   },
   {
-    "group_title": "Sling TV Channels",
-    "channel_count": 840,
-    "exclude": "false",
-    "order": 316
-  },
-  {
     "group_title": "Prime Channels",
     "channel_count": 796,
     "exclude": "false",
@@ -1417,24 +901,6 @@
     "channel_count": 376,
     "exclude": "false",
     "order": 319
-  },
-  {
-    "group_title": "DirecTV GO Channels",
-    "channel_count": 313,
-    "exclude": "false",
-    "order": 320
-  },
-  {
-    "group_title": "🇨🇦 TV Guide (Canada)",
-    "channel_count": 214,
-    "exclude": "true",
-    "order": 321
-  },
-  {
-    "group_title": "DirecTV GO Local Channels",
-    "channel_count": 208,
-    "exclude": "true",
-    "order": 322
   },
   {
     "group_title": "Tubi Channels",
@@ -1461,28 +927,10 @@
     "order": 326
   },
   {
-    "group_title": "🇦🇺 TV Guide (Australia)",
-    "channel_count": 64,
-    "exclude": "true",
-    "order": 328
-  },
-  {
-    "group_title": "World Sports ᴼᴺ ᴬᴵᴿ",
-    "channel_count": 551,
-    "exclude": "true",
-    "order": 328
-  },
-  {
     "group_title": "Peacock Channels",
     "channel_count": 44,
     "exclude": "false",
     "order": 329
-  },
-  {
-    "group_title": "Westerns",
-    "channel_count": 31,
-    "exclude": "true",
-    "order": 331
   },
   {
     "group_title": "NHL Teams",
@@ -1497,9 +945,651 @@
     "order": 333
   },
   {
+    "group_title": "UK| Entertainment ᴳᴬᴺᴶᴬ",
+    "channel_count": 239,
+    "exclude": "false",
+    "order": 346
+  },
+  {
+    "group_title": "UK| Sky Channels ᴳᴬᴺᴶᴬ",
+    "channel_count": 116,
+    "exclude": "false",
+    "order": 347
+  },
+  {
+    "group_title": "UK| Prime Channels",
+    "channel_count": 112,
+    "exclude": "false",
+    "order": 348
+  },
+  {
+    "group_title": "UK| Kids",
+    "channel_count": 55,
+    "exclude": "false",
+    "order": 349
+  },
+  {
+    "group_title": "BTN+",
+    "channel_count": 51,
+    "exclude": "false",
+    "order": 350
+  },
+  {
+    "group_title": "UK| News",
+    "channel_count": 32,
+    "exclude": "false",
+    "order": 351
+  },
+  {
     "group_title": "UK| ULTIMATE POOL PPV",
     "channel_count": 11,
     "exclude": "false",
-    "order": 334
+    "order": 352
+  },
+  {
+    "group_title": "ASIA| UK HEVC",
+    "channel_count": 14,
+    "exclude": "true",
+    "order": 1
+  },
+  {
+    "group_title": "ASIA| UK",
+    "channel_count": 14,
+    "exclude": "true",
+    "order": 1
+  },
+  {
+    "group_title": "TV Guide (Canada)",
+    "channel_count": 197,
+    "exclude": "true",
+    "order": 3
+  },
+  {
+    "group_title": "TV Guide (Canada)",
+    "channel_count": 197,
+    "exclude": "true",
+    "order": 3
+  },
+  {
+    "group_title": "24/7 Other",
+    "channel_count": 2019,
+    "exclude": "true",
+    "order": 4
+  },
+  {
+    "group_title": "NBC Network (Local Affiliates)",
+    "channel_count": 318,
+    "exclude": "true",
+    "order": 4
+  },
+  {
+    "group_title": "ABC Network (Local Affiliates)",
+    "channel_count": 126,
+    "exclude": "true",
+    "order": 5
+  },
+  {
+    "group_title": "CBS Network (Local Affiliates)",
+    "channel_count": 225,
+    "exclude": "true",
+    "order": 6
+  },
+  {
+    "group_title": "FOX Network (Local Affiliates)",
+    "channel_count": 235,
+    "exclude": "true",
+    "order": 7
+  },
+  {
+    "group_title": "CW Network (Local Affiliates)",
+    "channel_count": 44,
+    "exclude": "true",
+    "order": 8
+  },
+  {
+    "group_title": "FanDuel Sports Network",
+    "channel_count": 40,
+    "exclude": "true",
+    "order": 12
+  },
+  {
+    "group_title": "NFL Sunday Ticket",
+    "channel_count": 18,
+    "exclude": "true",
+    "order": 19
+  },
+  {
+    "group_title": "NFL Team Local Networks",
+    "channel_count": 155,
+    "exclude": "true",
+    "order": 20
+  },
+  {
+    "group_title": "NBA League Pass",
+    "channel_count": 120,
+    "exclude": "true",
+    "order": 25
+  },
+  {
+    "group_title": "WNBA League Pass",
+    "channel_count": 10,
+    "exclude": "true",
+    "order": 28
+  },
+  {
+    "group_title": "NHL Center Ice",
+    "channel_count": 30,
+    "exclude": "true",
+    "order": 30
+  },
+  {
+    "group_title": "NHL Center Ice",
+    "channel_count": 30,
+    "exclude": "true",
+    "order": 30
+  },
+  {
+    "group_title": "NHL Game Replays",
+    "channel_count": 17,
+    "exclude": "true",
+    "order": 34
+  },
+  {
+    "group_title": "MLB Extra Innings",
+    "channel_count": 30,
+    "exclude": "true",
+    "order": 36
+  },
+  {
+    "group_title": "ESPN Play",
+    "channel_count": 208,
+    "exclude": "true",
+    "order": 42
+  },
+  {
+    "group_title": "Big Brother",
+    "channel_count": 5,
+    "exclude": "true",
+    "order": 68
+  },
+  {
+    "group_title": "CA| PRIME ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+    "channel_count": 161,
+    "exclude": "true",
+    "order": 97
+  },
+  {
+    "group_title": "CA| CANADA WEST PPV",
+    "channel_count": 50,
+    "exclude": "true",
+    "order": 98
+  },
+  {
+    "group_title": "CA| CBC PPV",
+    "channel_count": 50,
+    "exclude": "true",
+    "order": 99
+  },
+  {
+    "group_title": "CA| CFL PPV",
+    "channel_count": 5,
+    "exclude": "true",
+    "order": 100
+  },
+  {
+    "group_title": "CA| OHL PPV",
+    "channel_count": 41,
+    "exclude": "true",
+    "order": 102
+  },
+  {
+    "group_title": "CA| PRIME PPV",
+    "channel_count": 151,
+    "exclude": "true",
+    "order": 103
+  },
+  {
+    "group_title": "CA| PRIME PPV ᴿᴬᵂ",
+    "channel_count": 151,
+    "exclude": "true",
+    "order": 104
+  },
+  {
+    "group_title": "CA| QMJHL PPV",
+    "channel_count": 40,
+    "exclude": "true",
+    "order": 105
+  },
+  {
+    "group_title": "CA| WHL PPV",
+    "channel_count": 41,
+    "exclude": "true",
+    "order": 107
+  },
+  {
+    "group_title": "CA| TSN+ PPV",
+    "channel_count": 50,
+    "exclude": "true",
+    "order": 109
+  },
+  {
+    "group_title": "UK| GENERAL ʰᵉᵛᶜ",
+    "channel_count": 31,
+    "exclude": "true",
+    "order": 110
+  },
+  {
+    "group_title": "UK| KIDS ʰᵉᵛᶜ",
+    "channel_count": 10,
+    "exclude": "true",
+    "order": 112
+  },
+  {
+    "group_title": "UK| NEWS ʰᵉᵛᶜ",
+    "channel_count": 6,
+    "exclude": "true",
+    "order": 114
+  },
+  {
+    "group_title": "UK| SPORT ᴿᴬᵂ",
+    "channel_count": 40,
+    "exclude": "true",
+    "order": 116
+  },
+  {
+    "group_title": "UK| FLORUGBY PPV",
+    "channel_count": 9,
+    "exclude": "true",
+    "order": 128
+  },
+  {
+    "group_title": "UK| DOCUMENTARY ʰᵉᵛᶜ",
+    "channel_count": 18,
+    "exclude": "true",
+    "order": 132
+  },
+  {
+    "group_title": "UK| PDC BOARD PPV",
+    "channel_count": 8,
+    "exclude": "true",
+    "order": 142
+  },
+  {
+    "group_title": "UK| SKY CINEMA ʰᵉᵛᶜ",
+    "channel_count": 40,
+    "exclude": "true",
+    "order": 153
+  },
+  {
+    "group_title": "UK| SKY GO SPORT VIP",
+    "channel_count": 38,
+    "exclude": "true",
+    "order": 155
+  },
+  {
+    "group_title": "UK| SPORT SD",
+    "channel_count": 19,
+    "exclude": "true",
+    "order": 159
+  },
+  {
+    "group_title": "UK| SPORT SD ⱽᴵᴾ",
+    "channel_count": 33,
+    "exclude": "true",
+    "order": 160
+  },
+  {
+    "group_title": "UK| SPORT ʰᵉᵛᶜ",
+    "channel_count": 46,
+    "exclude": "true",
+    "order": 161
+  },
+  {
+    "group_title": "UK| SPORT ᴴᴰ",
+    "channel_count": 35,
+    "exclude": "true",
+    "order": 162
+  },
+  {
+    "group_title": "UK| SPORT ᴴᴰ ⱽᴵᴾ",
+    "channel_count": 32,
+    "exclude": "true",
+    "order": 163
+  },
+  {
+    "group_title": "UK| TNT SPORT SD ⱽᴵᴾ",
+    "channel_count": 26,
+    "exclude": "true",
+    "order": 166
+  },
+  {
+    "group_title": "UK| TNT SPORT ᴴᴰ ⱽᴵᴾ",
+    "channel_count": 8,
+    "exclude": "true",
+    "order": 167
+  },
+  {
+    "group_title": "UK| TNT SPORT ᵃᵐᶻ SD",
+    "channel_count": 6,
+    "exclude": "true",
+    "order": 169
+  },
+  {
+    "group_title": "UK| TNT SPORT ᵃᵐᶻ ᴴᴰ",
+    "channel_count": 6,
+    "exclude": "true",
+    "order": 170
+  },
+  {
+    "group_title": "UK| TNT SPORT ᵃᵐᶻ ᴿᴬᵂ",
+    "channel_count": 6,
+    "exclude": "true",
+    "order": 171
+  },
+  {
+    "group_title": "UK| SUPER LEAGUE PLUS PPV",
+    "channel_count": 6,
+    "exclude": "true",
+    "order": 172
+  },
+  {
+    "group_title": "UK| TT RACES PPV",
+    "channel_count": 6,
+    "exclude": "true",
+    "order": 174
+  },
+  {
+    "group_title": "UK| VIAPLAY PPV",
+    "channel_count": 16,
+    "exclude": "true",
+    "order": 177
+  },
+  {
+    "group_title": "UK| MXGP PPV",
+    "channel_count": 31,
+    "exclude": "true",
+    "order": 180
+  },
+  {
+    "group_title": "ADULT CONTENT 18+",
+    "channel_count": 748,
+    "exclude": "true",
+    "order": 183
+  },
+  {
+    "group_title": "Telemundo Networks",
+    "channel_count": 112,
+    "exclude": "true",
+    "order": 189
+  },
+  {
+    "group_title": "MILB",
+    "channel_count": 110,
+    "exclude": "true",
+    "order": 190
+  },
+  {
+    "group_title": "Flo College",
+    "channel_count": 101,
+    "exclude": "true",
+    "order": 192
+  },
+  {
+    "group_title": "MILB VIP",
+    "channel_count": 101,
+    "exclude": "true",
+    "order": 193
+  },
+  {
+    "group_title": "College Football",
+    "channel_count": 86,
+    "exclude": "true",
+    "order": 195
+  },
+  {
+    "group_title": "CA| GENERAL ᴴᴰ/ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+    "channel_count": 68,
+    "exclude": "true",
+    "order": 199
+  },
+  {
+    "group_title": "Movie Networks",
+    "channel_count": 63,
+    "exclude": "true",
+    "order": 200
+  },
+  {
+    "group_title": "CA| GENERAL FR ᴴᴰ/ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+    "channel_count": 62,
+    "exclude": "true",
+    "order": 202
+  },
+  {
+    "group_title": "TV Guide (Australia)",
+    "channel_count": 60,
+    "exclude": "true",
+    "order": 203
+  },
+  {
+    "group_title": "TV Guide (Australia)",
+    "channel_count": 60,
+    "exclude": "true",
+    "order": 203
+  },
+  {
+    "group_title": "Spectrum Network",
+    "channel_count": 57,
+    "exclude": "true",
+    "order": 204
+  },
+  {
+    "group_title": "B1G+",
+    "channel_count": 51,
+    "exclude": "true",
+    "order": 205
+  },
+  {
+    "group_title": "College Basketball",
+    "channel_count": 51,
+    "exclude": "true",
+    "order": 206
+  },
+  {
+    "group_title": "MLS VIP",
+    "channel_count": 51,
+    "exclude": "true",
+    "order": 207
+  },
+  {
+    "group_title": "AU| PRIME PPV ᴿᴬᵂ",
+    "channel_count": 51,
+    "exclude": "true",
+    "order": 212
+  },
+  {
+    "group_title": "UEFA",
+    "channel_count": 33,
+    "exclude": "true",
+    "order": 227
+  },
+  {
+    "group_title": "CA| CINEMA FR ᴴᴰ/ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+    "channel_count": 23,
+    "exclude": "true",
+    "order": 238
+  },
+  {
+    "group_title": "CA| NEWS ᴴᴰ/ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+    "channel_count": 23,
+    "exclude": "true",
+    "order": 239
+  },
+  {
+    "group_title": "Flo Sports VIP",
+    "channel_count": 20,
+    "exclude": "true",
+    "order": 244
+  },
+  {
+    "group_title": "CA| KIDS FR ᴴᴰ/ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+    "channel_count": 19,
+    "exclude": "true",
+    "order": 248
+  },
+  {
+    "group_title": "Miami Florida Local Networks",
+    "channel_count": 15,
+    "exclude": "true",
+    "order": 252
+  },
+  {
+    "group_title": "CA| DOCUMENTARY FR ᴴᴰ/ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+    "channel_count": 15,
+    "exclude": "true",
+    "order": 253
+  },
+  {
+    "group_title": "UK| TNT SPORT ᴿᴬᵂ ⱽᴵᴾ ᴰᴼᴸᴮʸ ᴬᵁᴰᴵᴼ",
+    "channel_count": 15,
+    "exclude": "true",
+    "order": 254
+  },
+  {
+    "group_title": "B/R Max Sports",
+    "channel_count": 13,
+    "exclude": "true",
+    "order": 256
+  },
+  {
+    "group_title": "CA| MUSIC FR ᴴᴰ/ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+    "channel_count": 12,
+    "exclude": "true",
+    "order": 260
+  },
+  {
+    "group_title": "Dirtvision",
+    "channel_count": 11,
+    "exclude": "true",
+    "order": 263
+  },
+  {
+    "group_title": "CA| DOCUMENTARY ᴴᴰ/ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+    "channel_count": 9,
+    "exclude": "true",
+    "order": 270
+  },
+  {
+    "group_title": "CA| SPORTS FR ᴴᴰ/ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+    "channel_count": 9,
+    "exclude": "true",
+    "order": 271
+  },
+  {
+    "group_title": "Supercross",
+    "channel_count": 4,
+    "exclude": "true",
+    "order": 274
+  },
+  {
+    "group_title": "FLO ⱽᴵᴾ",
+    "channel_count": 991,
+    "exclude": "true",
+    "order": 301
+  },
+  {
+    "group_title": "Sling TV Channels",
+    "channel_count": 840,
+    "exclude": "true",
+    "order": 316
+  },
+  {
+    "group_title": "DirecTV GO Channels",
+    "channel_count": 313,
+    "exclude": "true",
+    "order": 320
+  },
+  {
+    "group_title": "🇨🇦 TV Guide (Canada)",
+    "channel_count": 214,
+    "exclude": "true",
+    "order": 321
+  },
+  {
+    "group_title": "🇨🇦 TV Guide (Canada)",
+    "channel_count": 214,
+    "exclude": "true",
+    "order": 321
+  },
+  {
+    "group_title": "DirecTV GO Local Channels",
+    "channel_count": 208,
+    "exclude": "true",
+    "order": 322
+  },
+  {
+    "group_title": "DirecTV GO Local Channels",
+    "channel_count": 208,
+    "exclude": "true",
+    "order": 322
+  },
+  {
+    "group_title": "🇦🇺 TV Guide (Australia)",
+    "channel_count": 64,
+    "exclude": "true",
+    "order": 328
+  },
+  {
+    "group_title": "World Sports ᴼᴺ ᴬᴵᴿ",
+    "channel_count": 551,
+    "exclude": "true",
+    "order": 328
+  },
+  {
+    "group_title": "🇦🇺 TV Guide (Australia)",
+    "channel_count": 64,
+    "exclude": "true",
+    "order": 328
+  },
+  {
+    "group_title": "World Sports ᴼᴺ ᴬᴵᴿ",
+    "channel_count": 551,
+    "exclude": "true",
+    "order": 328
+  },
+  {
+    "group_title": "Westerns",
+    "channel_count": 31,
+    "exclude": "true",
+    "order": 331
+  },
+  {
+    "group_title": "UK| Sports ᴳᴬᴺᴶᴬ",
+    "channel_count": 67,
+    "exclude": "true",
+    "order": 337
+  },
+  {
+    "group_title": "Westerns ᴳᴬᴺᴶᴬ",
+    "channel_count": 31,
+    "exclude": "true",
+    "order": 341
+  },
+  {
+    "group_title": "🇨🇦 Canada ⬇️",
+    "channel_count": 1,
+    "exclude": "true",
+    "order": 343
+  },
+  {
+    "group_title": "🇬🇧 United Kingdom ⬇️",
+    "channel_count": 1,
+    "exclude": "true",
+    "order": 344
+  },
+  {
+    "group_title": "🇦🇺 Australia ⬇️",
+    "channel_count": 1,
+    "exclude": "true",
+    "order": 345
   }
 ]

@@ -1,0 +1,12 @@
+{
+  "download_type": "google_drive",
+  "files": [
+    {
+      "google_drive_file_id": "1RSB0LD8167My6mPNSc8u0CF-n6oABRjs",
+      "output_filename": "data/downloaded_file.m3u",
+      "description": "Main playlist file from Google Drive"
+    }
+  ],
+  "timeout": 60,
+  "description": "Google Drive download configuration for enhanced processing pipeline"
+}

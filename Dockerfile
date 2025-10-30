@@ -18,6 +18,9 @@ COPY merge_247_channels.py /app/
 COPY docker-entrypoint.sh /app/
 COPY api_to_m3u_converter.py /app/
 
+# Copy UK TV Override system files
+COPY uk_tv_override_dynamic.py /app/
+
 # Copy Google Drive authentication setup files
 COPY setup_container_gdrive_auth.py /app/
 COPY setup_gdrive_for_container.py /app/
@@ -35,6 +38,9 @@ COPY requirements.txt /app/
 # Create data and config directories for outputs and mounted configs
 RUN mkdir -p /app/data /app/data/config
 
+# Copy UK TV Override configuration to config directory
+#COPY uk_tv_overrides_dynamic.conf /app/data/config/
+
 # Copy entrypoint script and make it executable
 COPY docker-entrypoint.sh /app/
 RUN chmod +x /app/docker-entrypoint.sh
@@ -45,6 +51,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Set environment variables
 ENV SKIP_DOWNLOAD=""
 ENV SKIP_FILTER=""
+ENV SKIP_UK_OVERRIDE=""
 ENV SKIP_CREDENTIALS=""
 ENV SKIP_GDRIVE="--skip-gdrive"
 ENV OUTPUT_DIR="/app/data"

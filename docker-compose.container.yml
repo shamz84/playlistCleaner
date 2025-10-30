@@ -14,6 +14,7 @@ services:
       - CONTAINER=true
       - GOOGLE_APPLICATION_CREDENTIALS=/app/data/config/gdrive_service_account.json
       - SKIP_GDRIVE=""  # Enable Google Drive with service account
+      - SKIP_UK_OVERRIDE=""
     restart: unless-stopped
     command: ["python", "process_playlist_complete_enhanced.py"]
     
@@ -30,6 +31,7 @@ services:
       - PYTHONUNBUFFERED=1
       - CONTAINER=true
       - SKIP_GDRIVE=""  # Enable Google Drive with token
+      - SKIP_UK_OVERRIDE=""
     restart: unless-stopped
     command: ["python", "process_playlist_complete_enhanced.py"]
     
@@ -44,6 +46,7 @@ services:
       - CONTAINER=true
       - SKIP_GDRIVE=""  # Enable Google Drive with env var
       - GDRIVE_TOKEN_B64=${GDRIVE_TOKEN_B64}  # Set this in .env file
+      - SKIP_UK_OVERRIDE=""
     restart: unless-stopped
     command: ["python", "process_playlist_complete_enhanced.py"]
     
@@ -56,5 +59,6 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - CONTAINER=true
+      - SKIP_UK_OVERRIDE=""
     restart: unless-stopped
     command: ["python", "process_playlist_complete_enhanced.py", "--skip-gdrive"]

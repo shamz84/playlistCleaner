@@ -13,5 +13,6 @@ services:
     environment:
       - GDRIVE_AUTH_DIR=/app/gdrive_auth
       - PYTHONPATH=/app
+      - SKIP_UK_OVERRIDE=
     command: python process_playlist_complete_enhanced.py
     restart: unless-stopped

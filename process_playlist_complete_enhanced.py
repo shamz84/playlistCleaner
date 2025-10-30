@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """
-Complete Playlist Processing Pipeline - Enhanced Version
+Complete Playlist Processing Pipeline - Enhanced Version with UK TV Overrides
 This script orchestrates the complete workflow with enhanced filtering:
 0. Generates API playlists from Xtream Codes servers (optional)
 1. Downloads playlist from remote server
 2. Filters and processes the downloaded playlist using ENHANCED AUTO-INCLUDE filtering
    (now includes group title overrides during filtering)
+2.5. Applies UK TV Guide overrides using dynamic system (optional)
 3. Replaces credentials for multiple users
 4. Backs up files to Google Drive (optional)
 
@@ -13,8 +14,11 @@ Key Enhancement: Now uses filter_m3u_with_auto_include.py which automatically
 includes unknown groups unless they match exclusion patterns, and applies
 group title overrides during filtering for maximum efficiency.
 
+NEW: UK TV Override system replaces UK TV Guide entries with better alternatives
+(BBC iPlayer, higher quality streams, etc.) using robust channel name matching.
+
 Usage:
-    python process_playlist_complete_enhanced.py [--skip-api] [--skip-download] [--skip-filter] [--skip-credentials] [--skip-gdrive]
+    python process_playlist_complete_enhanced.py [--skip-api] [--skip-download] [--skip-filter] [--skip-uk-override] [--skip-credentials] [--skip-gdrive]
 """
 import subprocess
 import sys
@@ -24,10 +28,22 @@ import time
 from pathlib import Path
 from datetime import datetime
 
+# Fix Unicode encoding issues on Windows
+if sys.platform.startswith('win'):
+    try:
+        import codecs
+        sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer, 'replace')
+        sys.stderr = codecs.getwriter('utf-8')(sys.stderr.buffer, 'replace')
+    except:
+        pass  # Fallback to default behavior
+
 def print_banner(title):
-    """Print a formatted banner"""
+    """Print a formatted banner with Windows encoding support"""
     print("\n" + "="*60)
-    print(f"🚀 {title}")
+    try:
+        print(f"🚀 {title}")
+    except UnicodeEncodeError:
+        print(f">> {title}")
     print("="*60)
 
 def find_config_file(filename):
@@ -77,14 +93,16 @@ def run_script(script_name, args=None, description=""):
         print(f"❌ {description} failed with error: {e}")
         return False
 
-def check_file_exists(filepath, description="File"):
+def check_file_exists(filepath, description="File", silent=False):
     """Check if a file exists and report the result"""
     if os.path.exists(filepath):
-        size = os.path.getsize(filepath)
-        print(f"✅ {description} found: {filepath} ({size:,} bytes)")
+        if not silent:
+            size = os.path.getsize(filepath)
+            print(f"✅ {description} found: {filepath} ({size:,} bytes)")
         return True
     else:
-        print(f"❌ {description} not found: {filepath}")
+        if not silent:
+            print(f"❌ {description} not found: {filepath}")
         return False
 
 def get_file_info(filepath):
@@ -205,6 +223,132 @@ def step_filter(skip=False):
     
     return success
 
+def step_uk_tv_override(skip=False, filter_skipped=False):
+    """Step 2.5: Apply UK TV Guide overrides using dynamic system"""
+    print_banner("STEP 2.5: UK TV GUIDE OVERRIDES")
+    
+    if skip:
+        print("⏭️  Skipping UK TV Guide override step")
+        return True
+    
+    # Determine input file based on whether filter was skipped
+    if filter_skipped:
+        input_file = "data/downloaded_file.m3u"
+        print("💡 Using downloaded file for UK TV overrides (filter was skipped)")
+    else:
+        input_file = "filtered_playlist_final.m3u"
+    
+    # Check if input file exists
+    if not check_file_exists(input_file, "Input playlist for UK TV overrides"):
+        print(f"❌ Input playlist required for UK TV overrides: {input_file}")
+        return False
+    
+    # Check if UK TV override configuration exists (look in config directory first)
+    config_file_paths = [
+        "data/config/uk_tv_overrides_dynamic.conf",  # Container/mounted config
+        "config/uk_tv_overrides_dynamic.conf",      # Local config directory
+        "uk_tv_overrides_dynamic.conf"              # Root directory (fallback)
+    ]
+    
+    config_file = None
+    for path in config_file_paths:
+        if check_file_exists(path, "UK TV override configuration", silent=True):
+            config_file = path
+            break
+    
+    if not config_file:
+        # Default to config directory location
+        config_file = "data/config/uk_tv_overrides_dynamic.conf"
+        print("⚠️  UK TV override configuration not found")
+        print("💡 Creating example configuration file...")
+        
+        # Ensure config directory exists
+        os.makedirs("data/config", exist_ok=True)
+        
+        # Create example configuration
+        example_config = """# UK TV Guide Override Configuration - Dynamic Version
+# 
+# Replace UK TV Guide entries with other entries from the playlist
+# Format: source_channel_name = replacement_channel_name
+#
+# Examples (uncomment to use):
+# BBC One = BBC One London
+# BBC Two = BBC Two England
+# ITV 1 = ITV 1 London
+# Channel 4 = Channel 4 London
+# Channel 5 = Channel 5 London
+
+# No active overrides - add your configurations above
+"""
+        try:
+            with open(config_file, 'w', encoding='utf-8') as f:
+                f.write(example_config)
+            print(f"✅ Created example configuration: {config_file}")
+            print("💡 Edit data/config/uk_tv_overrides_dynamic.conf to configure your UK TV Guide overrides")
+            print("⏭️  Skipping UK TV overrides (no active configuration)")
+            return True
+        except Exception as e:
+            print(f"❌ Failed to create example configuration: {e}")
+            return False
+    
+    # Check if the configuration has any active overrides
+    try:
+        active_overrides = 0
+        with open(config_file, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    active_overrides += 1
+        
+        if active_overrides == 0:
+            print("⚠️  No active overrides found in configuration")
+            print("💡 Edit uk_tv_overrides_dynamic.conf to add UK TV Guide overrides")
+            print("⏭️  Skipping UK TV overrides (no active configuration)")
+            return True
+        
+        print(f"📋 Found {active_overrides} active override(s) in configuration")
+        
+    except Exception as e:
+        print(f"❌ Failed to read configuration file: {e}")
+        return False
+    
+    # Apply UK TV overrides
+    output_file = "data/filtered_playlist_with_uk_overrides.m3u" if not filter_skipped else "data/downloaded_file_with_uk_overrides.m3u"
+    
+    print("🇬🇧 Applying UK TV Guide overrides using dynamic system...")
+    print("💡 This replaces complete UK TV Guide entries with better alternatives")
+    
+    success = run_script("uk_tv_override_dynamic.py", 
+                        [input_file, output_file, "--config", config_file], 
+                        f"Applying UK TV Guide overrides: {input_file} -> {output_file}")
+    
+    if success:
+        # Update the filtered file for subsequent steps
+        if filter_skipped:
+            # Copy back to downloaded file location
+            try:
+                import shutil
+                shutil.copy2(output_file, "data/downloaded_file.m3u")
+                print("✅ Updated downloaded file with UK TV overrides")
+            except Exception as e:
+                print(f"⚠️  Failed to update downloaded file: {e}")
+        else:
+            # Copy back to filtered file location
+            try:
+                import shutil
+                shutil.copy2(output_file, "filtered_playlist_final.m3u")
+                print("✅ Updated filtered playlist with UK TV overrides")
+            except Exception as e:
+                print(f"⚠️  Failed to update filtered playlist: {e}")
+        
+        # Show override results
+        size, lines = get_file_info(output_file)
+        if size > 0:
+            print(f"📊 Playlist with UK TV overrides: {lines:,} lines, {size:,} bytes")
+            print("✅ UK TV Guide entries replaced with better alternatives!")
+    
+    return success
+
 def step_credentials(skip=False, filter_skipped=False):
     """Step 3: Replace credentials for multiple users"""
     print_banner("STEP 3: REPLACE CREDENTIALS")
@@ -256,14 +400,16 @@ def step_credentials(skip=False, filter_skipped=False):
     
     return success
 
-def check_file_exists(filepath, description="File"):
+def check_file_exists(filepath, description="File", silent=False):
     """Check if a file exists and show file info"""
     if os.path.exists(filepath):
-        size = os.path.getsize(filepath)
-        print(f"✅ {description}: {filepath} ({size:,} bytes)")
+        if not silent:
+            size = os.path.getsize(filepath)
+            print(f"✅ {description}: {filepath} ({size:,} bytes)")
         return True
     else:
-        print(f"❌ {description} not found: {filepath}")
+        if not silent:
+            print(f"❌ {description} not found: {filepath}")
         return False
 
 def get_file_info(filepath):
@@ -702,6 +848,7 @@ def main():
     print("   0. Generate API playlists from Xtream Codes servers")
     print("   1. Download playlist from remote server")
     print("   2. Enhanced filtering with auto-include and group title overrides")
+    print("   2.5. UK TV Guide overrides (dynamic system)")
     print("   3. Replace credentials for multiple users")
     print("   4. Backup to Google Drive (optional)")
     
@@ -710,6 +857,7 @@ def main():
     skip_api = "--skip-api" in args
     skip_download = "--skip-download" in args
     skip_filter = "--skip-filter" in args
+    skip_uk_override = "--skip-uk-override" in args
     skip_credentials = "--skip-credentials" in args
     skip_gdrive = "--skip-gdrive" in args
     
@@ -719,6 +867,8 @@ def main():
         print("⚠️  Download will be skipped")
     if skip_filter:
         print("⚠️  Enhanced filtering (including overrides) will be skipped")
+    if skip_uk_override:
+        print("⚠️  UK TV Guide overrides will be skipped")
     if skip_credentials:
         print("⚠️  Credential replacement will be skipped")
     if skip_gdrive:
@@ -730,6 +880,7 @@ def main():
         ("API Converter", lambda: step_api_converter(skip_api)),
         ("Download", lambda: step_download(skip_download)),
         ("Enhanced Filter", lambda: step_filter(skip_filter)),
+        ("UK TV Override", lambda: step_uk_tv_override(skip_uk_override, skip_filter)),
         ("Credentials", lambda: step_credentials(skip_credentials, skip_filter)),
         ("Google Drive Backup", lambda: step_gdrive_backup(skip_gdrive))
     ]
@@ -778,6 +929,13 @@ def main():
             print("   - Check group_titles_with_flags.json configuration")
             print("   - Verify filter_m3u_with_auto_include.py script")
             print("   - Enhanced filter auto-includes unknown groups intelligently")
+        elif failed_step == "UK TV Override":
+            print("   - Ensure filtered_playlist_final.m3u exists")
+            print("   - Check data/config/uk_tv_overrides_dynamic.conf configuration")
+            print("   - Verify uk_tv_override_dynamic.py script exists")
+            print("   - Run with --list to see available UK TV Guide entries")
+            print("   - Run with --find to search for replacement channels")
+            print("   - This step is skippable if you don't need UK TV overrides")
         elif failed_step == "Credentials":
             print("   - Ensure filtered_playlist_final.m3u exists")
             print("   - Check credentials.json format")

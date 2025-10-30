@@ -26,7 +26,7 @@
   {
     "group_title": "24/7 Other",
     "channel_count": 2019,
-    "exclude": "false",
+    "exclude": "true",
     "order": 4
   },
   {
@@ -778,7 +778,7 @@
   {
     "group_title": "UK| TNT SPORT ᴿᴬᵂ ⱽᴵᴾ ᴰᴼᴸᴮʸ ᴬᵁᴰᴵᴼ",
     "channel_count": 15,
-    "exclude": "false",
+    "exclude": "true",
     "order": 254
   },
   {
@@ -839,7 +839,7 @@
   {
     "group_title": "FLO ⱽᴵᴾ",
     "channel_count": 991,
-    "exclude": "false",
+    "exclude": "true",
     "order": 301
   },
   {
@@ -905,7 +905,7 @@
   {
     "group_title": "Sling TV Channels",
     "channel_count": 840,
-    "exclude": "false",
+    "exclude": "true",
     "order": 316
   },
   {
@@ -929,7 +929,7 @@
   {
     "group_title": "DirecTV GO Channels",
     "channel_count": 313,
-    "exclude": "false",
+    "exclude": "true",
     "order": 320
   },
   {
@@ -1491,9 +1491,63 @@
     "order": 328
   },
   {
+    "group_title": "🇨🇦 TV Guide (Canada)",
+    "channel_count": 214,
+    "exclude": "true",
+    "order": 321
+  },
+  {
+    "group_title": "DirecTV GO Local Channels",
+    "channel_count": 208,
+    "exclude": "true",
+    "order": 322
+  },
+  {
+    "group_title": "🇦🇺 TV Guide (Australia)",
+    "channel_count": 64,
+    "exclude": "true",
+    "order": 328
+  },
+  {
+    "group_title": "World Sports ᴼᴺ ᴬᴵᴿ",
+    "channel_count": 551,
+    "exclude": "true",
+    "order": 328
+  },
+  {
     "group_title": "Westerns",
     "channel_count": 31,
     "exclude": "true",
     "order": 331
+  },
+  {
+    "group_title": "UK| Sports ᴳᴬᴺᴶᴬ",
+    "channel_count": 67,
+    "exclude": "true",
+    "order": 337
+  },
+  {
+    "group_title": "Westerns ᴳᴬᴺᴶᴬ",
+    "channel_count": 31,
+    "exclude": "true",
+    "order": 341
+  },
+  {
+    "group_title": "🇨🇦 Canada ⬇️",
+    "channel_count": 1,
+    "exclude": "true",
+    "order": 343
+  },
+  {
+    "group_title": "🇬🇧 United Kingdom ⬇️",
+    "channel_count": 1,
+    "exclude": "true",
+    "order": 344
+  },
+  {
+    "group_title": "🇦🇺 Australia ⬇️",
+    "channel_count": 1,
+    "exclude": "true",
+    "order": 345
   }
 ]
