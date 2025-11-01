@@ -376,13 +376,21 @@ def main():
             return  # Exit if files are recent
     
     # Determine if we should auto-select option 2 (no interaction needed)
-    # This happens when: no existing files found (first run, fresh export needed)
-    auto_select_default = not has_existing_files
+    # This happens when: 
+    # 1. No existing files found (first run, fresh export needed)
+    # 2. Files exist but are old (automated update needed)
+    # 3. Force run is enabled
+    auto_select_default = not has_existing_files or force_run or (has_existing_files and should_proceed)
     
     if auto_select_default:
-        # Auto-select option 2 for pipeline compatibility when no files exist
+        # Auto-select option 2 for pipeline compatibility
         choice = "2"
-        print("\n🤖 No existing files found. Auto-selecting default: Live TV channels (get_live_streams)")
+        if not has_existing_files:
+            print("\n🤖 No existing files found. Auto-selecting default: Live TV channels (get_live_streams)")
+        elif force_run:
+            print("\n🤖 Force run enabled. Auto-selecting default: Live TV channels (get_live_streams)")
+        else:
+            print("\n🤖 Files are old and need updating. Auto-selecting default: Live TV channels (get_live_streams)")
     else:
         # Show available options for interactive mode
         print("\n📋 Available actions:")
