@@ -48,12 +48,14 @@ class UKTVOverrideProcessor:
     def __init__(self, config_file: str = "uk_tv_overrides_dynamic.conf"):
         self.config_file = config_file
         self.overrides: Dict[str, str] = {}  # source_group_channel -> replacement_group_channel
+        self.additions: List[Dict] = []  # List of channels to add with positioning info
         self.uk_group_title = "🇬🇧 TV Guide (UK)"
         self.playlist_entries: Dict[str, PlaylistEntry] = {}  # group_channel_id -> PlaylistEntry
         
     def load_overrides(self) -> Dict[str, str]:
-        """Load override configuration from file"""
+        """Load override and addition configuration from file"""
         overrides = {}
+        additions = []
         
         if not os.path.exists(self.config_file):
             print(f"Config file {self.config_file} not found.")
@@ -68,8 +70,41 @@ class UKTVOverrideProcessor:
                     if not line or line.startswith('#'):
                         continue
                     
-                    # Parse source_channel = replacement_channel format
-                    if '=' in line:
+                    # Check if this is an ADD operation
+                    if line.startswith('[ADD:') and ']' in line:
+                        try:
+                            # Parse [ADD:position] channel_name = extinf_line|url_line
+                            end_bracket = line.find(']')
+                            position_part = line[5:end_bracket]  # Extract position from [ADD:position]
+                            rest = line[end_bracket + 1:].strip()
+                            
+                            if '=' in rest:
+                                channel_name, channel_data = rest.split('=', 1)
+                                channel_name = channel_name.strip()
+                                channel_data = channel_data.strip()
+                                
+                                if '|' in channel_data:
+                                    extinf_line, url_line = channel_data.split('|', 1)
+                                    extinf_line = extinf_line.strip()
+                                    url_line = url_line.strip()
+                                    
+                                    addition = {
+                                        'channel_name': channel_name,
+                                        'position': position_part,
+                                        'extinf_line': extinf_line,
+                                        'url_line': url_line
+                                    }
+                                    additions.append(addition)
+                                    print(f"Loaded addition: {channel_name} at position {position_part}")
+                                else:
+                                    print(f"Warning: ADD operation missing '|' separator on line {line_num}: {line}")
+                            else:
+                                print(f"Warning: ADD operation missing '=' on line {line_num}: {line}")
+                        except Exception as e:
+                            print(f"Warning: Invalid ADD format on line {line_num}: {line} ({e})")
+                    
+                    # Regular replace operation
+                    elif '=' in line:
                         source_channel, replacement_spec = line.split('=', 1)
                         source_channel = source_channel.strip()
                         replacement_spec = replacement_spec.strip()
@@ -82,11 +117,12 @@ class UKTVOverrideProcessor:
                         else:
                             print(f"Warning: Invalid override format on line {line_num}: {line}")
                     else:
-                        print(f"Warning: Invalid override format on line {line_num}: {line}")
+                        print(f"Warning: Invalid line format on line {line_num}: {line}")
                         
         except Exception as e:
             print(f"Error reading config file {self.config_file}: {e}")
-            
+        
+        self.additions = additions
         return overrides
     
     def build_playlist_index(self, m3u_content: str) -> None:
@@ -127,6 +163,52 @@ class UKTVOverrideProcessor:
             return None
         
         return self.playlist_entries.get(target_id)
+    
+    def _calculate_addition_position(self, position_spec: str, uk_entries_positions: List[Tuple[int, PlaylistEntry]], playlist_entries) -> int:
+        """Calculate where to insert a new channel based on position specification"""
+        if position_spec == "TOP":
+            # Insert at the beginning of UK TV Guide group
+            if uk_entries_positions:
+                return uk_entries_positions[0][0]
+            return 0
+        
+        elif position_spec == "BOTTOM":
+            # Insert at the end of UK TV Guide group
+            if uk_entries_positions:
+                return uk_entries_positions[-1][0] + 2  # +2 to account for EXTINF and URL lines
+            return 0
+        
+        elif position_spec.startswith("AFTER:"):
+            target_channel = position_spec[6:]  # Remove "AFTER:" prefix
+            for pos, entry in uk_entries_positions:
+                if entry.channel_name == target_channel:
+                    return pos + 2  # Insert after this entry (+2 for EXTINF and URL)
+            print(f"Warning: Channel '{target_channel}' not found for AFTER positioning")
+            return uk_entries_positions[-1][0] + 2 if uk_entries_positions else 0
+        
+        elif position_spec.startswith("BEFORE:"):
+            target_channel = position_spec[7:]  # Remove "BEFORE:" prefix
+            for pos, entry in uk_entries_positions:
+                if entry.channel_name == target_channel:
+                    return pos  # Insert before this entry
+            print(f"Warning: Channel '{target_channel}' not found for BEFORE positioning")
+            return uk_entries_positions[0][0] if uk_entries_positions else 0
+        
+        elif position_spec.startswith("INDEX:"):
+            try:
+                index = int(position_spec[6:])  # Remove "INDEX:" prefix
+                if uk_entries_positions and 0 <= index < len(uk_entries_positions):
+                    return uk_entries_positions[index][0]
+                else:
+                    print(f"Warning: Index {index} out of range, using BOTTOM position")
+                    return uk_entries_positions[-1][0] + 2 if uk_entries_positions else 0
+            except ValueError:
+                print(f"Warning: Invalid index format '{position_spec}', using BOTTOM position")
+                return uk_entries_positions[-1][0] + 2 if uk_entries_positions else 0
+        
+        else:
+            print(f"Warning: Unknown position specification '{position_spec}', using BOTTOM position")
+            return uk_entries_positions[-1][0] + 2 if uk_entries_positions else 0
     
     def list_uk_tv_entries(self, m3u_file: str) -> None:
         """List all UK TV Guide entries"""
@@ -191,11 +273,11 @@ class UKTVOverrideProcessor:
             print(f"Error reading playlist file: {e}")
     
     def process_playlist(self, input_file: str, output_file: str) -> None:
-        """Process M3U playlist and apply overrides"""
+        """Process M3U playlist and apply overrides and additions"""
         self.overrides = self.load_overrides()
         
-        if not self.overrides:
-            print("No overrides configured. Nothing to do.")
+        if not self.overrides and not self.additions:
+            print("No overrides or additions configured. Nothing to do.")
             return
         
         try:
@@ -210,16 +292,24 @@ class UKTVOverrideProcessor:
             lines = content.strip().split('\n')
             output_lines = []
             replacements_made = 0
-            i = 0
+            additions_made = 0
             
+            # Track UK TV Guide entries and their positions for additions
+            uk_entries_positions = []
+            
+            i = 0
             while i < len(lines):
                 line = lines[i].strip()
                 
                 if line.startswith('#EXTINF:'):
-                    # Check if this is a UK TV Guide entry to replace
+                    # Check if this is a UK TV Guide entry
                     if i + 1 < len(lines):
                         url_line = lines[i + 1].strip()
                         entry = PlaylistEntry(line, url_line)
+                        
+                        # Track UK TV Guide entries for addition positioning
+                        if entry.group_title == self.uk_group_title:
+                            uk_entries_positions.append((len(output_lines), entry))
                         
                         # Check if this entry should be replaced
                         if entry.group_channel_id in self.overrides:
@@ -255,12 +345,33 @@ class UKTVOverrideProcessor:
                     output_lines.append(line)
                     i += 1
             
+            # Now process additions
+            if self.additions:
+                print(f"\nProcessing {len(self.additions)} channel additions...")
+                
+                # Sort additions by their calculated positions (in reverse order to maintain positions)
+                additions_with_positions = []
+                for addition in self.additions:
+                    position = self._calculate_addition_position(addition['position'], uk_entries_positions, self.playlist_entries)
+                    additions_with_positions.append((position, addition))
+                
+                # Sort by position in reverse order so we insert from bottom to top
+                additions_with_positions.sort(key=lambda x: x[0], reverse=True)
+                
+                for position, addition in additions_with_positions:
+                    # Insert the new channel at the calculated position
+                    output_lines.insert(position, addition['extinf_line'])
+                    output_lines.insert(position + 1, addition['url_line'])
+                    additions_made += 1
+                    print(f"Added: {addition['channel_name']} at position {addition['position']}")
+            
             # Write output
             with open(output_file, 'w', encoding='utf-8') as f:
                 f.write('\n'.join(output_lines))
             
             print(f"\nProcessing complete!")
             print(f"Replacements made: {replacements_made}")
+            print(f"Additions made: {additions_made}")
             print(f"Output written to: {output_file}")
             
         except Exception as e:
@@ -281,12 +392,6 @@ class UKTVOverrideProcessor:
         return hybrid_line
 
 def main():
-    # Set up Windows Unicode output support
-    if sys.platform.startswith('win'):
-        import codecs
-        sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer, 'strict')
-        sys.stderr = codecs.getwriter('utf-8')(sys.stderr.buffer, 'strict')
-    
     if len(sys.argv) < 2:
         print("Usage:")
         print(f"  {sys.argv[0]} --list <playlist.m3u>")
