@@ -1,0 +1,2617 @@
+[
+    {
+        "category_id": "2073",
+        "category_name": "UK| SIX KINGS SLAM FINAL",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1985",
+        "category_name": "UK| PRIME ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "47",
+        "category_name": "UK| GENERAL ᴴᴰ/ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1141",
+        "category_name": "UK| GENERAL ʰᵉᵛᶜ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1961",
+        "category_name": "UK| BBC IPLAYER ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1244",
+        "category_name": "UK| ITV X VIP",
+        "parent_id": 0
+    },
+    {
+        "category_id": "956",
+        "category_name": "UK| NEWS ᴴᴰ/ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1145",
+        "category_name": "UK| NEWS ʰᵉᵛᶜ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "302",
+        "category_name": "UK| SKY CINEMA ᴴᴰ/ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "676",
+        "category_name": "UK| SKY CINEMA ʰᵉᵛᶜ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1062",
+        "category_name": "UK| CINE PRO 4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "188",
+        "category_name": "UK| 24/7 ᴴᴰ/ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1956",
+        "category_name": "UK| SKY STORE ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1845",
+        "category_name": "UK| SKY MIX SERIES ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1864",
+        "category_name": "UK| SKY MIX DOCS ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1968",
+        "category_name": "UK| BBC IPLAYER SERIES ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1967",
+        "category_name": "UK| APPLE TV+ SERIES ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1969",
+        "category_name": "UK| PRIME VIDEO SERIES ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1970",
+        "category_name": "UK| NETFLIX ORIGINAL ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1971",
+        "category_name": "UK| REALITY SHOW TV ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1972",
+        "category_name": "UK| SOCCER REPLAY ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "305",
+        "category_name": "UK| MUSIC ᴴᴰ/ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1732",
+        "category_name": "UK| MC VIDEO ᴴᴰ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "381",
+        "category_name": "UK| DISCOVERY+ ᴴᴰ/ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "306",
+        "category_name": "UK| DOCUMENTARY ᴴᴰ/ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1143",
+        "category_name": "UK| DOCUMENTARY ʰᵉᵛᶜ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "304",
+        "category_name": "UK| KIDS ᴴᴰ/ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1142",
+        "category_name": "UK| KIDS ʰᵉᵛᶜ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1963",
+        "category_name": "UK| NOW TV ENTERTAINMENT ᴴᴰ/ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1964",
+        "category_name": "UK| NOW TV SPORT ᴴᴰ/ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1965",
+        "category_name": "UK| NOW TV SPORT ᵁᴴᴰ ³⁸⁴⁰ᴾ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1441",
+        "category_name": "UK| SKY SPORT+ PPV ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1830",
+        "category_name": "UK| TNT SPORT EVENT",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1728",
+        "category_name": "UK| TNT SPORT ᴴᴰ ⱽᴵᴾ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1727",
+        "category_name": "UK| TNT SPORT SD ⱽᴵᴾ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1726",
+        "category_name": "UK| TNT SPORT ᴿᴬᵂ ⱽᴵᴾ ᴰᴼᴸᴮʸ ᴬᵁᴰᴵᴼ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1638",
+        "category_name": "UK| TNT SPORT ᵃᵐᶻ ᴴᴰ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1639",
+        "category_name": "UK| TNT SPORT ᵃᵐᶻ SD",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1637",
+        "category_name": "UK| TNT SPORT ᵃᵐᶻ ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1729",
+        "category_name": "UK| SPORT ᴴᴰ ⱽᴵᴾ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1730",
+        "category_name": "UK| SPORT SD ⱽᴵᴾ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1731",
+        "category_name": "UK| SPORT ᴿᴬᵂ ⱽᴵᴾ ᴰᴼᴸᴮʸ ᴬᵁᴰᴵᴼ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "303",
+        "category_name": "UK| SPORT ᴴᴰ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1641",
+        "category_name": "UK| SPORT SD",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1640",
+        "category_name": "UK| SPORT ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "978",
+        "category_name": "UK| SPORT ʰᵉᵛᶜ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "952",
+        "category_name": "UK| LIVE FOOTBALL PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "768",
+        "category_name": "UK| NATIONAL LEAGUE PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "769",
+        "category_name": "UK| CHAMPIONSHIP PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "766",
+        "category_name": "UK| LEAGUE ONE PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "767",
+        "category_name": "UK| LEAGUE TWO PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "924",
+        "category_name": "UK| VIAPLAY PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "575",
+        "category_name": "UK| DAZN PPV VIP",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1811",
+        "category_name": "UK| DAZN PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1543",
+        "category_name": "UK| PEACOCK PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "932",
+        "category_name": "UK| VIDIO EPL PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "755",
+        "category_name": "UK| EPL PREMIER LEAGUE PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1865",
+        "category_name": "UK| EPL PREMIER LEAGUE PPV VIP",
+        "parent_id": 0
+    },
+    {
+        "category_id": "930",
+        "category_name": "UK| SPFL/SCOTTISH PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1131",
+        "category_name": "UK| SUPER LEAGUE PLUS PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "976",
+        "category_name": "UK| LA LIGA TEAM PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1614",
+        "category_name": "UK| LIGUE 1 PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "977",
+        "category_name": "UK| SERIE A TEAM PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "975",
+        "category_name": "UK| HUB PREMIER PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "921",
+        "category_name": "UK| UEFA PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1398",
+        "category_name": "UK| DISCOVERY+ PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "471",
+        "category_name": "UK| PRIME PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1677",
+        "category_name": "UK| PRIME PPV ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1428",
+        "category_name": "UK| EU GAME PASS PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "402",
+        "category_name": "UK| FORMULA 1 PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1866",
+        "category_name": "UK| TT RACES PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1375",
+        "category_name": "UK| SCOTTISH CUP PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "963",
+        "category_name": "UK| PDC BOARD PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "935",
+        "category_name": "UK| PAY PER VIEW PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "380",
+        "category_name": "UK| PPV EVENT",
+        "parent_id": 0
+    },
+    {
+        "category_id": "929",
+        "category_name": "UK| UFC PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1083",
+        "category_name": "UK| ESPN+ PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1073",
+        "category_name": "UK| FA PLAYER PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "926",
+        "category_name": "UK| TRILLER TV PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1113",
+        "category_name": "UK| FLORUGBY PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1455",
+        "category_name": "UK| RALLY PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1993",
+        "category_name": "UK| MONO MAX PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1994",
+        "category_name": "UK| MXGP PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1995",
+        "category_name": "UK| VOLLEY BALL WORLD PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "238",
+        "category_name": "IE| IRELAND HD/4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1841",
+        "category_name": "IE| PRIME PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "934",
+        "category_name": "IE| LOI PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "933",
+        "category_name": "IE| SETANTA PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1040",
+        "category_name": "IE| ULSTER GAA PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1496",
+        "category_name": "IE| TYRONE GAA PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1867",
+        "category_name": "IE| GAAGO++ PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1064",
+        "category_name": "IE| GAAGO PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1090",
+        "category_name": "IE| NIFL PREMIERSHIP PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1842",
+        "category_name": "IE| PRIME PPV ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "923",
+        "category_name": "IE| CLUBBER PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "662",
+        "category_name": "4K| ᵁᴴᴰ ³⁸⁴⁰ᴾ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1210",
+        "category_name": "4K| RELAX ᵁᴴᴰ ³⁸⁴⁰ᴾ ☼",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1310",
+        "category_name": "WT| WORLD CRICKET",
+        "parent_id": 0
+    },
+    {
+        "category_id": "624",
+        "category_name": "AR| UEFA CHAMPIONS LEAGUE ⚽",
+        "parent_id": 0
+    },
+    {
+        "category_id": "518",
+        "category_name": "AR| NETFLIX GERMANY 4K ▶ نتفليكس ألماني",
+        "parent_id": 0
+    },
+    {
+        "category_id": "395",
+        "category_name": "AR| NETFLIX MOVIES 4K ▶ أفلام نتفليكس",
+        "parent_id": 0
+    },
+    {
+        "category_id": "556",
+        "category_name": "AR| NETFLIX SERIES 4K ▶ مسلسلات نتفليكس",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1429",
+        "category_name": "TS| TENNIS TV PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1096",
+        "category_name": "TS| TENNIS LIVE",
+        "parent_id": 0
+    },
+    {
+        "category_id": "2074",
+        "category_name": "US| SIX KINGS SLAM FINAL",
+        "parent_id": 0
+    },
+    {
+        "category_id": "2041",
+        "category_name": "US| SLING ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1689",
+        "category_name": "US| PRIME ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "2017",
+        "category_name": "US| TUBI ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "2056",
+        "category_name": "US| NETFLIX ON AIR ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "613",
+        "category_name": "US| PEACOCK ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "2049",
+        "category_name": "US| DIREC TV ᶜᶦᵗʸ ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "2036",
+        "category_name": "US| DIREC TV ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "58",
+        "category_name": "US| ENTERTAINMENT ᴴᴰ/ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1383",
+        "category_name": "US| SPECTRUM NETWORK ᴴᴰ/ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1387",
+        "category_name": "US| TELEMUNDO NETWORK ᴴᴰ/ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "491",
+        "category_name": "US| NEWS ᴴᴰ/ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "493",
+        "category_name": "US| MOVIES ᴴᴰ/ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1940",
+        "category_name": "US| 24/7 ONEPLAY ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "612",
+        "category_name": "US| PARAMOUNT+ ORIGINAL ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1056",
+        "category_name": "US| ️HULU NETWORK ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1884",
+        "category_name": "US| DISNEY+ NETWORK ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1885",
+        "category_name": "US| PEACOCK NETWORK ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1886",
+        "category_name": "US| HBO MAX NETWORK ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1109",
+        "category_name": "US| CINEMANIA HOLLYWOOD ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1110",
+        "category_name": "US| CINEMA TV SHOWS ᴴᴰ/ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1888",
+        "category_name": "US| ROKU ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "619",
+        "category_name": "US| 24/7 PPV ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "2057",
+        "category_name": "US| 24/7 MOVIES/ACTORS ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "2058",
+        "category_name": "US| 24/7 ACTION/ADVENTURE ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "2059",
+        "category_name": "US| 24/7 CLASSIC SHOWS ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "2060",
+        "category_name": "US| 24/7 REALITY ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "2061",
+        "category_name": "US| 24/7 COMEDY ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "2062",
+        "category_name": "US| 24/7 CRIME ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "2063",
+        "category_name": "US| 24/7 CARTOON ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "2064",
+        "category_name": "US| 24/7 KIDS/FAMILY ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "490",
+        "category_name": "US| KIDS ᴴᴰ/ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "598",
+        "category_name": "US| FOX ᴴᴰ/ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1033",
+        "category_name": "US| MIAMI ᴴᴰ/ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "599",
+        "category_name": "US| CW ᴴᴰ/ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "601",
+        "category_name": "US| CBS ᴴᴰ/ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "600",
+        "category_name": "US| NBC ᴴᴰ/ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "602",
+        "category_name": "US| ABC ᴴᴰ/ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "492",
+        "category_name": "US| SPORT ᴴᴰ/ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1991",
+        "category_name": "US| MAX ESPN ᴴᴰ/ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1206",
+        "category_name": "US| THE MASTERS PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "957",
+        "category_name": "US| PAY PER VIEW PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "903",
+        "category_name": "US| PPV EVENT",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1139",
+        "category_name": "US| UFC PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "603",
+        "category_name": "US| BALLY SPORTS PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1882",
+        "category_name": "US| FIFA+ PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1513",
+        "category_name": "US| PRIME PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1676",
+        "category_name": "US| PRIME PPV ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "573",
+        "category_name": "US| DAZN PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1497",
+        "category_name": "US| UEFA PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1151",
+        "category_name": "US| MLS PPV VIP",
+        "parent_id": 0
+    },
+    {
+        "category_id": "607",
+        "category_name": "US| MLS PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1495",
+        "category_name": "US| DAZN NFL PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "597",
+        "category_name": "US| NFL PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1501",
+        "category_name": "US| NFL REPLAY",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1591",
+        "category_name": "US| VIAPLAY NHL PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "604",
+        "category_name": "US| NHL PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1520",
+        "category_name": "US| NHL REAL PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1021",
+        "category_name": "US| NHL TEAM PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1503",
+        "category_name": "US| NHL REPLAY",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1192",
+        "category_name": "US| MILB PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "606",
+        "category_name": "US| MLB PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1519",
+        "category_name": "US| MLB REAL PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1185",
+        "category_name": "US| MLB TEAM PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1243",
+        "category_name": "US| WNBA PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1517",
+        "category_name": "US| WNBA REAL PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "605",
+        "category_name": "US| NBA PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1518",
+        "category_name": "US| NBA REAL PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1016",
+        "category_name": "US| NBA TEAM PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1394",
+        "category_name": "US| PEACOCK PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "961",
+        "category_name": "US| B1G+ PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1257",
+        "category_name": "US| B/R MAX SPORTS PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "688",
+        "category_name": "US| NCAAF PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1014",
+        "category_name": "US| NCAAB PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "927",
+        "category_name": "US| RUGBY PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1393",
+        "category_name": "US| MAX PPV ⱽᴵᴾ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1996",
+        "category_name": "US| MAX PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1983",
+        "category_name": "US| STAN PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1960",
+        "category_name": "US| ESPN+ PPV ⱽᴵᴾ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "911",
+        "category_name": "US| ESPN+ PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "912",
+        "category_name": "US| ESPN PLAY PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "931",
+        "category_name": "US| MATCHROOM PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "2014",
+        "category_name": "US| FLO ⱽᴵᴾ PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1928",
+        "category_name": "US| FLO COLLEGE PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1926",
+        "category_name": "US| FLO RACING PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "960",
+        "category_name": "US| FLO SPORTS PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1112",
+        "category_name": "US| SUPERCROSS PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "925",
+        "category_name": "US| DIRTVISION PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1927",
+        "category_name": "US| TENNIS PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1038",
+        "category_name": "US| PARAMOUNT+ PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1992",
+        "category_name": "US| GOLF PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "548",
+        "category_name": "AR| STARZPLAY SPORT ⁸ᴷ & ⁴ᴷ ⚽",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1231",
+        "category_name": "AR| STARZPLAY SPORT ⁸ᴷ & ᵀᴷ ⚽",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1216",
+        "category_name": "RX| RELAX 4K ☼",
+        "parent_id": 0
+    },
+    {
+        "category_id": "781",
+        "category_name": "AR| BEIN SPORTS ᵁᴴᴰ ⚽",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1765",
+        "category_name": "ASIA| YUPP TV EXCLUSIVE ᴴᴰ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "179",
+        "category_name": "ASIA| UK",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1144",
+        "category_name": "ASIA| UK HEVC",
+        "parent_id": 0
+    },
+    {
+        "category_id": "475",
+        "category_name": "ASIA| PREMIUM TV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "254",
+        "category_name": "ASIA| BANGLADESH",
+        "parent_id": 0
+    },
+    {
+        "category_id": "256",
+        "category_name": "ASIA| GUJARATI/ASSAM",
+        "parent_id": 0
+    },
+    {
+        "category_id": "258",
+        "category_name": "ASIA| BHOJPURI/ODISHA",
+        "parent_id": 0
+    },
+    {
+        "category_id": "199",
+        "category_name": "ASIA| SINHALA",
+        "parent_id": 0
+    },
+    {
+        "category_id": "255",
+        "category_name": "ASIA| MALAYALAM",
+        "parent_id": 0
+    },
+    {
+        "category_id": "259",
+        "category_name": "ASIA| MARATHI",
+        "parent_id": 0
+    },
+    {
+        "category_id": "253",
+        "category_name": "ASIA| KANNADA",
+        "parent_id": 0
+    },
+    {
+        "category_id": "177",
+        "category_name": "ASIA| ENGLISH",
+        "parent_id": 0
+    },
+    {
+        "category_id": "178",
+        "category_name": "ASIA| SPORTS",
+        "parent_id": 0
+    },
+    {
+        "category_id": "175",
+        "category_name": "ASIA| BENGALI",
+        "parent_id": 0
+    },
+    {
+        "category_id": "182",
+        "category_name": "ASIA| TELUGU",
+        "parent_id": 0
+    },
+    {
+        "category_id": "174",
+        "category_name": "ASIA| PUNJABI",
+        "parent_id": 0
+    },
+    {
+        "category_id": "176",
+        "category_name": "ASIA| TAMIL",
+        "parent_id": 0
+    },
+    {
+        "category_id": "67",
+        "category_name": "ASIA| HINDI",
+        "parent_id": 0
+    },
+    {
+        "category_id": "686",
+        "category_name": "ASIA| NEPAL",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1631",
+        "category_name": "AT| CANAL+ ONLINE UNTERHALTUNG ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1630",
+        "category_name": "AT| CANAL+ ONLINE SPORT ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "2033",
+        "category_name": "AT| JOYN ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1955",
+        "category_name": "AT| AUSTRIA ⱽᴵᴾ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "54",
+        "category_name": "AT| AUSTRIA HD/4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "570",
+        "category_name": "AT| DAZN PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "2032",
+        "category_name": "8K| SPORT ON AIR ⁸ᴷ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1987",
+        "category_name": "NL| PRIME ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1646",
+        "category_name": "NL| CANAL+ ONLINE VERMAAK ᴴᴰ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1644",
+        "category_name": "NL| CANAL+ ONLINE VERMAAK ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1647",
+        "category_name": "NL| CANAL+ ONLINE SPORT ᴴᴰ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1645",
+        "category_name": "NL| CANAL+ ONLINE SPORT ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1606",
+        "category_name": "NL| ODIDO VERMAAK ᴴᴰ ᴳᴼᴸᴰ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1608",
+        "category_name": "NL| ODIDO VERMAAK ᴿᴬᵂ ᴳᴼᴸᴰ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1607",
+        "category_name": "NL| ODIDO SPORT ᴴᴰ ᴳᴼᴸᴰ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1609",
+        "category_name": "NL| ODIDO SPORT ᴿᴬᵂ ᴳᴼᴸᴰ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "36",
+        "category_name": "NL| ALGEMEEN HD/4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "124",
+        "category_name": "NL| SPORT HD/4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1106",
+        "category_name": "NL| VIAPLAY PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1998",
+        "category_name": "NL| VIAPLAY F1 PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1999",
+        "category_name": "NL| VIAPLAY F2 PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "2000",
+        "category_name": "NL| VIAPLAY F3 PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "2001",
+        "category_name": "NL| VIAPLAY PREMIER LEAGUE PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "2002",
+        "category_name": "NL| VIAPLAY BUNDESLIGA PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "2003",
+        "category_name": "NL| VIAPLAY PDC PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1780",
+        "category_name": "NL| PRIME PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1779",
+        "category_name": "NL| PRIME PPV ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1396",
+        "category_name": "NL| FEYENOORD PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "979",
+        "category_name": "NL| MAX PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "958",
+        "category_name": "NL| ESPN PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1810",
+        "category_name": "NL| DAZN PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1656",
+        "category_name": "NL| CLIPMYHORSE PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1783",
+        "category_name": "NL| 8TKO PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "714",
+        "category_name": "NL| FILMS HD/4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "715",
+        "category_name": "NL| KINDEREN HD/4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "717",
+        "category_name": "NL| DOCUMENTAIRE HD/4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "718",
+        "category_name": "NL| MUZIEK HD/4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "784",
+        "category_name": "NL| NETHERLANDS SD",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1570",
+        "category_name": "BE| BELGIUM VIP ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1571",
+        "category_name": "BE| BELGIUM SPORT VIP ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "970",
+        "category_name": "BE| DAZN PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "2019",
+        "category_name": "BE| DAZN PPV ⱽᴵᴾ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "2020",
+        "category_name": "BE| DAZN PPV ⱽᴵᴾ ᶠʳ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1807",
+        "category_name": "BE| TELESAT ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "528",
+        "category_name": "BE| GENERAL HD/4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "531",
+        "category_name": "BE| DOCUMENTARY HD/4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "532",
+        "category_name": "BE| MOVIES HD/4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "530",
+        "category_name": "BE| SPORT HD/4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "529",
+        "category_name": "BE| KIDS HD/4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1989",
+        "category_name": "IT| PRIME ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "417",
+        "category_name": "IT| PLATINUM TV UHD/4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "18",
+        "category_name": "IT| GENERALE HD/4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "419",
+        "category_name": "IT| GOLD TV HEVC",
+        "parent_id": 0
+    },
+    {
+        "category_id": "295",
+        "category_name": "IT| CINEMA HD/4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "420",
+        "category_name": "IT| CINEMA VIP HD/4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1775",
+        "category_name": "IT| 24/7 MOVIES & SERIES",
+        "parent_id": 0
+    },
+    {
+        "category_id": "294",
+        "category_name": "IT| DOCUMENTARIO HD/4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "421",
+        "category_name": "IT| BAMBINI HD/4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "463",
+        "category_name": "IT| REGIONALI HD/4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1772",
+        "category_name": "IT| PRIME PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1767",
+        "category_name": "IT| PRIME PPV ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "265",
+        "category_name": "IT| SPORT HD/4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "590",
+        "category_name": "IT| DAZN PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "476",
+        "category_name": "IT| DAZN VIP HD/4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "681",
+        "category_name": "IT| SERIE A/B/C",
+        "parent_id": 0
+    },
+    {
+        "category_id": "457",
+        "category_name": "IT| AMAZON PRIME PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "467",
+        "category_name": "IT| FORMULA 1 / MOTOGP",
+        "parent_id": 0
+    },
+    {
+        "category_id": "450",
+        "category_name": "IT| BASKET HD/4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "2030",
+        "category_name": "FR| LUXPLAY ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1986",
+        "category_name": "FR| PRIME ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "596",
+        "category_name": "FR| FRANCE HEVC VIP",
+        "parent_id": 0
+    },
+    {
+        "category_id": "159",
+        "category_name": "FR| GÉNÉRAL HD/4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "68",
+        "category_name": "FR| CINÉMA HD/4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "582",
+        "category_name": "FR| PPV CINÉMA HD/4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1059",
+        "category_name": "FR| NETFLIX 4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1116",
+        "category_name": "FR| PREMIUM PLAY",
+        "parent_id": 0
+    },
+    {
+        "category_id": "558",
+        "category_name": "FR| ENFANTS HD/4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1951",
+        "category_name": "FR| LIGUE1+ 24/7 ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1953",
+        "category_name": "FR| LIGUE1+ ᴮᴱ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1952",
+        "category_name": "FR| LIGUE1+ ⱽᴵᴾ ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1954",
+        "category_name": "FR| LIGUE1+ ◉",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1020",
+        "category_name": "FR| DAZN PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1774",
+        "category_name": "FR| PRIME PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1766",
+        "category_name": "FR| PRIME PPV ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1384",
+        "category_name": "FR| MAX PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "2023",
+        "category_name": "FR| FFF TV PPV ᴮᴱ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1354",
+        "category_name": "FR| L'EQUIPE LIVE",
+        "parent_id": 0
+    },
+    {
+        "category_id": "557",
+        "category_name": "FR| SPORT HD/4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1491",
+        "category_name": "FR| EURO SPORT ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1506",
+        "category_name": "FR| CANAL+ LIVE ᴴᴰ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1627",
+        "category_name": "FR| CANAL+ LIVE ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "559",
+        "category_name": "FR| MUSIQUE HD/4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "560",
+        "category_name": "FR| DOCUMENTAIRE HD/4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "452",
+        "category_name": "FR| CANAL+ AFRICA",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1103",
+        "category_name": "FR| CARIBBEAN HD/4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1311",
+        "category_name": "ES| PRIME ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "2050",
+        "category_name": "ES| ATRES PLAYER ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1781",
+        "category_name": "ES| TIVIFY ᴴᴰ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1336",
+        "category_name": "ES| TIVIFY ᴳᴼᴸᴰ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "608",
+        "category_name": "ES| TDT ESPAÑA VIP",
+        "parent_id": 0
+    },
+    {
+        "category_id": "549",
+        "category_name": "ES| TDT PREMIUM VIP",
+        "parent_id": 0
+    },
+    {
+        "category_id": "550",
+        "category_name": "ES| M+ CINE VIP",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1060",
+        "category_name": "ES| MOVISTAR PLUS+ VIP",
+        "parent_id": 0
+    },
+    {
+        "category_id": "551",
+        "category_name": "ES| MOVISTAR SERIES VIP",
+        "parent_id": 0
+    },
+    {
+        "category_id": "2025",
+        "category_name": "ES| 24/7 ESPAÑA ⱽᴵᴾ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "2027",
+        "category_name": "ES| NETFLIX ORIGINALS ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "2028",
+        "category_name": "ES| MOVISTAR+ ESTRENOS ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "2029",
+        "category_name": "ES| MOVISTAR+ SERIES ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "42",
+        "category_name": "ES| INFANTIL VIP",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1601",
+        "category_name": "ES| COPA DEL REY VIP",
+        "parent_id": 0
+    },
+    {
+        "category_id": "870",
+        "category_name": "ES| M+ LALIGA VIP",
+        "parent_id": 0
+    },
+    {
+        "category_id": "553",
+        "category_name": "ES| M+ LIGA DE CAMPEONES VIP",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1738",
+        "category_name": "ES| M+ LIGA DE CAMPEONES ⁽ᴮᴷ⁾",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1232",
+        "category_name": "ES| LALIGA REPLAY VIP",
+        "parent_id": 0
+    },
+    {
+        "category_id": "2034",
+        "category_name": "ES| GO DSPORTS ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1958",
+        "category_name": "ES| DAZN EXCLUSIVE ᴴᴰ/ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "552",
+        "category_name": "ES| DAZN LALIGA VIP",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1286",
+        "category_name": "ES| DAZN ESPAÑA VIP",
+        "parent_id": 0
+    },
+    {
+        "category_id": "547",
+        "category_name": "ES| DAZN PPV VIP",
+        "parent_id": 0
+    },
+    {
+        "category_id": "2054",
+        "category_name": "ES| DAZN ACB PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1355",
+        "category_name": "ES| MAX PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1334",
+        "category_name": "ES| PRIME PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1674",
+        "category_name": "ES| PRIME PPV ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1616",
+        "category_name": "ES| LALIGA+ PPV VIP",
+        "parent_id": 0
+    },
+    {
+        "category_id": "2045",
+        "category_name": "ES| LALIGA+ PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1490",
+        "category_name": "ES| TV FOOTBALL PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "2044",
+        "category_name": "ES| RFEF PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1982",
+        "category_name": "ES| VIX PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1287",
+        "category_name": "ES| MOVISTAR DEPORTES VIP",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1291",
+        "category_name": "ES| OTROS DEPORTES VIP",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1288",
+        "category_name": "ES| DOCUMENTALES VIP",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1289",
+        "category_name": "ES| TOROS VIP",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1290",
+        "category_name": "ES| M+ VAMOS VIP",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1294",
+        "category_name": "ES| MUSICA VIP",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1820",
+        "category_name": "PT| VODAFONE ᴴᴰ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "184",
+        "category_name": "PT| GENERALISTAS",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1026",
+        "category_name": "PT| FILMES",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1028",
+        "category_name": "PT| MUSICA",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1027",
+        "category_name": "PT| CRIANCAS",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1457",
+        "category_name": "PT| DAZN EXCLUSIVE ᴴᴰ/ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1025",
+        "category_name": "PT| DESPORTO",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1008",
+        "category_name": "PT| DAZN PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1024",
+        "category_name": "PT| NOTICIAS",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1643",
+        "category_name": "PL| CANAL+ ONLINE SPORT ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1588",
+        "category_name": "PL| KANAŁY TVN PLAYER ᴴᴰ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1089",
+        "category_name": "PL| KANAŁY TVN PLAYER ᵁᴴᴰ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1589",
+        "category_name": "PL| SPORT TVN PLAYER ᴴᴰ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1212",
+        "category_name": "PL| SPORT TVN PLAYER ᵁᴴᴰ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "45",
+        "category_name": "PL| POLSKIE HD",
+        "parent_id": 0
+    },
+    {
+        "category_id": "111",
+        "category_name": "PL| POLSKIE 4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "499",
+        "category_name": "PL| POLSKIE ᴿᴬᵂ VIP",
+        "parent_id": 0
+    },
+    {
+        "category_id": "936",
+        "category_name": "PL| WALKI PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1385",
+        "category_name": "PL| MAX PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "466",
+        "category_name": "PL| POLAND +6H",
+        "parent_id": 0
+    },
+    {
+        "category_id": "48",
+        "category_name": "SE| SWEDEN ᴴᴰ/ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "72",
+        "category_name": "SE| SWEDEN ᵁᴸᵀᴿᴬ ᴿᴬᵂ ᴰᴼᴸᴮʸ ᴬᵁᴰᴵᴼ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "538",
+        "category_name": "SE| ONDEMAND ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1880",
+        "category_name": "SE| SVTPLAY PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1376",
+        "category_name": "SE| VIAPLAY PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1371",
+        "category_name": "SE| PLAY+ PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "462",
+        "category_name": "SE| TV4 PLAY PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "959",
+        "category_name": "SE| MAX PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1922",
+        "category_name": "SE| MAX ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1473",
+        "category_name": "SE| PRIME PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1673",
+        "category_name": "SE| PRIME PPV ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1551",
+        "category_name": "SE| DISNEY+ PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1554",
+        "category_name": "SE| INNEBANDY PLAY PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1456",
+        "category_name": "SE| AFTONBLADET PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1547",
+        "category_name": "SE| SVENSK HOCKEY PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1815",
+        "category_name": "SE| SVENSKBIL SPORT TV PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1538",
+        "category_name": "SE| HANDBOLLSLIGAN PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1484",
+        "category_name": "SE| HOCKEY ETTAN PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1550",
+        "category_name": "SE| ETTAN PLAY PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1432",
+        "category_name": "SE| FANSEAT PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1725",
+        "category_name": "SE| MFFPLAY PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1764",
+        "category_name": "SE| EXPRESSEN PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1879",
+        "category_name": "SE| DAZN PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "622",
+        "category_name": "DK| DENMARK ᴴᴰ/ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "51",
+        "category_name": "DK| DENMARK ᵁᴸᵀᴿᴬ ᴿᴬᵂ ᴰᴼᴸᴮʸ ᴬᵁᴰᴵᴼ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1505",
+        "category_name": "DK| PLAY TV2 ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1848",
+        "category_name": "DK| VIAPLAY ᴴᴰ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "470",
+        "category_name": "DK| PLAY TV2 PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "981",
+        "category_name": "DK| MAX PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1488",
+        "category_name": "DK| VIAPLAY PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1839",
+        "category_name": "DK| PRIME PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1840",
+        "category_name": "DK| PRIME PPV ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1997",
+        "category_name": "DK| DISNEY+ PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "49",
+        "category_name": "NO| NORWAY ᴴᴰ/ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "620",
+        "category_name": "NO| NORWAY ᵁᴸᵀᴿᴬ ᴿᴬᵂ ᴰᴼᴸᴮʸ ᴬᵁᴰᴵᴼ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1461",
+        "category_name": "NO| TV2 PLAY ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1022",
+        "category_name": "NO| TV2 PLAY PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1467",
+        "category_name": "NO| DIREKTE SPORT PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1592",
+        "category_name": "NO| VGTV PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "982",
+        "category_name": "NO| MAX PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1695",
+        "category_name": "NO| VIAPLAY VIP EVENT",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1984",
+        "category_name": "AU| PRIME ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "234",
+        "category_name": "AU| AUSTRALIA VIP",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1990",
+        "category_name": "AU| 9NOW ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "968",
+        "category_name": "AU| ESPN PLAY PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "989",
+        "category_name": "AU| OPTUS PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1039",
+        "category_name": "AU| NRL TV PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1086",
+        "category_name": "AU| STAN PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1138",
+        "category_name": "AU| AFL PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1843",
+        "category_name": "AU| PRIME PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1844",
+        "category_name": "AU| PRIME PPV ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "872",
+        "category_name": "NZ| NEW ZEALAND HD/4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1988",
+        "category_name": "CA| PRIME ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "62",
+        "category_name": "CA| CANADA ᴴᴰ/ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "576",
+        "category_name": "CA| GENERAL FR",
+        "parent_id": 0
+    },
+    {
+        "category_id": "579",
+        "category_name": "CA| CINEMA FR",
+        "parent_id": 0
+    },
+    {
+        "category_id": "577",
+        "category_name": "CA| KIDS FR",
+        "parent_id": 0
+    },
+    {
+        "category_id": "580",
+        "category_name": "CA| SPORTS FR",
+        "parent_id": 0
+    },
+    {
+        "category_id": "581",
+        "category_name": "CA| MUSIC FR",
+        "parent_id": 0
+    },
+    {
+        "category_id": "578",
+        "category_name": "CA| DOCUMENTARY FR",
+        "parent_id": 0
+    },
+    {
+        "category_id": "689",
+        "category_name": "CA| NEWS EN",
+        "parent_id": 0
+    },
+    {
+        "category_id": "583",
+        "category_name": "CA| GENERAL EN",
+        "parent_id": 0
+    },
+    {
+        "category_id": "584",
+        "category_name": "CA| CINEMA EN",
+        "parent_id": 0
+    },
+    {
+        "category_id": "585",
+        "category_name": "CA| SPORTS EN",
+        "parent_id": 0
+    },
+    {
+        "category_id": "586",
+        "category_name": "CA| KIDS EN",
+        "parent_id": 0
+    },
+    {
+        "category_id": "588",
+        "category_name": "CA| DOCUMENTARY EN",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1451",
+        "category_name": "CA| ROGERS SUPER SPORTS PACK EN",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1799",
+        "category_name": "CA| FUBO PPV ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1768",
+        "category_name": "CA| PRIME PPV ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1773",
+        "category_name": "CA| PRIME PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1930",
+        "category_name": "CA| TSN+ PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1966",
+        "category_name": "CA| DAZN PPV ⱽᴵᴾ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "574",
+        "category_name": "CA| DAZN PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "2012",
+        "category_name": "CA| VICTORY+ PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1015",
+        "category_name": "CA| CBC PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1094",
+        "category_name": "CA| TSN SPORT ᴴᴰ/ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1920",
+        "category_name": "CA| SPORTSNET PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1091",
+        "category_name": "CA| SPORTSNET+ PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "922",
+        "category_name": "CA| WHL PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "919",
+        "category_name": "CA| CFL PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1594",
+        "category_name": "CA| CANADA WEST PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "679",
+        "category_name": "SG| SINGAPORE VIP",
+        "parent_id": 0
+    },
+    {
+        "category_id": "995",
+        "category_name": "JP| JAPAN HD/4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "56",
+        "category_name": "HK| HONGKONG 4K/HD",
+        "parent_id": 0
+    },
+    {
+        "category_id": "61",
+        "category_name": "CH| CHINA",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1523",
+        "category_name": "AR| TOD SPORT ⁸ᴷ & PPV ⚽",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1127",
+        "category_name": "AR| BEIN SPORTS ⁸ᴷ & AFC ⚽",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1134",
+        "category_name": "AR| BEIN SPORTS ⁸ᴷ & ³⁸⁴⁰ᴾ ⚽",
+        "parent_id": 0
+    },
+    {
+        "category_id": "108",
+        "category_name": "AR| BEIN SPORTS ⁸ᴷ & ᴴᴰ ⚽",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1132",
+        "category_name": "AR| BEIN SPORTS ⁸ᴷ & SD ⚽",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1253",
+        "category_name": "AR| BEIN SPORTS ⁸ᴷ & ▼SD ⚽",
+        "parent_id": 0
+    },
+    {
+        "category_id": "349",
+        "category_name": "AR| BEIN SPORTS ⁸ᴷ & ʰᵉᵛᶜ ⚽",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1133",
+        "category_name": "AR| BEIN SPORTS ⁸ᴷ & ᴿᴬᵂ ⚽",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1102",
+        "category_name": "AR| BEIN SPORTS ⁸ᴷ & ᵀᴷ ⚽",
+        "parent_id": 0
+    },
+    {
+        "category_id": "782",
+        "category_name": "AR| BEIN SPORTS F ⚽",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1736",
+        "category_name": "AR| BEIN SPORTS F & AFC ⚽",
+        "parent_id": 0
+    },
+    {
+        "category_id": "780",
+        "category_name": "AR| BEIN SPORTS ˢˢ ⚽",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1789",
+        "category_name": "AR| BEIN SPORTS ᴮᴱ ⚽",
+        "parent_id": 0
+    },
+    {
+        "category_id": "346",
+        "category_name": "AR| BEIN SPORTS ◉ ⚽",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1653",
+        "category_name": "AR| BEIN SPORTS ᴺᴹ ⚽",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1654",
+        "category_name": "AR| BEIN SPORTS ᴺᴹ & ASIA ⚽",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1252",
+        "category_name": "AR| BEIN SPORTS SA ⚽",
+        "parent_id": 0
+    },
+    {
+        "category_id": "691",
+        "category_name": "AR| SPORT LQ ▼ رياضه ⚽️",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1339",
+        "category_name": "DE| PRIME ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1357",
+        "category_name": "DE| JOYN ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1268",
+        "category_name": "DE| WOW ENTERTAINMENT ᴴᴰ ᴰᴼᴸᴮʸ ᴬᵁᴰᴵᴼ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1344",
+        "category_name": "DE| WOW ENTERTAINMENT ᴿᴬᵂ ᴰᴼᴸᴮʸ ᴬᵁᴰᴵᴼ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1267",
+        "category_name": "DE| WOW SPORT ᴴᴰ ᴰᴼᴸᴮʸ ᴬᵁᴰᴵᴼ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1345",
+        "category_name": "DE| WOW SPORT ᴿᴬᵂ ᴰᴼᴸᴮʸ ᴬᵁᴰᴵᴼ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1353",
+        "category_name": "DE| RTL+ ᴿᴬᵂ ᴳᴼᴸᴰ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "667",
+        "category_name": "DE| SKY GO SPORT VIP",
+        "parent_id": 0
+    },
+    {
+        "category_id": "668",
+        "category_name": "DE| SKY GO CINEMA VIP",
+        "parent_id": 0
+    },
+    {
+        "category_id": "509",
+        "category_name": "DE| SKY HEVC",
+        "parent_id": 0
+    },
+    {
+        "category_id": "186",
+        "category_name": "DE| GENERAL HD/4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "513",
+        "category_name": "DE| SKY MOVIES HD/4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1534",
+        "category_name": "DE| NOW TV SPORTS PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "333",
+        "category_name": "DE| SPORT HD/4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1762",
+        "category_name": "DE| SKY SPORT AUSTRIA ⁴ᴷ & INF",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1761",
+        "category_name": "DE| SKY SPORT AUSTRIA HD/4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1137",
+        "category_name": "DE| BUNDESLIGA HD/4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1115",
+        "category_name": "DE| BUNDESLIGA REPLAY",
+        "parent_id": 0
+    },
+    {
+        "category_id": "2018",
+        "category_name": "DE| LEAGUES FOOTBALL PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "512",
+        "category_name": "DE| RTL+ PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1215",
+        "category_name": "DE| DYN PPV EXCLUSIVE",
+        "parent_id": 0
+    },
+    {
+        "category_id": "901",
+        "category_name": "DE| DYN PPV 4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1633",
+        "category_name": "DE| DAZN EXCLUSIVE ᴴᴰ/ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "433",
+        "category_name": "DE| DAZN PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "543",
+        "category_name": "DE| DAZN PPV SKY GO",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1593",
+        "category_name": "DE| FORMULA 1 PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1431",
+        "category_name": "DE| SPORT EUROPE PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1368",
+        "category_name": "DE| MAGENTA COLLECTION ᴿᴬᵂ ᴳᴼᴸᴰ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1816",
+        "category_name": "DE| MAGENTA COLLECTION SPORT ᴿᴬᵂ ᴳᴼᴸᴰ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "461",
+        "category_name": "DE| MAGENTA PPV ᴴᴰ ᴳᴼᴸᴰ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "980",
+        "category_name": "DE| DISCOVERY+ PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "334",
+        "category_name": "DE| KIDS HD/4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "335",
+        "category_name": "DE| DOCUMENTARY HD/4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "443",
+        "category_name": "DE| PRIME PPV",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1672",
+        "category_name": "DE| PRIME PPV ᴿᴬᵂ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1241",
+        "category_name": "DE| MAGENTA FILME 4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1255",
+        "category_name": "DE| MAGENTA SERIE 4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "545",
+        "category_name": "DE| Vodafone GO FILME 4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "500",
+        "category_name": "DE| SKY GO FILME PPV 4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "991",
+        "category_name": "DE| SKY MAX PPV 4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1049",
+        "category_name": "DE| PREMIUM PLAY PPV 4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1063",
+        "category_name": "DE| PLEX 4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "332",
+        "category_name": "DE| CINEMA PPV HD/4K",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1756",
+        "category_name": "DE| PARAMOUNT INF & ³⁸⁴⁰ᴾ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1757",
+        "category_name": "DE| APPLE+ INF & ³⁸⁴⁰ᴾ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1758",
+        "category_name": "DE| SKE SLECT INF & ³⁸⁴⁰ᴾ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1759",
+        "category_name": "DE| MAGENTA INF & ³⁸⁴⁰ᴾ",
+        "parent_id": 0
+    },
+    {
+        "category_id": "1760",
+        "category_name": "DE| SPOTIFY INF & ᴿᴬᵂ",
+        "parent_id": 0
+    }
+]
