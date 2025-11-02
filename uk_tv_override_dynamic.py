@@ -103,8 +103,8 @@ class UKTVOverrideProcessor:
                         except Exception as e:
                             print(f"Warning: Invalid ADD format on line {line_num}: {line} ({e})")
                     
-                    # Regular replace operation
-                    elif '=' in line:
+                    # Regular replace operation (only if NOT an ADD operation)
+                    elif '=' in line and not line.startswith('[ADD:'):
                         source_channel, replacement_spec = line.split('=', 1)
                         source_channel = source_channel.strip()
                         replacement_spec = replacement_spec.strip()
