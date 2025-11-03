@@ -21,6 +21,52 @@ import sys
 from urllib.parse import urljoin
 from datetime import datetime, timedelta
 
+def load_tv_logos():
+    """Load TV logos database for logo matching"""
+    tv_logos_file = "tv_logos.json"
+    tv_logos = {}
+    
+    if os.path.exists(tv_logos_file):
+        try:
+            with open(tv_logos_file, 'r', encoding='utf-8') as f:
+                logos_data = json.load(f)
+                
+            # Create a lookup dictionary: tvid -> url
+            for logo_entry in logos_data:
+                tvid = logo_entry.get('tvid')
+                url = logo_entry.get('url')
+                if tvid and url:
+                    # Handle cases where tvid might be a list
+                    if isinstance(tvid, list):
+                        # If it's a list, add all tvid values
+                        for tv_id in tvid:
+                            if tv_id and str(tv_id).strip():
+                                tv_logos[str(tv_id).strip()] = url
+                    else:
+                        # Single tvid value
+                        if str(tvid).strip():
+                            tv_logos[str(tvid).strip()] = url
+            
+            print(f"📋 Loaded {len(tv_logos)} TV logos for matching")
+            return tv_logos
+        except Exception as e:
+            print(f"⚠️  Warning: Could not load TV logos: {e}")
+    else:
+        print(f"⚠️  Warning: TV logos file not found: {tv_logos_file}")
+    
+    return {}
+
+def get_best_logo(original_logo, epg_id, tv_logos):
+    """Get the best logo: TV logos database match > original logo"""
+    # First priority: Match from TV logos database
+    if epg_id and epg_id in tv_logos:
+        matched_logo = tv_logos[epg_id]
+        print(f"🎯 Logo matched for {epg_id}: {matched_logo}")
+        return matched_logo
+    
+    # Fallback: Use original logo from API
+    return original_logo
+
 def load_config():
     """Load server configuration from file or prompt user"""
     config_file = "data/config/xtream_api_config.json"
@@ -236,30 +282,69 @@ def build_stream_url(config, stream_id, stream_type="live", extension="ts"):
     else:
         return f"{base_url}/live/{username}/{password}/{stream_id}.{extension}"
 
-def convert_to_m3u(channels, config, category_name="API Channels"):
+def convert_to_m3u(channels, config, category_name="API Channels", tv_logos=None):
     """Convert JSON channel data to M3U format"""
     
     if not channels:
         print("❌ No channels to convert")
         return None
     
+    # Load TV logos if not provided
+    if tv_logos is None:
+        tv_logos = load_tv_logos()
+    
     # M3U header
     m3u_content = ["#EXTM3U\n"]
     
     print(f"🔄 Converting {len(channels)} channels to M3U format...")
+    logo_matches = 0
     
     for channel in channels:
         try:
             # Extract channel info
             stream_id = channel.get('stream_id', '')
-            name = channel.get('name', 'Unknown Channel')
-            icon = channel.get('stream_icon', '')
+            raw_name = channel.get('name', 'Unknown Channel')
+            
+            # Clean channel name by removing decorative characters
+            name = raw_name
+            unwanted_chars = ['ᴿᴬᵂ', 'ᴴᴰ', '◉', 'HD', 'FHD', '4K']
+            for char in unwanted_chars:
+                name = name.replace(char, '')
+            # Clean up extra spaces
+            name = ' '.join(name.split())
+            
+            original_icon = channel.get('stream_icon', '')
             epg_id = channel.get('epg_channel_id', '')
             stream_type = channel.get('stream_type', 'live')
             category_id = channel.get('category_id', '')
             
+            # Generate tvg-id if not provided by API
+            if not epg_id:
+                # Create tvg-id from channel name
+                # Remove prefixes like "IN:", "UK:", "YP:" etc.
+                clean_name = name
+                prefixes = ['IN:', 'UK:', 'YP:', 'US:', 'CA:', 'AU:', 'DE:', 'FR:', 'ES:', 'IT:']
+                for prefix in prefixes:
+                    if clean_name.startswith(prefix):
+                        clean_name = clean_name[len(prefix):].strip()
+                        break
+                
+                # Remove special characters and convert to lowercase
+                clean_name = ''.join(c.lower() if c.isalnum() else '.' for c in clean_name)
+                # Remove multiple dots and trailing dots
+                clean_name = '.'.join(filter(None, clean_name.split('.')))
+                # Limit length and ensure it doesn't start/end with dots
+                epg_id = clean_name[:50].strip('.')
+                if not epg_id:  # Fallback to stream_id if name cleaning fails
+                    epg_id = f"stream.{stream_id}"
+            
             # Use individual category name if available, otherwise use the provided category_name
             channel_category = channel.get('_category_name', category_name)
+            
+            # Get the best logo (TV logos database > original)
+            icon = get_best_logo(original_icon, epg_id, tv_logos)
+            if icon != original_icon and icon:
+                logo_matches += 1
             
             # Build streaming URL
             stream_url = build_stream_url(config, stream_id, stream_type)
@@ -284,6 +369,9 @@ def convert_to_m3u(channels, config, category_name="API Channels"):
         except Exception as e:
             print(f"⚠️  Error processing channel {channel.get('name', 'Unknown')}: {e}")
             continue
+    
+    if logo_matches > 0:
+        print(f"🎯 Successfully matched {logo_matches} logos from TV logos database")
     
     return ''.join(m3u_content)
 
@@ -354,6 +442,10 @@ def main():
     """Main function"""
     print("🚀 Xtream Codes API to M3U Converter")
     print("=" * 50)
+    
+    # Load TV logos database for enhanced logo matching
+    tv_logos = load_tv_logos()
+    print(f"📺 Loaded {len(tv_logos)} TV logos for matching")
     
     # Check for force flag
     force_run = "--force" in sys.argv
@@ -505,7 +597,7 @@ def main():
                 print(f"\n📝 Creating M3U for {cat_name} with {len(all_channels)} total channels...")
                 
                 # Convert combined channels to M3U
-                m3u_content = convert_to_m3u(all_channels, config, cat_name)
+                m3u_content = convert_to_m3u(all_channels, config, cat_name, tv_logos)
                 
                 if m3u_content:
                     # Create filename for this category group
@@ -540,7 +632,8 @@ def main():
     
     # Convert to M3U
     m3u_content = convert_to_m3u(channels, config, 
-                                 category_name if 'category_name' in locals() else "API Channels")
+                                 category_name if 'category_name' in locals() else "API Channels",
+                                 tv_logos)
     
     if not m3u_content:
         print("❌ Failed to convert channels")
