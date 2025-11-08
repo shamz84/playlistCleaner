@@ -25,7 +25,7 @@
   },
   {
     "group_title": "UK| Kids",
-    "override_title": "KIDS",
+    "override_title": "Kids",
     "channel_count": 30,
     "exclude": "false",
     "order": 5
@@ -65,22 +65,22 @@
   },
   {
     "group_title": "UK| EPL PREMIER LEAGUE PPV ⱽᴵᴾ ᴿᴬᵂ",
-    "override_title": "EPL PPV",
+    "override_title": "EPL Live",
     "channel_count": 37,
     "exclude": "false",
     "order": 7
   },
   {
-    "group_title": "UK| HUB PREMIER",
-    "override_title": "PREMIER Sports",
-    "channel_count": 13,
+    "group_title": "UK| EPL PREMIER LEAGUE TEAMS",
+    "override_title": "EPL Live Teams",
+    "channel_count": 30,
     "exclude": "false",
     "order": 7
   },
   {
-    "group_title": "UK| EPL PREMIER LEAGUE TEAMS",
-    "override_title": "EPL PPV2",
-    "channel_count": 30,
+    "group_title": "UK| HUB PREMIER",
+    "override_title": "Premier Hub Sports",
+    "channel_count": 13,
     "exclude": "false",
     "order": 8
   },
@@ -88,6 +88,26 @@
     "group_title": "UK| SOCCER REPLAY ᴿᴬᵂ",
     "override_title": "EPL REPLAY",
     "channel_count": 108,
+    "exclude": "false",
+    "order": 9
+  },
+  {
+    "group_title": "UK| PPV EVENT",
+    "override_title": "PPV Events",
+    "channel_count": 69,
+    "exclude": "false",
+    "order": 9
+  },
+  {
+    "group_title": "UK| SKY SPORT+ PPV ᴿᴬᵂ",
+    "override_title": "SKY SPORT+",
+    "channel_count": 70,
+    "exclude": "false",
+    "order": 9
+  },
+  {
+    "group_title": "UK| TNT SPORT EVENT",
+    "channel_count": 19,
     "exclude": "false",
     "order": 9
   },
@@ -171,7 +191,7 @@
   },
   {
     "group_title": "UK| PAY PER VIEW PPV",
-    "override_title": "PAY PER VIEW PPV",
+    "override_title": "Pay Per View",
     "channel_count": 20,
     "exclude": "false",
     "order": 30
@@ -428,13 +448,6 @@
     "order": 143
   },
   {
-    "group_title": "UK| PPV EVENT",
-    "override_title": "PPV Events",
-    "channel_count": 69,
-    "exclude": "false",
-    "order": 144
-  },
-  {
     "group_title": "UK| PRIME PPV ᴿᴬᵂ",
     "override_title": "PRIME PPV",
     "channel_count": 50,
@@ -466,23 +479,10 @@
     "order": 151
   },
   {
-    "group_title": "UK| SKY SPORT+ PPV ᴿᴬᵂ",
-    "override_title": "SKY SPORT+",
-    "channel_count": 70,
-    "exclude": "false",
-    "order": 152
-  },
-  {
     "group_title": "UK| SKY MIX DOCS ᴿᴬᵂ",
     "channel_count": 17,
     "exclude": "false",
     "order": 156
-  },
-  {
-    "group_title": "UK| TNT SPORT EVENT",
-    "channel_count": 19,
-    "exclude": "false",
-    "order": 165
   },
   {
     "group_title": "UK| TRILLER TV PPV",
@@ -849,12 +849,6 @@
     "order": 304
   },
   {
-    "group_title": "UK| VISION+",
-    "channel_count": 115,
-    "exclude": "false",
-    "order": 305
-  },
-  {
     "group_title": "CA| VICTORY+ PPV",
     "channel_count": 101,
     "exclude": "false",
@@ -873,7 +867,7 @@
     "order": 310
   },
   {
-    "group_title": "BTN+ PPV",
+    "group_title": "BTN+",
     "channel_count": 51,
     "exclude": "false",
     "order": 311
@@ -915,12 +909,6 @@
     "order": 324
   },
   {
-    "group_title": "24/7 Oneplay",
-    "channel_count": 125,
-    "exclude": "false",
-    "order": 325
-  },
-  {
     "group_title": "4K Channels",
     "channel_count": 81,
     "exclude": "false",
@@ -943,48 +931,6 @@
     "channel_count": 1,
     "exclude": "false",
     "order": 333
-  },
-  {
-    "group_title": "UK| Entertainment ᴳᴬᴺᴶᴬ",
-    "channel_count": 239,
-    "exclude": "false",
-    "order": 346
-  },
-  {
-    "group_title": "UK| Sky Channels ᴳᴬᴺᴶᴬ",
-    "channel_count": 116,
-    "exclude": "false",
-    "order": 347
-  },
-  {
-    "group_title": "UK| Prime Channels",
-    "channel_count": 112,
-    "exclude": "false",
-    "order": 348
-  },
-  {
-    "group_title": "UK| Kids",
-    "channel_count": 55,
-    "exclude": "false",
-    "order": 349
-  },
-  {
-    "group_title": "BTN+",
-    "channel_count": 51,
-    "exclude": "false",
-    "order": 350
-  },
-  {
-    "group_title": "UK| News",
-    "channel_count": 32,
-    "exclude": "false",
-    "order": 351
-  },
-  {
-    "group_title": "UK| ULTIMATE POOL PPV",
-    "channel_count": 11,
-    "exclude": "false",
-    "order": 352
   },
   {
     "group_title": "ASIA| UK HEVC",
@@ -1497,6 +1443,12 @@
     "order": 301
   },
   {
+    "group_title": "UK| VISION+",
+    "channel_count": 115,
+    "exclude": "true",
+    "order": 305
+  },
+  {
     "group_title": "Sling TV Channels",
     "channel_count": 840,
     "exclude": "true",
@@ -1531,6 +1483,12 @@
     "channel_count": 208,
     "exclude": "true",
     "order": 322
+  },
+  {
+    "group_title": "24/7 Oneplay",
+    "channel_count": 125,
+    "exclude": "true",
+    "order": 325
   },
   {
     "group_title": "🇦🇺 TV Guide (Australia)",
@@ -1591,5 +1549,41 @@
     "channel_count": 1,
     "exclude": "true",
     "order": 345
+  },
+  {
+    "group_title": "High School Sports",
+    "channel_count": 101,
+    "exclude": "false",
+    "order": 346
+  },
+  {
+    "group_title": "UK| Entertainment ᴳᴬᴺᴶᴬ",
+    "channel_count": 239,
+    "exclude": "false",
+    "order": 347
+  },
+  {
+    "group_title": "UK| News",
+    "channel_count": 32,
+    "exclude": "false",
+    "order": 348
+  },
+  {
+    "group_title": "UK| Prime Channels",
+    "channel_count": 112,
+    "exclude": "false",
+    "order": 349
+  },
+  {
+    "group_title": "UK| Sky Channels ᴳᴬᴺᴶᴬ",
+    "channel_count": 116,
+    "exclude": "false",
+    "order": 350
+  },
+  {
+    "group_title": "UK| ULTIMATE POOL PPV",
+    "channel_count": 11,
+    "exclude": "false",
+    "order": 351
   }
 ]

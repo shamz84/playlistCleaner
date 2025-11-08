@@ -24,14 +24,8 @@
     "order": 3
   },
   {
-    "group_title": "24/7 Other",
-    "channel_count": 2019,
-    "exclude": "true",
-    "order": 4
-  },
-  {
     "group_title": "UK| Kids",
-    "override_title": "KIDS",
+    "override_title": "Kids",
     "channel_count": 30,
     "exclude": "false",
     "order": 5
@@ -104,7 +98,6 @@
     "exclude": "false",
     "order": 9
   },
-
   {
     "group_title": "UK| SKY SPORT+ PPV ᴿᴬᵂ",
     "override_title": "SKY SPORT+",
@@ -178,9 +171,23 @@
     "order": 23
   },
   {
-    "group_title": "UK| GENERAL ᴴᴰ/ᴿᴬᵂ",
-    "override_title": "GENERAL Backup",
-    "channel_count": 190,
+    "group_title": "UK| Entertainment ᴳᴬᴺᴶᴬ",
+    "override_title": "Entertainment backup",
+    "channel_count": 239,
+    "exclude": "false",
+    "order": 25
+  },
+  {
+    "group_title": "UK| News",
+    "override_title": "News",
+    "channel_count": 32,
+    "exclude": "false",
+    "order": 25
+  },
+  {
+    "group_title": "UK| Prime Channels",
+    "override_title": "Prime Channels",
+    "channel_count": 112,
     "exclude": "false",
     "order": 25
   },
@@ -198,7 +205,7 @@
   },
   {
     "group_title": "UK| PAY PER VIEW PPV",
-    "override_title": "PAY PER VIEW PPV",
+    "override_title": "Pay Per View",
     "channel_count": 20,
     "exclude": "false",
     "order": 30
@@ -777,12 +784,6 @@
     "order": 251
   },
   {
-    "group_title": "UK| TNT SPORT ᴿᴬᵂ ⱽᴵᴾ ᴰᴼᴸᴮʸ ᴬᵁᴰᴵᴼ",
-    "channel_count": 15,
-    "exclude": "true",
-    "order": 254
-  },
-  {
     "group_title": "CA| KIDS ᴴᴰ/ᴿᴬᵂ ⁶⁰ᶠᵖˢ",
     "channel_count": 14,
     "exclude": "false",
@@ -838,12 +839,6 @@
     "order": 300
   },
   {
-    "group_title": "FLO ⱽᴵᴾ",
-    "channel_count": 991,
-    "exclude": "true",
-    "order": 301
-  },
-  {
     "group_title": "Tubi TV Channels",
     "channel_count": 153,
     "exclude": "false",
@@ -868,12 +863,6 @@
     "order": 304
   },
   {
-    "group_title": "UK| VISION+",
-    "channel_count": 115,
-    "exclude": "false",
-    "order": 305
-  },
-  {
     "group_title": "CA| VICTORY+ PPV",
     "channel_count": 101,
     "exclude": "false",
@@ -892,7 +881,7 @@
     "order": 310
   },
   {
-    "group_title": "BTN+ PPV",
+    "group_title": "BTN+",
     "channel_count": 51,
     "exclude": "false",
     "order": 311
@@ -902,12 +891,6 @@
     "channel_count": 12,
     "exclude": "false",
     "order": 315
-  },
-  {
-    "group_title": "Sling TV Channels",
-    "channel_count": 840,
-    "exclude": "true",
-    "order": 316
   },
   {
     "group_title": "Prime Channels",
@@ -928,12 +911,6 @@
     "order": 319
   },
   {
-    "group_title": "DirecTV GO Channels",
-    "channel_count": 313,
-    "exclude": "true",
-    "order": 320
-  },
-  {
     "group_title": "Tubi Channels",
     "channel_count": 153,
     "exclude": "false",
@@ -944,12 +921,6 @@
     "channel_count": 135,
     "exclude": "false",
     "order": 324
-  },
-  {
-    "group_title": "24/7 Oneplay",
-    "channel_count": 125,
-    "exclude": "true",
-    "order": 325
   },
   {
     "group_title": "4K Channels",
@@ -981,7 +952,7 @@
     "exclude": "true",
     "order": 1
   },
-    {
+  {
     "group_title": "ASIA| UK",
     "channel_count": 14,
     "exclude": "true",
@@ -998,6 +969,12 @@
     "channel_count": 197,
     "exclude": "true",
     "order": 3
+  },
+  {
+    "group_title": "24/7 Other",
+    "channel_count": 2019,
+    "exclude": "true",
+    "order": 4
   },
   {
     "group_title": "NBC Network (Local Affiliates)",
@@ -1046,6 +1023,13 @@
     "channel_count": 155,
     "exclude": "true",
     "order": 20
+  },
+  {
+    "group_title": "UK| GENERAL ᴴᴰ/ᴿᴬᵂ",
+    "override_title": "GENERAL Backup",
+    "channel_count": 190,
+    "exclude": "true",
+    "order": 25
   },
   {
     "group_title": "NBA League Pass",
@@ -1432,6 +1416,12 @@
     "order": 253
   },
   {
+    "group_title": "UK| TNT SPORT ᴿᴬᵂ ⱽᴵᴾ ᴰᴼᴸᴮʸ ᴬᵁᴰᴵᴼ",
+    "channel_count": 15,
+    "exclude": "true",
+    "order": 254
+  },
+  {
     "group_title": "B/R Max Sports",
     "channel_count": 13,
     "exclude": "true",
@@ -1468,6 +1458,36 @@
     "order": 274
   },
   {
+    "group_title": "FLO ⱽᴵᴾ",
+    "channel_count": 991,
+    "exclude": "true",
+    "order": 301
+  },
+  {
+    "group_title": "UK| VISION+",
+    "channel_count": 115,
+    "exclude": "true",
+    "order": 305
+  },
+  {
+    "group_title": "Sling TV Channels",
+    "channel_count": 840,
+    "exclude": "true",
+    "order": 316
+  },
+  {
+    "group_title": "DirecTV GO Channels",
+    "channel_count": 313,
+    "exclude": "true",
+    "order": 320
+  },
+  {
+    "group_title": "🇨🇦 TV Guide (Canada)",
+    "channel_count": 214,
+    "exclude": "true",
+    "order": 321
+  },
+  {
     "group_title": "🇨🇦 TV Guide (Canada)",
     "channel_count": 214,
     "exclude": "true",
@@ -1478,6 +1498,18 @@
     "channel_count": 208,
     "exclude": "true",
     "order": 322
+  },
+  {
+    "group_title": "DirecTV GO Local Channels",
+    "channel_count": 208,
+    "exclude": "true",
+    "order": 322
+  },
+  {
+    "group_title": "24/7 Oneplay",
+    "channel_count": 125,
+    "exclude": "true",
+    "order": 325
   },
   {
     "group_title": "🇦🇺 TV Guide (Australia)",
@@ -1490,18 +1522,6 @@
     "channel_count": 551,
     "exclude": "true",
     "order": 328
-  },
-  {
-    "group_title": "🇨🇦 TV Guide (Canada)",
-    "channel_count": 214,
-    "exclude": "true",
-    "order": 321
-  },
-  {
-    "group_title": "DirecTV GO Local Channels",
-    "channel_count": 208,
-    "exclude": "true",
-    "order": 322
   },
   {
     "group_title": "🇦🇺 TV Guide (Australia)",
@@ -1550,5 +1570,23 @@
     "channel_count": 1,
     "exclude": "true",
     "order": 345
+  },
+  {
+    "group_title": "High School Sports",
+    "channel_count": 101,
+    "exclude": "true",
+    "order": 346
+  },
+  {
+    "group_title": "UK| Sky Channels ᴳᴬᴺᴶᴬ",
+    "channel_count": 116,
+    "exclude": "true",
+    "order": 350
+  },
+  {
+    "group_title": "UK| ULTIMATE POOL PPV",
+    "channel_count": 11,
+    "exclude": "true",
+    "order": 351
   }
 ]

@@ -318,11 +318,11 @@ def filter_m3u_playlist_with_unknown_inclusion(input_file, output_file, include_
                 count = unknown_groups.get(group, 0)
                 print(f"  • {group} ({count} channels)")
         
-        return True
+        return True, auto_included_groups, auto_excluded_groups, unknown_groups
         
     except Exception as e:
         print(f"❌ Error writing output file: {e}")
-        return False
+        return False, set(), set(), {}
 
 def update_config_with_new_groups(auto_included_groups, auto_excluded_groups, unknown_groups_info):
     """Optionally update the configuration file with the new groups found."""
@@ -330,8 +330,9 @@ def update_config_with_new_groups(auto_included_groups, auto_excluded_groups, un
         return
     
     try:
-        # Load current config
-        with open('group_titles_with_flags.json', 'r', encoding='utf-8') as f:
+        # Load current config using the same path resolution as the main script
+        config_file = find_config_file('group_titles_with_flags.json')
+        with open(config_file, 'r', encoding='utf-8') as f:
             config = json.load(f)
         
         # Find max order
@@ -365,7 +366,7 @@ def update_config_with_new_groups(auto_included_groups, auto_excluded_groups, un
         
         # Save as a new config file for review
         new_config = config + new_entries
-        backup_file = 'group_titles_with_flags_updated.json'
+        backup_file = 'data/config/group_titles_with_flags_updated.json'
         
         with open(backup_file, 'w', encoding='utf-8') as f:
             json.dump(new_config, f, indent=2, ensure_ascii=False)
@@ -407,7 +408,7 @@ def main():
         return
     
     # Run enhanced filtering
-    success = filter_m3u_playlist_with_unknown_inclusion(
+    success, auto_included_groups, auto_excluded_groups, unknown_groups = filter_m3u_playlist_with_unknown_inclusion(
         input_file, output_file, include_groups, exclude_groups, group_overrides, auto_include_unknown=True
     )
     
@@ -415,9 +416,14 @@ def main():
         print(f"\n✅ Enhanced filtering completed successfully!")
         print(f"📁 Output saved to: {output_file}")
         
+        # Update configuration with new groups if any were found
+        if auto_included_groups or auto_excluded_groups:
+            update_config_with_new_groups(auto_included_groups, auto_excluded_groups, unknown_groups)
+        
         # Ask about updating config
         print(f"\n💡 To make these changes permanent, review and replace:")
         print(f"   group_titles_with_flags.json with group_titles_with_flags_updated.json")
+        
     else:
         print(f"\n❌ Filtering failed!")
 
