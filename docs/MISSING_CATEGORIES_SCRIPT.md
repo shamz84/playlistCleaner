@@ -64,3 +64,4 @@ Do you want to remove these missing categories from the configuration? (y/n): y
 3. Categories are considered "missing" if their exact group title isn't found in the playlist
 4. The script doesn't modify any playlist files, only the configuration
 5. If you accidentally remove categories you want to keep, you can restore from the backup
+
