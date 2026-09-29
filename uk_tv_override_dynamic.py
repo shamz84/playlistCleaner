@@ -148,21 +148,49 @@ class UKTVOverrideProcessor:
             else:
                 i += 1
     
-    def find_replacement_entry(self, replacement_spec: str) -> PlaylistEntry:
-        """Find replacement entry by group+channel specification"""
+    def find_replacement_entry(self, replacement_spec: str) -> Tuple[PlaylistEntry, str]:
+        """Find replacement entry by group+channel specification or return None for stream URLs
+        Returns: (PlaylistEntry or None, type_str) where type_str is 'channel', 'stream', or 'custom'
+        """
+        # Check if this is a stream URL specification
+        if replacement_spec.startswith('STREAM:'):
+            # Return None to signal stream URL replacement
+            return (None, 'stream')
+        
+        # Check if this is a full EXTINF+URL specification (contains | separator and starts with #EXTINF:)
+        if '|' in replacement_spec and replacement_spec.startswith('#EXTINF:'):
+            # Return None to signal custom EXTINF+URL replacement
+            return (None, 'custom')
+        
+        # Check if this is channel_name|stream_url format (contains | but doesn't start with #EXTINF:)
+        if '|' in replacement_spec and not replacement_spec.startswith('#EXTINF:'):
+            # Parse channel_name and stream_url
+            channel_name, stream_url = replacement_spec.split('|', 1)
+            channel_name = channel_name.strip()
+            stream_url = stream_url.strip()
+            
+            # Find the channel with matching name AND stream URL
+            for group_channel_id, entry in self.playlist_entries.items():
+                if entry.channel_name == channel_name and entry.url_line == stream_url:
+                    return (entry, 'channel')
+            
+            # If not found, return None
+            print(f"Warning: No channel found with name '{channel_name}' and stream URL '{stream_url}'")
+            return (None, 'channel')
+        
         # Parse replacement_spec: could be "group-title||channel-name" or just "channel-name"
         if '||' in replacement_spec:
             # Full specification with group-title
             target_id = replacement_spec
+            entry = self.playlist_entries.get(target_id)
+            return (entry, 'channel')
         else:
             # Just channel name - search all groups for matching channel name
             target_channel = replacement_spec
             for group_channel_id, entry in self.playlist_entries.items():
                 if entry.channel_name == target_channel:
-                    return entry
-            return None
-        
-        return self.playlist_entries.get(target_id)
+                    return (entry, 'channel')
+            return (None, 'channel')
     
     def _calculate_addition_position(self, position_spec: str, uk_entries_positions: List[Tuple[int, PlaylistEntry]], playlist_entries) -> int:
         """Calculate where to insert a new channel based on position specification"""
@@ -314,22 +342,60 @@ class UKTVOverrideProcessor:
                         # Check if this entry should be replaced
                         if entry.group_channel_id in self.overrides:
                             replacement_spec = self.overrides[entry.group_channel_id]
-                            replacement_entry = self.find_replacement_entry(replacement_spec)
+                            replacement_entry, replacement_type = self.find_replacement_entry(replacement_spec)
                             
-                            if replacement_entry:
-                                # Create a modified EXTINF line that preserves the original group-title
-                                # but uses the replacement entry's other attributes
-                                modified_extinf = self._create_hybrid_extinf(entry, replacement_entry)
-                                
-                                output_lines.append(modified_extinf)
-                                output_lines.append(replacement_entry.url_line)
-                                replacements_made += 1
-                                print(f"Replaced: {entry.channel_name} -> {replacement_entry.channel_name} (preserved group-title)")
-                            else:
-                                # Replacement not found, keep original
+                            if replacement_type == 'stream':
+                                # Stream URL replacement only
+                                stream_url = replacement_spec[7:]  # Remove 'STREAM:' prefix
+                                # Keep original EXTINF line, only replace URL
                                 output_lines.append(line)
-                                output_lines.append(url_line)
-                                print(f"Warning: Replacement '{replacement_spec}' not found for {entry.channel_name}")
+                                output_lines.append(stream_url)
+                                replacements_made += 1
+                                print(f"Replaced stream URL for: {entry.channel_name}")
+                            
+                            elif replacement_type == 'custom':
+                                # Custom EXTINF+URL replacement
+                                if '|' in replacement_spec:
+                                    extinf_line, url_line_new = replacement_spec.split('|', 1)
+                                    extinf_line = extinf_line.strip()
+                                    url_line_new = url_line_new.strip()
+                                    
+                                    # Ensure the group-title is preserved in the custom EXTINF
+                                    if 'group-title=' not in extinf_line and entry.group_title:
+                                        # Add group-title if missing
+                                        extinf_line = extinf_line.rstrip(',') + f' group-title="{entry.group_title}",'
+                                    else:
+                                        # Replace group-title to ensure it matches original
+                                        pattern = r'group-title="[^"]*"'
+                                        replacement = f'group-title="{entry.group_title}"'
+                                        extinf_line = re.sub(pattern, replacement, extinf_line)
+                                    
+                                    output_lines.append(extinf_line)
+                                    output_lines.append(url_line_new)
+                                    replacements_made += 1
+                                    print(f"Replaced with custom EXTINF: {entry.channel_name}")
+                                else:
+                                    # Malformed custom spec, keep original
+                                    output_lines.append(line)
+                                    output_lines.append(url_line)
+                                    print(f"Warning: Custom replacement missing '|' separator for {entry.channel_name}")
+                            
+                            elif replacement_type == 'channel':
+                                # Channel name replacement
+                                if replacement_entry:
+                                    # Create a modified EXTINF line that preserves the original group-title
+                                    # but uses the replacement entry's other attributes
+                                    modified_extinf = self._create_hybrid_extinf(entry, replacement_entry)
+                                    
+                                    output_lines.append(modified_extinf)
+                                    output_lines.append(replacement_entry.url_line)
+                                    replacements_made += 1
+                                    print(f"Replaced: {entry.channel_name} -> {replacement_entry.channel_name} (preserved group-title)")
+                                else:
+                                    # Replacement not found, keep original
+                                    output_lines.append(line)
+                                    output_lines.append(url_line)
+                                    print(f"Warning: Replacement '{replacement_spec}' not found for {entry.channel_name}")
                         else:
                             # No replacement configured, keep original
                             output_lines.append(line)
