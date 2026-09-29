@@ -27,38 +27,41 @@ except ImportError:
 # If modifying these scopes, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/drive.file']
 
+
+def resolve_existing_path(paths, fallback=None):
+    """Return the first existing path from a precedence-ordered list."""
+    return next((path for path in paths if os.path.exists(path)), fallback)
+
+
 class GoogleDriveUploader:
     def __init__(self, credentials_file='gdrive_credentials.json', token_file='gdrive_token.json'):
         """Initialize the Google Drive uploader"""
-        # Always set credentials_file first
-        config_creds = os.path.join('config', credentials_file)
-        if os.path.exists(config_creds):
-            self.credentials_file = config_creds
-            print(f"📁 Using credentials from config folder: {config_creds}")
-        elif os.path.exists(credentials_file):
-            self.credentials_file = credentials_file
-            print(f"📁 Using credentials from root folder: {credentials_file}")
-        else:
-            self.credentials_file = credentials_file  # Will fail later with proper error message
+        credentials_paths = [
+            os.path.join('data', 'config', credentials_file),
+            os.path.join('config', credentials_file),
+            credentials_file,
+        ]
+        self.credentials_file = resolve_existing_path(credentials_paths, credentials_paths[0])
+        if os.path.exists(self.credentials_file):
+            print(f"📁 Using credentials from: {self.credentials_file}")
         
         # Check for token file (contains both credentials and tokens)
-        data_config_token = os.path.join('data', 'config', token_file)
-        config_token = os.path.join('config', token_file)
-        if os.path.exists(data_config_token):
-            self.token_file = data_config_token
-            print(f"📁 Using token from data/config folder: {data_config_token}")
-        elif os.path.exists(config_token):
-            self.token_file = config_token
-            print(f"📁 Using token from config folder: {config_token}")
-        elif os.path.exists(token_file):
-            self.token_file = token_file
-            print(f"📁 Using token from root folder: {token_file}")
-        else:
-            self.token_file = token_file
+        token_paths = [
+            os.path.join('data', 'config', token_file),
+            os.path.join('config', token_file),
+            token_file,
+        ]
+        self.token_file = resolve_existing_path(token_paths, token_paths[0])
+        if os.path.exists(self.token_file):
+            print(f"📁 Using token from: {self.token_file}")
         
         # Check for writable token file (container environment)
-        writable_token = 'gdrive_token_writable.json'
-        if os.path.exists(writable_token):
+        writable_token_paths = [
+            os.path.join('data', 'config', 'gdrive_token_writable.json'),
+            'gdrive_token_writable.json',
+        ]
+        writable_token = resolve_existing_path(writable_token_paths)
+        if writable_token:
             self.token_file = writable_token
             print(f"📁 Using writable token file: {writable_token}")
         # Don't override if we already found a valid token file
@@ -501,22 +504,18 @@ class GoogleDriveUploader:
             print(f"❌ Error listing files: {error}")
             return []
 
-def create_config_template():
+def create_config_template(config_file='data/config/gdrive_config.json'):
     """Create a configuration template"""
     config = {
         "default_folder": "PlaylistBackups",
         "auto_create_folders": True,
         "overwrite_existing": True,
-        "backup_files": [
-            "filtered_playlist_final.m3u",
-            "8k_*.m3u",
-            "manual_download.m3u"
-        ]
+        "backup_files": []
     }
     
-    # Create config folder if it doesn't exist
-    os.makedirs("config", exist_ok=True)
-    config_file = "config/gdrive_config.json"
+    config_dir = os.path.dirname(config_file)
+    if config_dir:
+        os.makedirs(config_dir, exist_ok=True)
     
     with open(config_file, 'w', encoding='utf-8') as f:
         json.dump(config, f, indent=2)
@@ -565,14 +564,13 @@ def main():
     if sys.argv[1] == "--backup":
         print("💾 Starting playlist backup...")
         
-        # Load or create config - check config folder first, then root
-        config_file = None
-        config_paths = ["config/gdrive_config.json", "gdrive_config.json"]
-        
-        for path in config_paths:
-            if os.path.exists(path):
-                config_file = path
-                break
+        # Load or create config - prefer the current data/config location.
+        config_paths = [
+            "data/config/gdrive_config.json",
+            "config/gdrive_config.json",
+            "gdrive_config.json",
+        ]
+        config_file = resolve_existing_path(config_paths)
         
         if config_file:
             print(f"📁 Using config from: {config_file}")
@@ -581,7 +579,7 @@ def main():
         else:
             print("⚠️  Configuration not found, creating template...")
             config = create_config_template()
-            config_file = "config/gdrive_config.json"
+            config_file = "data/config/gdrive_config.json"
         
         # Get or create backup folder
         folder_name = config.get('default_folder', 'PlaylistBackups')

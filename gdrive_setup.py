@@ -73,7 +73,7 @@ python gdrive_setup.py --install
 3. Choose "Desktop application"
 4. Name it "Playlist Uploader"
 5. Download the JSON file
-6. Rename to "gdrive_credentials.json" and place in project folder
+6. Rename to "gdrive_credentials.json" and place in data/config/
 
 ## 4. First-Time Authentication
 Run:
@@ -94,9 +94,9 @@ python upload_to_gdrive.py --backup
 ```
 
 ## Files Created:
-- gdrive_credentials.json (your OAuth credentials - place in config folder)
-- gdrive_token.json (authentication token - auto-generated)
-- config/gdrive_config.json (backup configuration)
+- data/config/gdrive_credentials.json (your OAuth credentials)
+- data/config/gdrive_token.json (authentication token - auto-generated)
+- data/config/gdrive_config.json (backup configuration)
 """
     
     with open("GDRIVE_SETUP.md", "w", encoding="utf-8") as f:
@@ -106,29 +106,30 @@ python upload_to_gdrive.py --backup
 
 def check_credentials():
     """Check if Google Drive credentials are set up"""
-    # Check config folder first, then root
-    config_creds = "config/gdrive_credentials.json"
-    root_creds = "gdrive_credentials.json"
-    
-    if os.path.exists(config_creds):
-        print(f"✅ gdrive_credentials.json found in config folder: {config_creds}")
-        return True
-    elif os.path.exists(root_creds):
-        print(f"✅ gdrive_credentials.json found in root folder: {root_creds}")
-        print("💡 Consider moving to config/gdrive_credentials.json for better organization")
-        return True
-    else:
-        print("❌ gdrive_credentials.json not found")
-        print("💡 You need to download OAuth credentials from Google Cloud Console")
-        print("📁 Place the file in either:")
-        print("   - config/gdrive_credentials.json (recommended)")
-        print("   - gdrive_credentials.json (root folder)")
-        return False
+    credential_paths = [
+        "data/config/gdrive_credentials.json",
+        "config/gdrive_credentials.json",
+        "gdrive_credentials.json",
+    ]
+
+    for credentials_path in credential_paths:
+        if os.path.exists(credentials_path):
+            print(f"✅ gdrive_credentials.json found: {credentials_path}")
+            return True
+
+    print("❌ gdrive_credentials.json not found")
+    print("💡 Download OAuth credentials from Google Cloud Console and place them in:")
+    print("   - data/config/gdrive_credentials.json (recommended)")
+    print("   - config/gdrive_credentials.json or repository root (legacy fallback)")
+    return False
 
 def check_config():
     """Check if Google Drive configuration exists"""
-    # Check config folder first, then root
-    config_paths = ["config/gdrive_config.json", "gdrive_config.json"]
+    config_paths = [
+        "data/config/gdrive_config.json",
+        "config/gdrive_config.json",
+        "gdrive_config.json",
+    ]
     
     for config_file in config_paths:
         if os.path.exists(config_file):
@@ -138,8 +139,6 @@ def check_config():
                 print(f"✅ gdrive_config.json found: {config_file}")
                 print(f"   Default folder: {config.get('default_folder', 'Not set')}")
                 print(f"   Backup files: {len(config.get('backup_files', []))} configured")
-                if config_file == "gdrive_config.json":
-                    print("💡 Consider moving to config/gdrive_config.json for better organization")
                 return True
             except Exception as e:
                 print(f"❌ gdrive_config.json invalid at {config_file}: {e}")
@@ -147,8 +146,8 @@ def check_config():
     
     print("❌ gdrive_config.json not found")
     print("💡 Place the file in either:")
-    print("   - config/gdrive_config.json (recommended)")
-    print("   - gdrive_config.json (root folder)")
+    print("   - data/config/gdrive_config.json (recommended)")
+    print("   - config/gdrive_config.json or repository root (legacy fallback)")
     return False
 
 def main():

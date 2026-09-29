@@ -4,6 +4,7 @@ This folder contains the current operating guides and an archive of older migrat
 
 ## Start here
 
+- [Work handoff](HANDOFF.md) — current repository state, recent documentation work, known issues, and suggested next steps.
 - [System and host run guide](README_Complete_System.md) — pipeline stages, setup, paths, safe commands, and validation.
 - [Docker deployment status and commands](DOCKER_DEPLOYMENT.md) — image build and container caveats. The checked-in Compose examples are not currently reliable as-is.
 

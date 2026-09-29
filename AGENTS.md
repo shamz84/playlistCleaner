@@ -32,7 +32,7 @@ The full run makes network requests for API conversion and download. Pipeline st
 
 Docker is the deployment target. Build from the repository root with `docker build -t playlist-processor:latest .`. The current host Python command is the reliable run path; Docker direct-run guidance and known limitations are in `docs/DOCKER_DEPLOYMENT.md`. Checked-in Compose examples still contain mounts that do not match this checkout's `data/config/` layout, the entrypoint does not expose `--skip-api`, and its skipped-download preflight checks the wrong location. Review mounts and preflight behavior before any container run. QNAP-specific deployment is not maintained.
 
-The Drive uploader does not consistently discover config under `data/config/`: OAuth credentials and the backup config search `config/` then repository root; token discovery includes `data/config/`. The container entrypoint creates root-level config links, but native lookup differs. Keep Drive upload disabled unless the actual config/auth paths have been verified.
+The Drive uploader and setup checker search `data/config/` first for OAuth credentials and backup config, with legacy `config/` and repository-root fallbacks; token lookup also checks the current config directory. The container entrypoint creates compatibility links for mounted configs. Keep Drive upload disabled unless the intended auth/config files and upload patterns have been verified.
 
 There is no established automated test suite. Validate config edits as JSON and use focused script checks or a user-approved pipeline run. `verify_results.py` is a historical diagnostic with hard-coded expectations; do not treat it as a general test gate without checking that those expectations match current configuration.
 
