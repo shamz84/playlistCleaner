@@ -1,5 +1,7 @@
 # Google Drive Authentication in Containers
 
+> Archived reference only: paths and setup steps below are historical and have not been validated against the current pipeline. See [current Drive guidance](../README_GoogleDrive.md).
+
 ## 🎯 **Important Update**
 
 The original `Dockerfile` **already includes full Google Drive support**! This guide provides additional container authentication strategies, but the basic functionality is available in the main Dockerfile.

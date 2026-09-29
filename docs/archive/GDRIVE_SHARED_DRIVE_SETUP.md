@@ -1,5 +1,7 @@
 # Google Drive Service Account Setup - SOLUTION REQUIRED
 
+> Archived troubleshooting record only. Verify current service-account support and permissions before using any steps below; see [current Drive guidance](../README_GoogleDrive.md).
+
 ## Current Status ✅
 - ✅ Service account is properly configured 
 - ✅ Authentication is working correctly

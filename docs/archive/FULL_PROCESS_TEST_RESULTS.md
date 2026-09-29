@@ -1,5 +1,7 @@
 # 🎉 FULL PROCESS TEST RESULTS
 
+> Historical test snapshot only. Results and paths below describe an earlier checkout and do not validate the current pipeline. See [the current pipeline guide](../README_Complete_System.md).
+
 ## Test Overview
 **Date**: August 16, 2025 at 11:41:04  
 **Test Type**: Complete pipeline with Google Drive backup  

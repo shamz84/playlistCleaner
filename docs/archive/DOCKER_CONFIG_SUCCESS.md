@@ -1,5 +1,7 @@
 # 🎉 Docker Image Configuration - SUCCESS!
 
+> Historical test snapshot only. The reported mounts and success claims do not establish current deployment readiness. See [current Docker guidance](../DOCKER_DEPLOYMENT.md).
+
 ## ✅ Test Results Summary
 
 **Date**: August 11, 2025  

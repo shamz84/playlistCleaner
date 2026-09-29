@@ -1,5 +1,7 @@
 # 🐳 Podman Container Test Results - Post Refactor
 
+> Historical test snapshot only. These results do not validate the current Docker deployment. See [current container guidance](../DOCKER_DEPLOYMENT.md).
+
 ## Test Overview
 **Date**: August 16, 2025  
 **Test Type**: Container functionality validation after configuration refactor  

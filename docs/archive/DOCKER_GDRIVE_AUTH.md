@@ -1,5 +1,7 @@
 # Docker Google Drive Authentication Guide
 
+> Archived reference only: paths and setup steps below are historical and have not been validated against the current pipeline. See [current Drive guidance](../README_GoogleDrive.md).
+
 ## Problem
 OAuth 2.0 authentication requires a browser, but Docker containers run headless without GUI access.
 

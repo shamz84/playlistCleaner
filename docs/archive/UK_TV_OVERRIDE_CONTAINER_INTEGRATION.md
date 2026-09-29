@@ -1,5 +1,7 @@
 # UK TV Override Container Integration
 
+> Archived integration record only; paths and outputs below may not match the current pipeline. See [current UK override guidance](../UK_TV_Override_Dynamic_README.md).
+
 ## Overview
 Updated Docker container configuration to include the UK TV Override system functionality.
 

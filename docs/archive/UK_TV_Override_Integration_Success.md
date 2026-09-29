@@ -1,5 +1,7 @@
 # UK TV Override Integration - Complete Success!
 
+> Historical integration report only; it is not a current test result. See [current UK override guidance](../UK_TV_Override_Dynamic_README.md).
+
 ## ✅ **Successfully Integrated UK TV Override into Enhanced Pipeline**
 
 The UK TV Guide Override system has been successfully integrated into the enhanced playlist processing pipeline (`process_playlist_complete_enhanced.py`).

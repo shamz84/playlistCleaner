@@ -1,5 +1,7 @@
 # Google Drive Config Migration Summary
 
+> Historical migration record only; path claims below may not match current code. See [current Drive guidance](../README_GoogleDrive.md).
+
 ## Overview
 Successfully migrated Google Drive configuration from root directory to `config/` folder for better organization and consistency with other configuration files.
 

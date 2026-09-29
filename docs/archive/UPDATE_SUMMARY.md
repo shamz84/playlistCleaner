@@ -1,5 +1,7 @@
 # System Update Summary - Downloaded File Integration
 
+> Historical change summary only; descriptions below refer to an earlier implementation. See [the current pipeline guide](../README_Complete_System.md).
+
 ## 🎯 Changes Made
 
 ### **Primary Goal**

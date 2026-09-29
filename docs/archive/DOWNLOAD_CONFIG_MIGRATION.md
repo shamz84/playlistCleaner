@@ -1,5 +1,7 @@
 # 🎯 Download Config Migration - COMPLETED ✅
 
+> Historical migration record only; do not use it as current setup guidance. See [the current pipeline guide](../README_Complete_System.md).
+
 ## Issue Resolved
 The download process was **NOT** using the config folder version of `download_config.json` due to hardcoded path checking in `process_playlist_complete.py`.
 

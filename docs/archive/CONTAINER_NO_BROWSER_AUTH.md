@@ -1,5 +1,7 @@
 # Container Authentication Guide 🐳
 
+> Archived reference only: paths and setup steps below are historical and have not been validated against the current pipeline. See [current Drive guidance](../README_GoogleDrive.md).
+
 ## ⚠️ **IMPORTANT: No Browser Authentication in Containers**
 
 **Browser-based OAuth authentication is IMPOSSIBLE in containers.** Containers don't have browsers, display servers, or user interaction capabilities.

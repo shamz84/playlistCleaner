@@ -1,5 +1,7 @@
 # 🐳 Container Google Drive Solutions
 
+> Archived reference only: paths and setup steps below are historical and have not been validated against the current pipeline. See [current Drive guidance](../README_GoogleDrive.md).
+
 ## 🎯 **Solution 1: Pre-authenticate (RECOMMENDED)**
 
 ### **✅ How it Works:**
