@@ -30,7 +30,7 @@ The full run makes network requests for API conversion and download. Pipeline st
 
 ## Docker and validation
 
-Docker is the deployment target. Build from the repository root with `docker build -t playlist-processor:latest .`. The current host Python command is the reliable run path; Docker direct-run guidance and known limitations are in `docs/DOCKER_DEPLOYMENT.md`. Checked-in Compose examples still contain mounts that do not match this checkout's `data/config/` layout, the entrypoint does not expose `--skip-api`, and its skipped-download preflight checks the wrong location. Review mounts and preflight behavior before any container run. QNAP-specific deployment is not maintained.
+Docker is the deployment target. Build from the repository root with `docker build -t playlist-processor:latest .`. The current host Python command is the reliable run path; Docker direct-run guidance and known limitations are in `docs/DOCKER_DEPLOYMENT.md`. The entrypoint now forwards `SKIP_API` and checks skipped-download playlist inputs under `/app/data/`, but checked-in Compose examples may still contain mounts that do not match this checkout's `data/config/` layout. Review mounts and preflight behavior before any container run. QNAP-specific deployment is not maintained.
 
 The Drive uploader and setup checker search `data/config/` first for OAuth credentials and backup config, with legacy `config/` and repository-root fallbacks; token lookup also checks the current config directory. The container entrypoint creates compatibility links for mounted configs. Keep Drive upload disabled unless the intended auth/config files and upload patterns have been verified.
 

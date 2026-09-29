@@ -43,12 +43,13 @@ RUN mkdir -p /app/data /app/data/config
 
 # Copy entrypoint script and make it executable
 COPY docker-entrypoint.sh /app/
-RUN chmod +x /app/docker-entrypoint.sh
+RUN sed -i 's/\r$//' /app/docker-entrypoint.sh && chmod +x /app/docker-entrypoint.sh
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Set environment variables
+ENV SKIP_API=""
 ENV SKIP_DOWNLOAD=""
 ENV SKIP_FILTER=""
 ENV SKIP_UK_OVERRIDE=""

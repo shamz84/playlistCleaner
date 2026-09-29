@@ -131,13 +131,10 @@ validate_all_inputs() {
         # Check for existing playlist files if download is skipped
         if [[ "$SKIP_DOWNLOAD" == "--skip-download" ]]; then
             local playlist_found=false
-            if check_file_with_size "/app/downloaded_file.m3u" "Downloaded playlist file" 1000; then
+            if check_file_with_size "/app/data/downloaded_file.m3u" "Downloaded playlist file" 100; then
                 playlist_found=true
             fi
-            if check_file_with_size "/app/raw_playlist_20.m3u" "Static playlist file" 1000; then
-                playlist_found=true
-            fi
-            if check_file_with_size "/app/manual_download.m3u" "Manual download file" 1000; then
+            if check_file_with_size "/app/data/raw_playlist_AsiaUk.m3u" "Asia UK playlist file" 100; then
                 playlist_found=true
             fi
             
@@ -165,7 +162,7 @@ validate_all_inputs() {
             # When filter is skipped, we need downloaded file for credentials
             if [[ "$SKIP_DOWNLOAD" == "--skip-download" ]]; then
                 # If download is also skipped, downloaded file must already exist
-                if ! check_file_with_size "/app/downloaded_file.m3u" "Downloaded playlist (required for credentials when filter skipped)" 1000; then
+                if ! check_file_with_size "/app/data/downloaded_file.m3u" "Downloaded playlist (required when download and filter are skipped)" 1000; then
                     echo "❌ No downloaded playlist found for credential replacement (both download and filter are skipped)"
                     validation_failed=true
                 fi
@@ -231,6 +228,7 @@ validate_all_inputs() {
 
 # Display environment
 echo "📋 Configuration:"
+echo "   SKIP_API: ${SKIP_API:-'(not set)'}"
 echo "   SKIP_DOWNLOAD: ${SKIP_DOWNLOAD:-'(not set)'}"
 echo "   SKIP_FILTER: ${SKIP_FILTER:-'(not set)'}"
 echo "   SKIP_UK_OVERRIDE: ${SKIP_UK_OVERRIDE:-'(not set)'}"
@@ -335,10 +333,10 @@ trap cleanup SIGTERM SIGINT
 
 # Run the main script with arguments
 echo -e "\n🚀 Starting enhanced playlist processing pipeline..."
-echo "Command: python process_playlist_complete_enhanced.py $SKIP_DOWNLOAD $SKIP_FILTER $SKIP_UK_OVERRIDE $SKIP_CREDENTIALS $SKIP_GDRIVE"
+echo "Command: python process_playlist_complete_enhanced.py $SKIP_API $SKIP_DOWNLOAD $SKIP_FILTER $SKIP_UK_OVERRIDE $SKIP_CREDENTIALS $SKIP_GDRIVE"
 
 # Execute the main command
-python process_playlist_complete_enhanced.py $SKIP_DOWNLOAD $SKIP_FILTER $SKIP_UK_OVERRIDE $SKIP_CREDENTIALS $SKIP_GDRIVE
+python process_playlist_complete_enhanced.py $SKIP_API $SKIP_DOWNLOAD $SKIP_FILTER $SKIP_UK_OVERRIDE $SKIP_CREDENTIALS $SKIP_GDRIVE
 
 # Copy outputs after successful completion
 copy_outputs

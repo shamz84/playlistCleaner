@@ -7,7 +7,7 @@ Updated: 2026-09-29
 - Repository: `Z:\training\playlistCleaner`
 - Branch: `main`, up to date with `origin/main` at handoff creation.
 - Latest pushed commit at start of this follow-up: `34ac6ed` — `Refresh repository documentation and archive historical guides`.
-- Google Drive path-precedence fixes and this handoff update are currently uncommitted.
+- Google Drive path-precedence fix is committed locally as `b195e8d`; Docker entrypoint changes are currently uncommitted.
 - Local untracked files remain and must not be staged accidentally: `data/config/gdrive_token_writable.json`, two group-config backups, and `data/downloaded_file.m3u.backup_before_247_merge`. Treat the token as secret and backups as local data.
 
 ## Current project context
@@ -28,8 +28,8 @@ Updated: 2026-09-29
 
 ## Recommended next work
 
-1. **Completed in the current uncommitted changes:** `upload_to_gdrive.py` now searches `data/config/` first for OAuth credentials, token files, writable tokens, and backup config; legacy `config/` and repository-root paths remain fallbacks. New backup config templates are created under `data/config/` with an empty upload-pattern list, avoiding accidental upload of credential-bearing personalized playlists. `gdrive_setup.py` uses the same config precedence. Lookup behavior passed a focused temporary-file test; no Google authentication or network calls were made.
-2. **Next:** review container preflight and entrypoint against the current pipeline. In particular, `SKIP_API` is not forwarded, and skipped-download preflight checks root playlist paths while the enhanced pipeline uses `data/` paths. Validate any fix with a disposable fixture or image test, not the live playlist data.
+1. **Completed and committed locally:** `upload_to_gdrive.py` searches `data/config/` first for OAuth credentials, token files, writable tokens, and backup config; legacy `config/` and repository-root paths remain fallbacks. New backup config templates are created under `data/config/` with an empty upload-pattern list, avoiding accidental upload of credential-bearing personalized playlists. `gdrive_setup.py` uses the same config precedence. Commit: `b195e8d`. Focused temporary-file tests passed with no Google authentication or network calls.
+2. **Implemented and statically validated; runtime test pending:** `SKIP_API` is wired through the Dockerfile, entrypoint, and Compose services. When download is skipped but filtering runs, entrypoint preflight now checks the enhanced pipeline's `data/downloaded_file.m3u` or optional `data/raw_playlist_AsiaUk.m3u`. Bash syntax after build-time CRLF normalization, flag forwarding, Compose declarations, and preflight paths passed isolated checks. No image/pipeline run was performed: the local Podman machine socket was unavailable and Docker is not installed. If runtime verification is needed, start an available container engine and use disposable data/config fixtures only.
 3. Decide whether to consolidate or delete redundant current Docker/Drive guides after container limitations are resolved. The archived docs should remain clearly non-authoritative.
 4. If any project code/config is changed, validate JSON and run focused tests first. Do not invoke the full pipeline unless its network and file-overwrite effects are intended.
 

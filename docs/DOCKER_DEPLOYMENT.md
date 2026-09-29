@@ -21,6 +21,8 @@ docker run --rm `
   playlist-processor:latest
 ```
 
+To skip Xtream API generation while still downloading the configured playlist, add `-e SKIP_API=--skip-api`. To skip both network input stages and process an existing data file, set both `SKIP_API=--skip-api` and `SKIP_DOWNLOAD=--skip-download`; the file must be available under the mounted `/app/data/` directory.
+
 The full run may call the configured Xtream API and remote download service, update `data/downloaded_file.m3u` during the 24/7 merge, and produce playlists in the mounted data directory after the entrypoint copies outputs. It requires valid `data/config/` settings, including credentials if credential replacement is enabled. Do not run it as a harmless container smoke test.
 
 ## Current limitations — read before operating
@@ -28,8 +30,8 @@ The full run may call the configured Xtream API and remote download service, upd
 The checked-in Compose files and some older deployment guides are not validated against this checkout:
 
 - `docker-compose.yml` mounts `./config` rather than the present `./data/config`, mounts a root Google Drive token, and references a root Asia playlist. Those paths may not exist.
-- The container entrypoint validates a skipped-download playlist at `/app/downloaded_file.m3u`, while the enhanced pipeline reads `/app/data/downloaded_file.m3u`. Therefore, using `SKIP_DOWNLOAD=--skip-download` in the container may fail preflight even if the data-mounted playlist exists.
-- The entrypoint does not pass a `SKIP_API` environment setting; container runs cannot currently skip API generation through that interface.
+- When download is skipped and filtering runs, preflight now checks `/app/data/downloaded_file.m3u` or the optional `/app/data/raw_playlist_AsiaUk.m3u`, matching the enhanced pipeline inputs.
+- `SKIP_API=--skip-api` is now passed through the entrypoint and declared in the Compose services, so Xtream API generation can be skipped without also skipping the download stage.
 - Google Drive uploader config/credential lookup differs between native and container execution. The default is to skip upload. Do not enable Drive upload in a container until auth/config paths have been verified for the specific setup.
 - `restart: unless-stopped` in Compose is service-style behavior and can rerun this one-shot processing job; do not use that policy for an unattended run without changing and reviewing it.
 
@@ -37,7 +39,7 @@ The direct command above documents intended mounts and flags; it has not been ce
 
 ## Container skip variables
 
-The entrypoint passes `SKIP_DOWNLOAD`, `SKIP_FILTER`, `SKIP_UK_OVERRIDE`, `SKIP_CREDENTIALS`, and `SKIP_GDRIVE` to the orchestrator. Only set a variable to its exact corresponding flag, e.g. `SKIP_GDRIVE=--skip-gdrive`. `SKIP_API` is not wired through.
+The entrypoint passes `SKIP_API`, `SKIP_DOWNLOAD`, `SKIP_FILTER`, `SKIP_UK_OVERRIDE`, `SKIP_CREDENTIALS`, and `SKIP_GDRIVE` to the orchestrator. Set each variable to its exact corresponding flag, e.g. `SKIP_API=--skip-api` or `SKIP_GDRIVE=--skip-gdrive`; leave it empty to run that stage.
 
 ## Scope
 

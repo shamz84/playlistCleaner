@@ -17,6 +17,7 @@ services:
       - ./raw_playlist_AsiaUk.m3u:/app/data/raw_playlist_AsiaUk.m3u:ro
     environment:
       # Pipeline control - set to --skip-<step> to skip that step
+      - SKIP_API=${SKIP_API:-}
       - SKIP_DOWNLOAD=
       - SKIP_FILTER=
       - SKIP_UK_OVERRIDE=
@@ -34,6 +35,7 @@ services:
       - ./data:/app/data
       - ./download_config.json:/app/download_config.json:ro
     environment:
+      - SKIP_API=${SKIP_API:-}
       - SKIP_DOWNLOAD=
       - SKIP_FILTER=--skip-filter
       - SKIP_UK_OVERRIDE=--skip-uk-override
@@ -52,6 +54,7 @@ services:
       # - ./raw_playlist_20.m3u:/app/raw_playlist_20.m3u:ro  # No longer needed - using downloaded_file.m3u
       - ./raw_playlist_AsiaUk.m3u:/app/data/raw_playlist_AsiaUk.m3u:ro
     environment:
+      - SKIP_API=${SKIP_API:-}
       - SKIP_DOWNLOAD=--skip-download
       - SKIP_FILTER=
       - SKIP_UK_OVERRIDE=
