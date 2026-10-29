@@ -1,0 +1,56 @@
+{
+ "epg_listings": [
+  {
+   "id": "35020",
+   "epg_id": "1",
+   "title": "Tm90IEdvaW5nIE91dA==",
+   "lang": "",
+   "start": "2026-10-29 22:30:00",
+   "end": "2026-10-29 23:00:00",
+   "description": "TGVlIGZpbmRzIGFuIHVuZGlzY292ZXJlZCBCYW5rc3kgYW5kIGF0dGVtcHRzIHRvIHN0ZWFsIHRoZSBhcnR3b3JrIGluIGEgZm9vbGhhcmR5IHF1ZXN0IGZvciBmYW1lIGFuZCBmb3J0dW5lLg==",
+   "channel_id": "BBCOneOxford.uk",
+   "start_timestamp": "1793313000",
+   "stop_timestamp": "1793314800",
+   "stream_id": "497001"
+  },
+  {
+   "id": "35021",
+   "epg_id": "1",
+   "title": "QkJDIE5ld3MgYW5kIFdlYXRoZXI=",
+   "lang": "",
+   "start": "2026-10-29 23:00:00",
+   "end": "2026-10-29 23:30:00",
+   "description": "VGhlIGxhdGVzdCBuYXRpb25hbCBhbmQgaW50ZXJuYXRpb25hbCBuZXdzLCB3aXRoIHJlcG9ydHMgZnJvbSBCQkMgY29ycmVzcG9uZGVudHMgd29ybGR3aWRlLg==",
+   "channel_id": "BBCOneOxford.uk",
+   "start_timestamp": "1793314800",
+   "stop_timestamp": "1793316600",
+   "stream_id": "497001"
+  },
+  {
+   "id": "35022",
+   "epg_id": "1",
+   "title": "U291dGggVG9kYXk=",
+   "lang": "",
+   "start": "2026-10-29 23:30:00",
+   "end": "2026-10-29 23:40:00",
+   "description": "VGhlIGxhdGVzdCBuZXdzLCBzcG9ydCBhbmQgd2VhdGhlciBmb3IgdGhlIFNvdXRoIG9mIEVuZ2xhbmQu",
+   "channel_id": "BBCOneOxford.uk",
+   "start_timestamp": "1793316600",
+   "stop_timestamp": "1793317200",
+   "stream_id": "497001"
+  },
+  {
+   "id": "35023",
+   "epg_id": "1",
+   "title": "UXVlc3Rpb24gVGltZQ==",
+   "lang": "",
+   "start": "2026-10-29 23:40:00",
+   "end": "2026-10-30 00:40:00",
+   "description": "RmlvbmEgQnJ1Y2UgcHJlc2VudHMgYW4gaG91ciBvZiB0b3BpY2FsIGRlYmF0ZS4=",
+   "channel_id": "BBCOneOxford.uk",
+   "start_timestamp": "1793317200",
+   "stop_timestamp": "1793320800",
+   "stream_id": "497001"
+  }
+ ]
+}

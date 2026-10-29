@@ -1,0 +1,942 @@
+[
+ {
+  "num": 1625,
+  "name": "EN - Leo (2023)",
+  "stream_type": "movie",
+  "stream_id": 1596838,
+  "stream_icon": "https://example.invalid/t/p/w600_and_h900_bestv2/gSOVog7ydsaF1YpgAqBqnKYFGY.jpg",
+  "rating": "7.396",
+  "rating_5based": 3.7,
+  "tmdb": 1075794,
+  "trailer": "",
+  "added": "1760218444",
+  "is_adult": 0,
+  "category_id": "2048",
+  "category_ids": [
+   2048
+  ],
+  "container_extension": "mkv",
+  "custom_sid": null,
+  "direct_source": ""
+ },
+ {
+  "num": 3859,
+  "name": "EN - Leo (2023)",
+  "stream_type": "movie",
+  "stream_id": 1268490,
+  "stream_icon": "https://example.invalid/t/p/w600_and_h900_bestv2/pD6sL4vntUOXHmuvJPPZAgvyfd9.jpg",
+  "rating": "7.455",
+  "rating_5based": 3.7,
+  "tmdb": "1075794",
+  "trailer": "",
+  "added": "1736293020",
+  "is_adult": 0,
+  "category_id": "429",
+  "category_ids": [
+   429
+  ],
+  "container_extension": "mkv",
+  "custom_sid": null,
+  "direct_source": ""
+ },
+ {
+  "num": 6834,
+  "name": "EN - Leo  (2023)",
+  "stream_type": "movie",
+  "stream_id": 628562,
+  "stream_icon": "https://example.invalid/t/p/w600_and_h900_bestv2/gSOVog7ydsaF1YpgAqBqnKYFGY.jpg",
+  "rating": "0",
+  "rating_5based": 0,
+  "tmdb": "1075794",
+  "trailer": "sQTNRFJ9R-4",
+  "added": "1700578560",
+  "is_adult": 0,
+  "category_id": "173",
+  "category_ids": [
+   173
+  ],
+  "container_extension": "mkv",
+  "custom_sid": null,
+  "direct_source": ""
+ },
+ {
+  "num": 22739,
+  "name": "4K-NF - Leo (2023)",
+  "stream_type": "movie",
+  "stream_id": 1559601,
+  "stream_icon": "https://example.invalid/stalker_portal/screenshots/409/40823.jpg",
+  "rating": "7.399",
+  "rating_5based": 3.7,
+  "tmdb": "1075794",
+  "trailer": "",
+  "added": "1758737340",
+  "is_adult": 0,
+  "category_id": "220",
+  "category_ids": [
+   220
+  ],
+  "container_extension": "mkv",
+  "custom_sid": null,
+  "direct_source": ""
+ },
+ {
+  "num": 22740,
+  "name": "NF - Leo (2023)",
+  "stream_type": "movie",
+  "stream_id": 1559590,
+  "stream_icon": "https://example.invalid/t/p/w600_and_h900_bestv2/gSOVog7ydsaF1YpgAqBqnKYFGY.jpg",
+  "rating": "7.399",
+  "rating_5based": 3.7,
+  "tmdb": "1075794",
+  "trailer": "",
+  "added": "1758736860",
+  "is_adult": 0,
+  "category_id": "285",
+  "category_ids": [
+   285
+  ],
+  "container_extension": "mkv",
+  "custom_sid": null,
+  "direct_source": ""
+ },
+ {
+  "num": 23359,
+  "name": "NF - Leo (2023)",
+  "stream_type": "movie",
+  "stream_id": 628657,
+  "stream_icon": "https://example.invalid/t/p/w600_and_h900_bestv2/gSOVog7ydsaF1YpgAqBqnKYFGY.jpg",
+  "rating": "7",
+  "rating_5based": 3.5,
+  "tmdb": "1075794",
+  "trailer": "",
+  "added": "1700764920",
+  "is_adult": 0,
+  "category_id": "137",
+  "category_ids": [
+   137
+  ],
+  "container_extension": "mkv",
+  "custom_sid": null,
+  "direct_source": ""
+ },
+ {
+  "num": 39749,
+  "name": "IN-MM - Leo (2023)",
+  "stream_type": "movie",
+  "stream_id": 938258,
+  "stream_icon": "https://example.invalid/t/p/w600_and_h900_bestv2/pD6sL4vntUOXHmuvJPPZAgvyfd9.jpg",
+  "rating": "7.468",
+  "rating_5based": 3.7,
+  "tmdb": "1075794",
+  "trailer": "",
+  "added": "1722284700",
+  "is_adult": 0,
+  "category_id": "222",
+  "category_ids": [
+   222
+  ],
+  "container_extension": "mkv",
+  "custom_sid": null,
+  "direct_source": ""
+ },
+ {
+  "num": 39937,
+  "name": "Leo (2023)",
+  "stream_type": "movie",
+  "stream_id": 924945,
+  "stream_icon": "https://example.invalid/t/p/w600_and_h900_bestv2/pD6sL4vntUOXHmuvJPPZAgvyfd9.jpg",
+  "rating": "7.467",
+  "rating_5based": 3.7,
+  "tmdb": 1075794,
+  "trailer": "",
+  "added": "1721770984",
+  "is_adult": 0,
+  "category_id": "773",
+  "category_ids": [
+   773
+  ],
+  "container_extension": "mkv",
+  "custom_sid": null,
+  "direct_source": ""
+ },
+ {
+  "num": 40136,
+  "name": "IN-TU - Leo (2023)",
+  "stream_type": "movie",
+  "stream_id": 897804,
+  "stream_icon": "https://example.invalid/t/p/w600_and_h900_bestv2/pD6sL4vntUOXHmuvJPPZAgvyfd9.jpg",
+  "rating": "7.477",
+  "rating_5based": 3.7,
+  "tmdb": "1075794",
+  "trailer": "",
+  "added": "1720273680",
+  "is_adult": 0,
+  "category_id": "191",
+  "category_ids": [
+   191
+  ],
+  "container_extension": "mkv",
+  "custom_sid": null,
+  "direct_source": ""
+ },
+ {
+  "num": 40302,
+  "name": "IN-TL - Leo (2023)",
+  "stream_type": "movie",
+  "stream_id": 891011,
+  "stream_icon": "https://example.invalid/t/p/w600_and_h900_bestv2/pD6sL4vntUOXHmuvJPPZAgvyfd9.jpg",
+  "rating": "7.483",
+  "rating_5based": 3.7,
+  "tmdb": "1075794",
+  "trailer": "",
+  "added": "1719862800",
+  "is_adult": 0,
+  "category_id": "190",
+  "category_ids": [
+   190
+  ],
+  "container_extension": "mkv",
+  "custom_sid": null,
+  "direct_source": ""
+ },
+ {
+  "num": 40595,
+  "name": "IN-KN - Leo (2023)",
+  "stream_type": "movie",
+  "stream_id": 868414,
+  "stream_icon": "https://example.invalid/t/p/w600_and_h900_bestv2/pD6sL4vntUOXHmuvJPPZAgvyfd9.jpg",
+  "rating": "7.49",
+  "rating_5based": 3.7,
+  "tmdb": "1075794",
+  "trailer": "",
+  "added": "1718533500",
+  "is_adult": 0,
+  "category_id": "1325",
+  "category_ids": [
+   1325
+  ],
+  "container_extension": "mkv",
+  "custom_sid": null,
+  "direct_source": ""
+ },
+ {
+  "num": 40916,
+  "name": "IN-TM  - Leo (2023)",
+  "stream_type": "movie",
+  "stream_id": 728536,
+  "stream_icon": "https://example.invalid/t/p/w600_and_h900_bestv2/pD6sL4vntUOXHmuvJPPZAgvyfd9.jpg",
+  "rating": "7.496",
+  "rating_5based": 3.7,
+  "tmdb": "1075794",
+  "trailer": "",
+  "added": "1708958100",
+  "is_adult": 0,
+  "category_id": "190",
+  "category_ids": [
+   190
+  ],
+  "container_extension": "mkv",
+  "custom_sid": null,
+  "direct_source": ""
+ },
+ {
+  "num": 41014,
+  "name": "IN - Leo (2023)",
+  "stream_type": "movie",
+  "stream_id": 686063,
+  "stream_icon": "https://example.invalid/t/p/w600_and_h900_bestv2/pD6sL4vntUOXHmuvJPPZAgvyfd9.jpg",
+  "rating": "7.532",
+  "rating_5based": 3.8,
+  "tmdb": "1075794",
+  "trailer": "",
+  "added": "1705874940",
+  "is_adult": 0,
+  "category_id": "222",
+  "category_ids": [
+   222
+  ],
+  "container_extension": "mkv",
+  "custom_sid": null,
+  "direct_source": ""
+ },
+ {
+  "num": 41143,
+  "name": "IN - Leo (2023)",
+  "stream_type": "movie",
+  "stream_id": 647187,
+  "stream_icon": "https://example.invalid/t/p/w600_and_h900_bestv2/pD6sL4vntUOXHmuvJPPZAgvyfd9.jpg",
+  "rating": "7.543",
+  "rating_5based": 3.8,
+  "tmdb": "1075794",
+  "trailer": "",
+  "added": "1702202940",
+  "is_adult": 0,
+  "category_id": "88",
+  "category_ids": [
+   88
+  ],
+  "container_extension": "mkv",
+  "custom_sid": null,
+  "direct_source": ""
+ },
+ {
+  "num": 5176,
+  "name": "EN-TOP -63.Avengers.Infinity.War.2018",
+  "stream_type": "movie",
+  "stream_id": 1007303,
+  "stream_icon": "https://example.invalid/t/p/w600_and_h900_bestv2/7WsyChQLEftFiDOVTGkv3hFpyyt.jpg",
+  "rating": "8.246",
+  "rating_5based": 4.1,
+  "tmdb": "299536",
+  "trailer": "6ZfuNTqbHE8",
+  "added": "1724698800",
+  "is_adult": 0,
+  "category_id": "1453",
+  "category_ids": [
+   1453
+  ],
+  "container_extension": "mkv",
+  "custom_sid": null,
+  "direct_source": ""
+ },
+ {
+  "num": 12509,
+  "name": "4K-EN - Avengers: Infinity War  (2018)",
+  "stream_type": "movie",
+  "stream_id": 261250,
+  "stream_icon": "https://example.invalid/t/p/w600_and_h900_bestv2/iShpWeZ78dns4rBsM6LlGyw5pe9.jpg",
+  "rating": "8.247",
+  "rating_5based": 4.1,
+  "tmdb": "299536",
+  "trailer": "sAOzrChqmd0",
+  "added": "1620485520",
+  "is_adult": 0,
+  "category_id": "217",
+  "category_ids": [
+   217
+  ],
+  "container_extension": "mkv",
+  "custom_sid": null,
+  "direct_source": ""
+ },
+ {
+  "num": 15707,
+  "name": "EN - Avengers: Infinity War  (2018)",
+  "stream_type": "movie",
+  "stream_id": 92528,
+  "stream_icon": "https://example.invalid/t/p/w600_and_h900_bestv2/7WsyChQLEftFiDOVTGkv3hFpyyt.jpg",
+  "rating": "8.3",
+  "rating_5based": 4.2,
+  "tmdb": "299536",
+  "trailer": "6ZfuNTqbHE8",
+  "added": "1581464640",
+  "is_adult": 0,
+  "category_id": "275",
+  "category_ids": [
+   275
+  ],
+  "container_extension": "mp4",
+  "custom_sid": null,
+  "direct_source": ""
+ },
+ {
+  "num": 20693,
+  "name": "TOP - Avengers: Infinity War",
+  "stream_type": "movie",
+  "stream_id": 31041,
+  "stream_icon": "http://example.invalid/images/movies//7WsyChQLEftFiDOVTGkv3hFpyyt.jpg",
+  "rating": "8.3",
+  "rating_5based": 4.2,
+  "tmdb": 299536,
+  "trailer": "6ZfuNTqbHE8",
+  "added": "1578632700",
+  "is_adult": 0,
+  "category_id": "92",
+  "category_ids": [
+   92
+  ],
+  "container_extension": "mkv",
+  "custom_sid": null,
+  "direct_source": ""
+ },
+ {
+  "num": 24776,
+  "name": "NF - Avengers: Infinity War",
+  "stream_type": "movie",
+  "stream_id": 46664,
+  "stream_icon": "http://example.invalid/images/movies//7WsyChQLEftFiDOVTGkv3hFpyyt.jpg",
+  "rating": "8.3",
+  "rating_5based": 4.2,
+  "tmdb": 299536,
+  "trailer": "6ZfuNTqbHE8",
+  "added": "1578914493",
+  "is_adult": 0,
+  "category_id": "137",
+  "category_ids": [
+   137
+  ],
+  "container_extension": "mkv",
+  "custom_sid": null,
+  "direct_source": ""
+ },
+ {
+  "num": 28224,
+  "name": "4K-MRVL - Avengers: Infinity War (2018)",
+  "stream_type": "movie",
+  "stream_id": 1235970,
+  "stream_icon": "https://example.invalid/t/p/w600_and_h900_bestv2/7WsyChQLEftFiDOVTGkv3hFpyyt.jpg",
+  "rating": "8.243",
+  "rating_5based": 4.1,
+  "tmdb": "299536",
+  "trailer": "",
+  "added": "1734272460",
+  "is_adult": 0,
+  "category_id": "1536",
+  "category_ids": [
+   1536
+  ],
+  "container_extension": "mkv",
+  "custom_sid": null,
+  "direct_source": ""
+ },
+ {
+  "num": 28236,
+  "name": "MRVL - Avengers: Infinity War (2018)",
+  "stream_type": "movie",
+  "stream_id": 1235958,
+  "stream_icon": "https://example.invalid/t/p/w600_and_h900_bestv2/7WsyChQLEftFiDOVTGkv3hFpyyt.jpg",
+  "rating": "8.243",
+  "rating_5based": 4.1,
+  "tmdb": "299536",
+  "trailer": "",
+  "added": "1734272160",
+  "is_adult": 0,
+  "category_id": "1535",
+  "category_ids": [
+   1535
+  ],
+  "container_extension": "mkv",
+  "custom_sid": null,
+  "direct_source": ""
+ },
+ {
+  "num": 38020,
+  "name": "IN-EN - Avengers: Infinity War (2018)",
+  "stream_type": "movie",
+  "stream_id": 1428279,
+  "stream_icon": "https://example.invalid/t/p/w600_and_h900_bestv2/7WsyChQLEftFiDOVTGkv3hFpyyt.jpg",
+  "rating": "8.236",
+  "rating_5based": 4.1,
+  "tmdb": "299536",
+  "trailer": "",
+  "added": "1746959520",
+  "is_adult": 0,
+  "category_id": "1651",
+  "category_ids": [
+   1651
+  ],
+  "container_extension": "mkv",
+  "custom_sid": null,
+  "direct_source": ""
+ },
+ {
+  "num": 41289,
+  "name": "IN - Avengers: Infinity War  (2018)",
+  "stream_type": "movie",
+  "stream_id": 230497,
+  "stream_icon": "http://example.invalid/images/movies//7WsyChQLEftFiDOVTGkv3hFpyyt.jpg",
+  "rating": "8.3",
+  "rating_5based": 4.2,
+  "tmdb": 299536,
+  "trailer": "6ZfuNTqbHE8",
+  "added": "1611587583",
+  "is_adult": 0,
+  "category_id": "88",
+  "category_ids": [
+   88
+  ],
+  "container_extension": "mkv",
+  "custom_sid": null,
+  "direct_source": ""
+ },
+ {
+  "num": 45028,
+  "name": "D+ - Avengers: Infinity War  (2018)",
+  "stream_type": "movie",
+  "stream_id": 321284,
+  "stream_icon": "https://example.invalid/t/p/w600_and_h900_bestv2/7WsyChQLEftFiDOVTGkv3hFpyyt.jpg",
+  "rating": "8.3",
+  "rating_5based": 4.2,
+  "tmdb": 299536,
+  "trailer": "sAOzrChqmd0",
+  "added": "1641666129",
+  "is_adult": 0,
+  "category_id": "325",
+  "category_ids": [
+   325
+  ],
+  "container_extension": "mp4",
+  "custom_sid": null,
+  "direct_source": ""
+ },
+ {
+  "num": 17315,
+  "name": "EN - Arsenal  (2017)",
+  "stream_type": "movie",
+  "stream_id": 385261,
+  "stream_icon": "https://example.invalid/t/p/w600_and_h900_bestv2/b9vwgGqWge0PRZqhbqOW7WCVK2V.jpg",
+  "rating": "4.5",
+  "rating_5based": 2.3,
+  "tmdb": "388202",
+  "trailer": "vTabX1ONwRY",
+  "added": "1660218660",
+  "is_adult": 0,
+  "category_id": "282",
+  "category_ids": [
+   282
+  ],
+  "container_extension": "mp4",
+  "custom_sid": null,
+  "direct_source": ""
+ },
+ {
+  "num": 20677,
+  "name": "TOP - Arsenal",
+  "stream_type": "movie",
+  "stream_id": 31025,
+  "stream_icon": "http://example.invalid/images/movies//6tkmf3MrA3SKoBnVeBJsqXuLJ9a.jpg",
+  "rating": "4.6",
+  "rating_5based": 2.3,
+  "tmdb": 388202,
+  "trailer": "vTabX1ONwRY",
+  "added": "1578632696",
+  "is_adult": 0,
+  "category_id": "92",
+  "category_ids": [
+   92
+  ],
+  "container_extension": "mkv",
+  "custom_sid": null,
+  "direct_source": ""
+ },
+ {
+  "num": 24752,
+  "name": "NF - Arsenal",
+  "stream_type": "movie",
+  "stream_id": 46639,
+  "stream_icon": "http://example.invalid/images/movies//6tkmf3MrA3SKoBnVeBJsqXuLJ9a.jpg",
+  "rating": "4.6",
+  "rating_5based": 2.3,
+  "tmdb": 388202,
+  "trailer": "vTabX1ONwRY",
+  "added": "1578914486",
+  "is_adult": 0,
+  "category_id": "137",
+  "category_ids": [
+   137
+  ],
+  "container_extension": "mkv",
+  "custom_sid": null,
+  "direct_source": ""
+ },
+ {
+  "num": 32473,
+  "name": "SOC - Arsenal - Liverpool 04.02.2024",
+  "stream_type": "movie",
+  "stream_id": 707984,
+  "stream_icon": "http://example.invalid/stalker_portal/screenshots/138/13726.jpg",
+  "rating": "4.442",
+  "rating_5based": 2.2,
+  "tmdb": "388202",
+  "trailer": "",
+  "added": "1707678900",
+  "is_adult": 0,
+  "category_id": "634",
+  "category_ids": [
+   634
+  ],
+  "container_extension": "mkv",
+  "custom_sid": null,
+  "direct_source": ""
+ },
+ {
+  "num": 101,
+  "name": "EN - Coyotes (2025)",
+  "stream_type": "movie",
+  "stream_id": 2183580,
+  "stream_icon": "https://example.invalid/t/p/w600_and_h900_bestv2/fSzs9ZXYcrln0FRrjGIPCjuB6En.jpg",
+  "rating": "5.4",
+  "rating_5based": 2.7,
+  "tmdb": "1386827",
+  "trailer": "",
+  "added": "1791501180",
+  "is_adult": 0,
+  "category_id": "163",
+  "category_ids": [
+   163
+  ],
+  "container_extension": "mkv",
+  "custom_sid": null,
+  "direct_source": ""
+ },
+ {
+  "num": 3,
+  "name": "4K-TOP - Practical Magic 2 (2026)",
+  "stream_type": "movie",
+  "stream_id": 2187836,
+  "stream_icon": "https://example.invalid/t/p/w600_and_h900_bestv2/ogwQOLbCfncjvBhFb5l0OmQH8KC.jpg",
+  "rating": "6.3",
+  "rating_5based": 3.2,
+  "tmdb": "1302904",
+  "trailer": "iSWP2feb4rw",
+  "added": "1791836230",
+  "is_adult": 0,
+  "category_id": "1923",
+  "category_ids": [
+   1923
+  ],
+  "container_extension": "mkv",
+  "custom_sid": null,
+  "direct_source": ""
+ },
+ {
+  "num": 57,
+  "name": "EN - Practical Magic 2  (2026)",
+  "stream_type": "movie",
+  "stream_id": 2200672,
+  "stream_icon": "https://example.invalid/t/p/w600_and_h900_bestv2/ogwQOLbCfncjvBhFb5l0OmQH8KC.jpg",
+  "rating": "7",
+  "rating_5based": 3.5,
+  "tmdb": "1302904",
+  "trailer": "",
+  "added": "1792581780",
+  "is_adult": 0,
+  "category_id": "163",
+  "category_ids": [
+   163
+  ],
+  "container_extension": "mkv",
+  "custom_sid": null,
+  "direct_source": ""
+ },
+ {
+  "num": 19986,
+  "name": "TOP - Practical Magic 2 (2026)",
+  "stream_type": "movie",
+  "stream_id": 2187835,
+  "stream_icon": "https://example.invalid/t/p/w600_and_h900_bestv2/ogwQOLbCfncjvBhFb5l0OmQH8KC.jpg",
+  "rating": "6.3",
+  "rating_5based": 3.2,
+  "tmdb": "1302904",
+  "trailer": "iSWP2feb4rw",
+  "added": "1791835818",
+  "is_adult": 0,
+  "category_id": "92",
+  "category_ids": [
+   92
+  ],
+  "container_extension": "mkv",
+  "custom_sid": null,
+  "direct_source": ""
+ },
+ {
+  "num": 2417,
+  "name": "EN - WWE SmackDown  (11/07/2025)",
+  "stream_type": "movie",
+  "stream_id": 1500923,
+  "stream_icon": "http://example.invalid/stalker_portal/screenshots/109/10865.jpg",
+  "rating": "",
+  "rating_5based": "0",
+  "tmdb": "",
+  "trailer": "",
+  "added": "1752496740",
+  "is_adult": 0,
+  "category_id": "310",
+  "category_ids": [
+   310
+  ],
+  "container_extension": "mkv",
+  "custom_sid": null,
+  "direct_source": ""
+ },
+ {
+  "num": 2442,
+  "name": "EN - WWE SmackDown  (04/07/2025)",
+  "stream_type": "movie",
+  "stream_id": 1494034,
+  "stream_icon": "http://example.invalid/stalker_portal/screenshots/110/10964.jpg",
+  "rating": "",
+  "rating_5based": "0",
+  "tmdb": "",
+  "trailer": "",
+  "added": "1751975940",
+  "is_adult": 0,
+  "category_id": "310",
+  "category_ids": [
+   310
+  ],
+  "container_extension": "mkv",
+  "custom_sid": null,
+  "direct_source": ""
+ },
+ {
+  "num": 975,
+  "name": "EN - Blue Grace (2018)",
+  "stream_type": "movie",
+  "stream_id": 1805695,
+  "stream_icon": "https://example.invalid/stalker_portal/screenshots/364/36372.jpg",
+  "rating": "",
+  "rating_5based": "0",
+  "tmdb": "",
+  "trailer": "",
+  "added": "1769562540",
+  "is_adult": 0,
+  "category_id": "119",
+  "category_ids": [
+   119
+  ],
+  "container_extension": "mkv",
+  "custom_sid": null,
+  "direct_source": ""
+ },
+ {
+  "num": 5111,
+  "name": "EN-TOP -128.Dangal.2016",
+  "stream_type": "movie",
+  "stream_id": 1007368,
+  "stream_icon": "http://example.invalid/stalker_portal/screenshots/187/18607.jpg",
+  "rating": "",
+  "rating_5based": "0",
+  "tmdb": "",
+  "trailer": "",
+  "added": "1724698800",
+  "is_adult": 0,
+  "category_id": "1453",
+  "category_ids": [
+   1453
+  ],
+  "container_extension": "mkv",
+  "custom_sid": null,
+  "direct_source": ""
+ },
+ {
+  "num": 5873,
+  "name": "EN - AEW Dynamite",
+  "stream_type": "movie",
+  "stream_id": 797049,
+  "stream_icon": "http://example.invalid/stalker_portal/screenshots/128/12714.jpg",
+  "rating": "",
+  "rating_5based": "0",
+  "tmdb": "",
+  "trailer": "",
+  "added": "1714037940",
+  "is_adult": 0,
+  "category_id": "310",
+  "category_ids": [
+   310
+  ],
+  "container_extension": "mkv",
+  "custom_sid": null,
+  "direct_source": ""
+ },
+ {
+  "num": 976,
+  "name": "Muriel's Wedding (1994)",
+  "stream_type": "movie",
+  "stream_id": 1805694,
+  "stream_icon": "https://example.invalid/t/p/w600_and_h900_bestv2/zJyTr8Fo412a2OIfJGXTRAm4IwX.jpg",
+  "rating": "6.84",
+  "rating_5based": 3.4,
+  "tmdb": 236,
+  "trailer": "",
+  "added": "1769562594",
+  "is_adult": 0,
+  "category_id": "119",
+  "category_ids": [
+   119
+  ],
+  "container_extension": "mkv",
+  "custom_sid": null,
+  "direct_source": ""
+ },
+ {
+  "num": 977,
+  "name": "Kid Cannabis (2014)",
+  "stream_type": "movie",
+  "stream_id": 1805693,
+  "stream_icon": "https://example.invalid/t/p/w600_and_h900_bestv2/xv9HaE9DCTkXTkwxILdnpjkR4eY.jpg",
+  "rating": "6.174",
+  "rating_5based": 3.1,
+  "tmdb": 212231,
+  "trailer": "",
+  "added": "1769562594",
+  "is_adult": 0,
+  "category_id": "119",
+  "category_ids": [
+   119
+  ],
+  "container_extension": "mkv",
+  "custom_sid": null,
+  "direct_source": ""
+ },
+ {
+  "num": 309,
+  "name": "EN - Once Upon a Christmas Miracle (2018)",
+  "stream_type": "movie",
+  "stream_id": 2087346,
+  "stream_icon": "https://example.invalid/t/p/w600_and_h900_bestv2/aSY8EsGoo9GmQrzOm0dEbQ3BYHX.jpg",
+  "rating": "6.6",
+  "rating_5based": 3.3,
+  "tmdb": "552004",
+  "trailer": "",
+  "added": "1785010680",
+  "is_adult": 0,
+  "category_id": "119",
+  "category_ids": [
+   119
+  ],
+  "container_extension": "mp4",
+  "custom_sid": null,
+  "direct_source": ""
+ },
+ {
+  "num": 6051,
+  "name": "EN - A Cry for Help: The Tracey Thurman Story (1989)",
+  "stream_type": "movie",
+  "stream_id": 752689,
+  "stream_icon": "https://example.invalid/t/p/w600_and_h900_bestv2/1WoVIk4ND6PzI9eD3uLLKqry4ug.jpg",
+  "rating": "8.3",
+  "rating_5based": 4.2,
+  "tmdb": "107244",
+  "trailer": "",
+  "added": "1711240440",
+  "is_adult": 0,
+  "category_id": "287",
+  "category_ids": [
+   287
+  ],
+  "container_extension": "avi",
+  "custom_sid": null,
+  "direct_source": ""
+ },
+ {
+  "num": 8444,
+  "name": "EN - Blood Red Sky  (2021)",
+  "stream_type": "movie",
+  "stream_id": 281796,
+  "stream_icon": "https://example.invalid/t/p/w600_and_h900_bestv2/ky8Fua6PD7FyyOA7JACh3GDETli.jpg",
+  "rating": "7.9",
+  "rating_5based": 4,
+  "tmdb": "760883",
+  "trailer": "ySFBYrAdTtI",
+  "added": "1627128000",
+  "is_adult": 0,
+  "category_id": "163",
+  "category_ids": [
+   163
+  ],
+  "container_extension": "m4v",
+  "custom_sid": null,
+  "direct_source": ""
+ },
+ {
+  "num": 41247,
+  "name": "IN - Almost Pyaar with DJ Mohabbat (2023)",
+  "stream_type": "movie",
+  "stream_id": 538489,
+  "stream_icon": "https://example.invalid/t/p/w600_and_h900_bestv2/5OKVJdLBFB2EOjCNpZlnu09HVL1.jpg",
+  "rating": "4.5",
+  "rating_5based": 2.3,
+  "tmdb": "1049623",
+  "trailer": "",
+  "added": "1693513560",
+  "is_adult": 0,
+  "category_id": "88",
+  "category_ids": [
+   88
+  ],
+  "container_extension": "ts",
+  "custom_sid": null,
+  "direct_source": ""
+ },
+ {
+  "num": 28248,
+  "name": "SOC - Wisconsin Badgers at 4 Notre Dame Fighting Irish0 6.09.2026",
+  "stream_type": "movie",
+  "stream_id": 2195045,
+  "stream_icon": "https://example.invalid/stalker_portal/screenshots/316/31503.jpg",
+  "rating": "",
+  "rating_5based": "0",
+  "tmdb": "",
+  "trailer": "",
+  "added": "1792346220",
+  "is_adult": 0,
+  "category_id": "635",
+  "category_ids": [
+   635
+  ],
+  "container_extension": "mkv",
+  "custom_sid": null,
+  "direct_source": ""
+ },
+ {
+  "num": 28249,
+  "name": "SOC - Winnipeg Blue Bombers at Saskatchewan Roughriders 06.09.2026",
+  "stream_type": "movie",
+  "stream_id": 2195044,
+  "stream_icon": "https://example.invalid/stalker_portal/screenshots/316/31503.jpg",
+  "rating": "",
+  "rating_5based": "0",
+  "tmdb": "",
+  "trailer": "",
+  "added": "1792346220",
+  "is_adult": 0,
+  "category_id": "635",
+  "category_ids": [
+   635
+  ],
+  "container_extension": "mkv",
+  "custom_sid": null,
+  "direct_source": ""
+ },
+ {
+  "num": 33070,
+  "name": "IN-CAM - Udta Teer (2026)",
+  "stream_type": "movie",
+  "stream_id": 2213027,
+  "stream_icon": "https://example.invalid/t/p/w600_and_h900_bestv2/tvICKypVlW7Iio4KVs7NousbSKi.jpg",
+  "rating": "6.625",
+  "rating_5based": 3.3,
+  "tmdb": "1375156",
+  "trailer": "",
+  "added": "1793308200",
+  "is_adult": 0,
+  "category_id": "1662",
+  "category_ids": [
+   1662
+  ],
+  "container_extension": "mkv",
+  "custom_sid": null,
+  "direct_source": ""
+ },
+ {
+  "num": 33071,
+  "name": "IN-CAM - Tum Mere Ho (2026)",
+  "stream_type": "movie",
+  "stream_id": 2213026,
+  "stream_icon": "https://example.invalid/t/p/w600_and_h900_bestv2/iQyd8w6xPjTrOeYImdt70EEQ0zv.jpg",
+  "rating": "0",
+  "rating_5based": 0,
+  "tmdb": "1806232",
+  "trailer": "",
+  "added": "1793308200",
+  "is_adult": 0,
+  "category_id": "1662",
+  "category_ids": [
+   1662
+  ],
+  "container_extension": "mkv",
+  "custom_sid": null,
+  "direct_source": ""
+ }
+]

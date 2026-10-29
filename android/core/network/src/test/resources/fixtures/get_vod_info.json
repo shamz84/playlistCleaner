@@ -1,0 +1,42 @@
+{
+ "info": {
+  "kinopoisk_url": "https://example.invalid/movie/26594",
+  "tmdb_id": "26594",
+  "name": "The Secret",
+  "o_name": "The Secret",
+  "cover_big": "https://example.invalid/t/p/w600_and_h900_bestv2/yDpyYUrVAgyWYADeYbGY4vWKjZV.jpg",
+  "movie_image": "https://example.invalid/t/p/w600_and_h900_bestv2/yDpyYUrVAgyWYADeYbGY4vWKjZV.jpg",
+  "releasedate": "2006-03-26",
+  "episode_run_time": 90,
+  "youtube_trailer": "",
+  "director": "Drew Heriot, Sean Byrne",
+  "actors": "Bob Proctor, Joe Vitale, John Assaraf, Loral Langemeier, Marie Diamond",
+  "cast": "Bob Proctor, Joe Vitale, John Assaraf, Loral Langemeier, Marie Diamond",
+  "description": "Interviews with leading authors, philosophers and scientists, with an in-depth discussion of the Law of Attraction. The audience is shown how they can learn and use 'The Secret' in their everyday lives.",
+  "plot": "Interviews with leading authors, philosophers and scientists, with an in-depth discussion of the Law of Attraction. The audience is shown how they can learn and use 'The Secret' in their everyday lives.",
+  "age": "",
+  "country": "",
+  "genre": "Documentary",
+  "backdrop_path": [
+   "https://example.invalid/t/p/w1280/uIjNXtPFIfNX2fxQNP43N3K0n2O.jpg"
+  ],
+  "duration_secs": "5400",
+  "duration": "01:30:00",
+  "bitrate": 0,
+  "rating": "6.593",
+  "runtime": "5400",
+  "status": ""
+ },
+ "movie_data": {
+  "stream_id": 2204608,
+  "name": "EN - The Secret (2006)",
+  "added": "1792795440",
+  "category_id": "119",
+  "category_ids": [
+   119
+  ],
+  "container_extension": "mkv",
+  "custom_sid": null,
+  "direct_source": ""
+ }
+}

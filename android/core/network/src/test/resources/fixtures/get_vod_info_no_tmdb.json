@@ -1,0 +1,40 @@
+{
+ "info": {
+  "duration_secs": "5816",
+  "duration": "01:36:56",
+  "bitrate": 4133,
+  "tmdb_id": "",
+  "name": "",
+  "o_name": "",
+  "cover_big": "https://example.invalid/stalker_portal/screenshots/364/36372.jpg",
+  "movie_image": "https://example.invalid/stalker_portal/screenshots/364/36372.jpg",
+  "releasedate": "",
+  "youtube_trailer": "",
+  "director": "",
+  "actors": "",
+  "cast": "",
+  "description": "",
+  "plot": "",
+  "age": "",
+  "country": "",
+  "genre": "",
+  "backdrop_path": [
+   null
+  ],
+  "runtime": "5816",
+  "rating": "",
+  "status": ""
+ },
+ "movie_data": {
+  "stream_id": 1805695,
+  "name": "EN - Blue Grace (2018)",
+  "added": "1769562540",
+  "category_id": "119",
+  "category_ids": [
+   119
+  ],
+  "container_extension": "mkv",
+  "custom_sid": null,
+  "direct_source": ""
+ }
+}

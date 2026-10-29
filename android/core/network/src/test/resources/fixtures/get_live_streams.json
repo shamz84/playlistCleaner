@@ -1,0 +1,506 @@
+[
+ {
+  "num": 86,
+  "name": "UK: BBC ONE LONDON 4K ◉",
+  "stream_type": "live",
+  "stream_id": 497001,
+  "stream_icon": "http://example.invalid/stalker_portal/misc/logos/320/11987.jpg?90172",
+  "epg_channel_id": "BBCOneOxford.uk",
+  "added": "1688069645",
+  "is_adult": 0,
+  "category_id": "47",
+  "category_ids": [
+   47
+  ],
+  "custom_sid": null,
+  "tv_archive": 1,
+  "direct_source": "",
+  "tv_archive_duration": "3"
+ },
+ {
+  "num": 87,
+  "name": "UK: BBC 1 HD ◉",
+  "stream_type": "live",
+  "stream_id": 162096,
+  "stream_icon": "http://example.invalid/stalker_portal/misc/logos/320/12016.jpg?38263",
+  "epg_channel_id": "bbc1.uk",
+  "added": "1591733478",
+  "is_adult": 0,
+  "category_id": "47",
+  "category_ids": [
+   47
+  ],
+  "custom_sid": null,
+  "tv_archive": 1,
+  "direct_source": "",
+  "tv_archive_duration": "3"
+ },
+ {
+  "num": 88,
+  "name": "UK: BBC 2 HD ◉",
+  "stream_type": "live",
+  "stream_id": 162098,
+  "stream_icon": "http://example.invalid/stalker_portal/misc/logos/320/12017.jpg?20708",
+  "epg_channel_id": "BBC2.uk",
+  "added": "1591733478",
+  "is_adult": 0,
+  "category_id": "47",
+  "category_ids": [
+   47
+  ],
+  "custom_sid": null,
+  "tv_archive": 1,
+  "direct_source": "",
+  "tv_archive_duration": "3"
+ },
+ {
+  "num": 89,
+  "name": "UK: BBC 3 / CBBC HD ◉",
+  "stream_type": "live",
+  "stream_id": 162100,
+  "stream_icon": "http://example.invalid/stalker_portal/misc/logos/320/12033.jpg?67015",
+  "epg_channel_id": "TS",
+  "added": "1591733478",
+  "is_adult": 0,
+  "category_id": "47",
+  "category_ids": [
+   47
+  ],
+  "custom_sid": null,
+  "tv_archive": 1,
+  "direct_source": "",
+  "tv_archive_duration": "3"
+ },
+ {
+  "num": 90,
+  "name": "UK: BBC 4 / CBEEBIES 4K ◉",
+  "stream_type": "live",
+  "stream_id": 162102,
+  "stream_icon": "http://example.invalid/stalker_portal/misc/logos/320/12018.jpg?74474",
+  "epg_channel_id": "BBC4.uk",
+  "added": "1591733478",
+  "is_adult": 0,
+  "category_id": "47",
+  "category_ids": [
+   47
+  ],
+  "custom_sid": null,
+  "tv_archive": 1,
+  "direct_source": "",
+  "tv_archive_duration": "3"
+ },
+ {
+  "num": 91,
+  "name": "UK: ITV 1 HD ◉",
+  "stream_type": "live",
+  "stream_id": 162104,
+  "stream_icon": "http://example.invalid/stalker_portal/misc/logos/320/12019.jpg?8392",
+  "epg_channel_id": "ITV1.uk",
+  "added": "1591733478",
+  "is_adult": 0,
+  "category_id": "47",
+  "category_ids": [
+   47
+  ],
+  "custom_sid": null,
+  "tv_archive": 1,
+  "direct_source": "",
+  "tv_archive_duration": "3"
+ },
+ {
+  "num": 93,
+  "name": "UK: ITV 1 +1 ◉",
+  "stream_type": "live",
+  "stream_id": 283547,
+  "stream_icon": "http://example.invalid/stalker_portal/misc/logos/320/12013.jpg?20593",
+  "epg_channel_id": "ITV1.uk",
+  "added": "1628449274",
+  "is_adult": 0,
+  "category_id": "47",
+  "category_ids": [
+   47
+  ],
+  "custom_sid": null,
+  "tv_archive": 1,
+  "direct_source": "",
+  "tv_archive_duration": "3"
+ },
+ {
+  "num": 94,
+  "name": "UK: ITV 2 HD ◉",
+  "stream_type": "live",
+  "stream_id": 162106,
+  "stream_icon": "http://example.invalid/stalker_portal/misc/logos/320/12020.jpg?96832",
+  "epg_channel_id": "itv2.uk",
+  "added": "1591733478",
+  "is_adult": 0,
+  "category_id": "47",
+  "category_ids": [
+   47
+  ],
+  "custom_sid": null,
+  "tv_archive": 1,
+  "direct_source": "",
+  "tv_archive_duration": "3"
+ },
+ {
+  "num": 16624,
+  "name": "IN: UTSAV PLUS ᴴᴰ ◉",
+  "stream_type": "live",
+  "stream_id": 1015347,
+  "stream_icon": "http://example.invalid/stalker_portal/misc/logos/320/14827.png?43831",
+  "epg_channel_id": "uk.Utsav Plus HD",
+  "added": "1725310410",
+  "is_adult": 0,
+  "category_id": "179",
+  "category_ids": [
+   179
+  ],
+  "custom_sid": null,
+  "tv_archive": 1,
+  "direct_source": "",
+  "tv_archive_duration": "7"
+ },
+ {
+  "num": 16625,
+  "name": "IN: UTSAV PLUS ᴿᴬᵂ ◉",
+  "stream_type": "live",
+  "stream_id": 1015346,
+  "stream_icon": "http://example.invalid/stalker_portal/misc/logos/320/14827.png?43831",
+  "epg_channel_id": "uk.Utsav Plus HD",
+  "added": "1725310410",
+  "is_adult": 0,
+  "category_id": "179",
+  "category_ids": [
+   179
+  ],
+  "custom_sid": null,
+  "tv_archive": 1,
+  "direct_source": "",
+  "tv_archive_duration": "7"
+ },
+ {
+  "num": 16627,
+  "name": "IN: SONY TV ᴴᴰ ◉",
+  "stream_type": "live",
+  "stream_id": 1015345,
+  "stream_icon": "http://example.invalid/stalker_portal/misc/logos/320/4736.jpg?56939",
+  "epg_channel_id": "uk.Sony TV Asia HD",
+  "added": "1725310410",
+  "is_adult": 0,
+  "category_id": "179",
+  "category_ids": [
+   179
+  ],
+  "custom_sid": null,
+  "tv_archive": 1,
+  "direct_source": "",
+  "tv_archive_duration": "7"
+ },
+ {
+  "num": 1,
+  "name": "#### PRIME ᴿᴬᵂ ⁶⁰ᶠᵖˢ #####",
+  "stream_type": "live",
+  "stream_id": 1537489,
+  "stream_icon": "https://example.invalid/prQGp2k4/Prime-Video-GIF.gif",
+  "epg_channel_id": "",
+  "added": "1758283030",
+  "is_adult": 0,
+  "category_id": "1985",
+  "category_ids": [
+   1985
+  ],
+  "custom_sid": null,
+  "tv_archive": 0,
+  "direct_source": "",
+  "tv_archive_duration": 0
+ },
+ {
+  "num": 85,
+  "name": "#### GENERAL HD/4K ####",
+  "stream_type": "live",
+  "stream_id": 1015349,
+  "stream_icon": "https://example.invalid/wikipedia/commons/2/2d/Animated-Flag-United-Kingdom.gif",
+  "epg_channel_id": "",
+  "added": "1725310955",
+  "is_adult": 0,
+  "category_id": "47",
+  "category_ids": [
+   47
+  ],
+  "custom_sid": null,
+  "tv_archive": 0,
+  "direct_source": "",
+  "tv_archive_duration": 0
+ },
+ {
+  "num": 1346,
+  "name": "NOW: SKY SPORTS MAIN EVENT ᴿᴬᵂ",
+  "stream_type": "live",
+  "stream_id": 1527639,
+  "stream_icon": "http://example.invalid/stalker_portal/misc/logos/320/12232.jpg?92793",
+  "epg_channel_id": "skysportsmainevent.uk",
+  "added": "1758205234",
+  "is_adult": 0,
+  "category_id": "1964",
+  "category_ids": [
+   1964
+  ],
+  "custom_sid": null,
+  "tv_archive": 0,
+  "direct_source": "",
+  "tv_archive_duration": 0
+ },
+ {
+  "num": 1347,
+  "name": "NOW: SKY SPORTS MAIN EVENT ᴴᴰ",
+  "stream_type": "live",
+  "stream_id": 1527638,
+  "stream_icon": "http://example.invalid/stalker_portal/misc/logos/320/12232.jpg?92793",
+  "epg_channel_id": "skysportsmainevent.uk",
+  "added": "1758205234",
+  "is_adult": 0,
+  "category_id": "1964",
+  "category_ids": [
+   1964
+  ],
+  "custom_sid": null,
+  "tv_archive": 0,
+  "direct_source": "",
+  "tv_archive_duration": 0
+ },
+ {
+  "num": 1378,
+  "name": "NOW: SKY SPORTS MAIN EVENT ᵁᴴᴰ ³⁸⁴⁰ᴾ",
+  "stream_type": "live",
+  "stream_id": 1527598,
+  "stream_icon": "http://example.invalid/stalker_portal/misc/logos/320/12232.jpg?51065",
+  "epg_channel_id": "",
+  "added": "1758205168",
+  "is_adult": 0,
+  "category_id": "1965",
+  "category_ids": [
+   1965
+  ],
+  "custom_sid": null,
+  "tv_archive": 0,
+  "direct_source": "",
+  "tv_archive_duration": 0
+ },
+ {
+  "num": 1535,
+  "name": "VIP: SKY SPORTS MAIN EVENT ᴴᴰ",
+  "stream_type": "live",
+  "stream_id": 1290315,
+  "stream_icon": "http://example.invalid/stalker_portal/misc/logos/320/12232.jpg?72698",
+  "epg_channel_id": "SkySportsMainEvent.uk",
+  "added": "1737449302",
+  "is_adult": 0,
+  "category_id": "1729",
+  "category_ids": [
+   1729
+  ],
+  "custom_sid": null,
+  "tv_archive": 0,
+  "direct_source": "",
+  "tv_archive_duration": 0
+ },
+ {
+  "num": 2,
+  "name": "PRIME: AMERICAN CRIMES ᴿᴬᵂ",
+  "stream_type": "live",
+  "stream_id": 1537488,
+  "stream_icon": "http://example.invalid/stalker_portal/misc/logos/320/13797.png?ver=39230",
+  "epg_channel_id": "",
+  "added": "1758283030",
+  "is_adult": 0,
+  "category_id": "1985",
+  "category_ids": [
+   1985
+  ],
+  "custom_sid": null,
+  "tv_archive": 0,
+  "direct_source": "",
+  "tv_archive_duration": 0
+ },
+ {
+  "num": 3,
+  "name": "PRIME: ARE WE THERE YET? ᴿᴬᵂ",
+  "stream_type": "live",
+  "stream_id": 1537486,
+  "stream_icon": "http://example.invalid/stalker_portal/misc/logos/320/13797.png?ver=39230",
+  "epg_channel_id": "",
+  "added": "1758283030",
+  "is_adult": 0,
+  "category_id": "1985",
+  "category_ids": [
+   1985
+  ],
+  "custom_sid": null,
+  "tv_archive": 0,
+  "direct_source": "",
+  "tv_archive_duration": 0
+ },
+ {
+  "num": 4,
+  "name": "PRIME: AX MEN ᴿᴬᵂ",
+  "stream_type": "live",
+  "stream_id": 1537485,
+  "stream_icon": "http://example.invalid/stalker_portal/misc/logos/320/13797.png?ver=39230",
+  "epg_channel_id": "",
+  "added": "1758283030",
+  "is_adult": 0,
+  "category_id": "1985",
+  "category_ids": [
+   1985
+  ],
+  "custom_sid": null,
+  "tv_archive": 0,
+  "direct_source": "",
+  "tv_archive_duration": 0
+ },
+ {
+  "num": 5,
+  "name": "PRIME: BAYWATCH ᴿᴬᵂ",
+  "stream_type": "live",
+  "stream_id": 1537484,
+  "stream_icon": "http://example.invalid/stalker_portal/misc/logos/320/13797.png?ver=39230",
+  "epg_channel_id": "",
+  "added": "1758283030",
+  "is_adult": 0,
+  "category_id": "1985",
+  "category_ids": [
+   1985
+  ],
+  "custom_sid": null,
+  "tv_archive": 0,
+  "direct_source": "",
+  "tv_archive_duration": 0
+ },
+ {
+  "num": 6,
+  "name": "PRIME: BEYOND BELIEF: FACT OR FICTION ᴿᴬᵂ",
+  "stream_type": "live",
+  "stream_id": 1537483,
+  "stream_icon": "http://example.invalid/stalker_portal/misc/logos/320/13797.png?ver=39230",
+  "epg_channel_id": "",
+  "added": "1758283030",
+  "is_adult": 0,
+  "category_id": "1985",
+  "category_ids": [
+   1985
+  ],
+  "custom_sid": null,
+  "tv_archive": 0,
+  "direct_source": "",
+  "tv_archive_duration": 0
+ },
+ {
+  "num": 7,
+  "name": "PRIME: BIONIC WOMAN ᴿᴬᵂ",
+  "stream_type": "live",
+  "stream_id": 1537482,
+  "stream_icon": "http://example.invalid/stalker_portal/misc/logos/320/13797.png?ver=39230",
+  "epg_channel_id": "",
+  "added": "1758283030",
+  "is_adult": 0,
+  "category_id": "1985",
+  "category_ids": [
+   1985
+  ],
+  "custom_sid": null,
+  "tv_archive": 0,
+  "direct_source": "",
+  "tv_archive_duration": 0
+ },
+ {
+  "num": 1283,
+  "name": "NOW: SKY ACTION ᴿᴬᵂ",
+  "stream_type": "live",
+  "stream_id": 1527714,
+  "stream_icon": "http://example.invalid/stalker_portal/misc/logos/320/13470.jpg?3770",
+  "epg_channel_id": "SkyAction.uk",
+  "added": "1758205295",
+  "is_adult": 0,
+  "category_id": "1963",
+  "category_ids": [
+   1963
+  ],
+  "custom_sid": null,
+  "tv_archive": 0,
+  "direct_source": "",
+  "tv_archive_duration": 0
+ },
+ {
+  "num": 1284,
+  "name": "NOW: SKY ACTION ᴴᴰ",
+  "stream_type": "live",
+  "stream_id": 1527713,
+  "stream_icon": "http://example.invalid/stalker_portal/misc/logos/320/13470.jpg?3770",
+  "epg_channel_id": "SkyAction.uk",
+  "added": "1758205295",
+  "is_adult": 0,
+  "category_id": "1963",
+  "category_ids": [
+   1963
+  ],
+  "custom_sid": null,
+  "tv_archive": 0,
+  "direct_source": "",
+  "tv_archive_duration": 0
+ },
+ {
+  "num": 1285,
+  "name": "NOW: SKY ARTS 1 ᴿᴬᵂ",
+  "stream_type": "live",
+  "stream_id": 1527712,
+  "stream_icon": "http://example.invalid/stalker_portal/misc/logos/320/12112.jpg?55134",
+  "epg_channel_id": "skyarts.uk",
+  "added": "1758205295",
+  "is_adult": 0,
+  "category_id": "1963",
+  "category_ids": [
+   1963
+  ],
+  "custom_sid": null,
+  "tv_archive": 0,
+  "direct_source": "",
+  "tv_archive_duration": 0
+ },
+ {
+  "num": 281,
+  "name": "UK: MORE 4+1",
+  "stream_type": "live",
+  "stream_id": 904776,
+  "stream_icon": "http://example.invalid/stalker_portal/misc/logos/320/12118.jpg?92704",
+  "epg_channel_id": "",
+  "added": "1720635089",
+  "is_adult": 0,
+  "category_id": "47",
+  "category_ids": [
+   47
+  ],
+  "custom_sid": null,
+  "tv_archive": 0,
+  "direct_source": "",
+  "tv_archive_duration": 0
+ },
+ {
+  "num": 1186,
+  "name": "UK: DISCOVERY HISTORY +1",
+  "stream_type": "live",
+  "stream_id": 707007,
+  "stream_icon": "http://example.invalid/stalker_portal/misc/logos/320/12219.jpg?89049",
+  "epg_channel_id": "",
+  "added": "1707580366",
+  "is_adult": 0,
+  "category_id": "381",
+  "category_ids": [
+   381
+  ],
+  "custom_sid": null,
+  "tv_archive": 0,
+  "direct_source": "",
+  "tv_archive_duration": 0
+ }
+]
