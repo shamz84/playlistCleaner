@@ -6,12 +6,12 @@
         <!--
           adb shell am start -n app.playlistplayer/.DebugPlaybackActivity with string extra "url"
           (see DebugPlaybackActivity KDoc for all extras).
-          Not exported: only the app itself (or run-as / a userdebug shell) can start it.
+          Exported so `adb shell am start` works on retail Fire TV builds; this overlay exists only in debug APKs.
         -->
         <activity
             android:name=".DebugPlaybackActivity"
             android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenLayout|screenSize|smallestScreenSize|uiMode"
-            android:exported="false" />
+            android:exported="true" />
     </application>
 
 </manifest>
