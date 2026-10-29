@@ -27,12 +27,15 @@ class PlaylistSyncWorker(
     context: Context,
     params: WorkerParameters,
     private val syncer: PlaylistSyncer,
+    private val followUp: PlaylistSyncFollowUp = PlaylistSyncFollowUp.NONE,
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
         val playlistId = inputData.getLong(KEY_PLAYLIST_ID, -1L)
         if (playlistId < 0) return Result.failure(workDataOf(KEY_OUTCOME to "InvalidInput"))
-        return when (val outcome = syncer.sync(playlistId)) {
+        val outcome = syncer.sync(playlistId)
+        followUp.afterSync(playlistId, outcome)
+        return when (outcome) {
             is SyncOutcome.Failed ->
                 if (outcome.retryable && runAttemptCount + 1 < MAX_ATTEMPTS) {
                     Result.retry()
@@ -87,14 +90,29 @@ class PlaylistSyncWorker(
 }
 
 /**
+ * Work to start after each playlist sync attempt (one-time or periodic), e.g. the Xtream catalog
+ * sync (`CatalogSyncChain`). Must not throw for ordinary failures.
+ */
+fun interface PlaylistSyncFollowUp {
+    suspend fun afterSync(playlistId: Long, outcome: SyncOutcome)
+
+    companion object {
+        val NONE: PlaylistSyncFollowUp = PlaylistSyncFollowUp { _, _ -> }
+    }
+}
+
+/**
  * Creates [PlaylistSyncWorker] with its dependencies (manual DI). Register it in the app's
  * WorkManager configuration, typically inside a DelegatingWorkerFactory alongside other units'
  * factories. Returns null for other workers so delegation continues.
  */
-class SyncWorkerFactory(private val syncer: () -> PlaylistSyncer) : WorkerFactory() {
+class SyncWorkerFactory(
+    private val followUp: PlaylistSyncFollowUp = PlaylistSyncFollowUp.NONE,
+    private val syncer: () -> PlaylistSyncer,
+) : WorkerFactory() {
     override fun createWorker(appContext: Context, workerClassName: String, workerParameters: WorkerParameters): ListenableWorker? =
         when (workerClassName) {
-            PlaylistSyncWorker::class.java.name -> PlaylistSyncWorker(appContext, workerParameters, syncer())
+            PlaylistSyncWorker::class.java.name -> PlaylistSyncWorker(appContext, workerParameters, syncer(), followUp)
             else -> null
         }
 }

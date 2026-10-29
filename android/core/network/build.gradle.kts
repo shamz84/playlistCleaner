@@ -18,6 +18,8 @@ kotlin {
 
 dependencies {
     api(project(":core:model"))
+    // XtreamClient maps EPG listings to :core:parsing XtreamEpgListing (the decoder lives there).
+    api(project(":core:parsing"))
     api(libs.okhttp)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.core)

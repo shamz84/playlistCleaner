@@ -4,15 +4,26 @@ import android.content.Context
 import androidx.work.DelegatingWorkerFactory
 import androidx.work.WorkManager
 import app.playlistplayer.core.database.AppDatabase
+import app.playlistplayer.core.database.CatalogStore
 import app.playlistplayer.core.database.PlaylistStore
+import app.playlistplayer.core.model.XtreamAccount
 import app.playlistplayer.core.network.RedactingLogger
 import app.playlistplayer.core.network.drive.DriveClient
 import app.playlistplayer.core.network.drive.DriveClientConfig
 import app.playlistplayer.core.network.source.DefaultPlaylistSourceFactory
 import app.playlistplayer.core.network.source.PlaylistSourceFactory
+import app.playlistplayer.core.network.xtream.AccountStatusChecker
+import app.playlistplayer.core.network.xtream.XtreamAccountStatusChecker
+import app.playlistplayer.core.network.xtream.XtreamClient
 import app.playlistplayer.core.sync.PlaylistRegistry
 import app.playlistplayer.core.sync.PlaylistSyncer
 import app.playlistplayer.core.sync.SyncWorkerFactory
+import app.playlistplayer.core.sync.catalog.CatalogSyncChain
+import app.playlistplayer.core.sync.catalog.CatalogSyncWorkerFactory
+import app.playlistplayer.core.sync.catalog.CatalogSyncer
+import app.playlistplayer.core.sync.catalog.SeriesInfoRepository
+import app.playlistplayer.core.sync.catalog.VodInfoRepository
+import app.playlistplayer.core.sync.catalog.toAccountStatusEntity
 import app.playlistplayer.core.sync.platform.AndroidLogSink
 import app.playlistplayer.core.sync.platform.AppSignature
 import app.playlistplayer.core.sync.secure.SecureStore
@@ -70,9 +81,47 @@ class AppContainer(context: Context) {
         PlaylistSyncer(playlistStore, secureStore, playlistSourceFactory, logger = logger.withTag("PlaylistSync"))
     }
 
+    // ---- Xtream (U4) ----
+
+    /** get_series can take ~7 s to first byte on a cold server cache: allow a longer read timeout. */
+    val xtreamClient: XtreamClient by lazy {
+        XtreamClient(okHttpClient.newBuilder().readTimeout(60, TimeUnit.SECONDS).build())
+    }
+
+    val catalogStore: CatalogStore by lazy { CatalogStore(database) }
+
+    private val xtreamAccounts: suspend (Long) -> XtreamAccount? = { id -> secureStore.account(id) }
+
+    val catalogSyncer: CatalogSyncer by lazy {
+        CatalogSyncer(playlistStore, catalogStore, xtreamAccounts, xtreamClient, logger = logger.withTag("CatalogSync"))
+    }
+
+    /** On-demand get_series_info (cached in Room) for the series screen (U10). */
+    val seriesInfoRepository: SeriesInfoRepository by lazy {
+        SeriesInfoRepository(catalogStore, xtreamAccounts, xtreamClient, logger = logger.withTag("SeriesInfo"))
+    }
+
+    /** On-demand get_vod_info details (cached in Room) for the movie detail screen (U10). */
+    val vodInfoRepository: VodInfoRepository by lazy {
+        VodInfoRepository(catalogStore, xtreamAccounts, xtreamClient, logger = logger.withTag("VodInfo"))
+    }
+
+    /** Live account check for the player's 401/403/509 classification (U6); persists the fresh status. */
+    val accountStatusChecker: AccountStatusChecker by lazy {
+        XtreamAccountStatusChecker(
+            xtreamClient,
+            accountLookup = { id -> if (playlistStore.playlist(id)?.xtreamEnabled == true) secureStore.account(id) else null },
+            onInfo = { id, info -> catalogStore.putAccountStatus(info.toAccountStatusEntity(id, System.currentTimeMillis())) },
+        )
+    }
+
     /** WorkManager worker factory; later units add their factories to this delegate. */
     val workerFactory: DelegatingWorkerFactory by lazy {
-        DelegatingWorkerFactory().apply { addFactory(SyncWorkerFactory { playlistSyncer }) }
+        DelegatingWorkerFactory().apply {
+            // A successful playlist sync chains the catalog sync for Xtream-enabled playlists.
+            addFactory(SyncWorkerFactory(CatalogSyncChain(playlistStore, logger.withTag("CatalogSync")) { workManager }) { playlistSyncer })
+            addFactory(CatalogSyncWorkerFactory { catalogSyncer })
+        }
     }
 
     val workManager: WorkManager get() = WorkManager.getInstance(appContext)

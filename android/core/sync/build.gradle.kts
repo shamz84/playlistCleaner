@@ -16,6 +16,13 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    sourceSets {
+        // CatalogSyncWorkerTest replays the U1 provider fixtures kept with :core:network.
+        getByName("test") {
+            resources.directories.add("../network/src/test/resources")
+        }
+    }
+
     testOptions {
         unitTests.isIncludeAndroidResources = true
         unitTests.all {
