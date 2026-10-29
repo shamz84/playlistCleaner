@@ -50,7 +50,7 @@ class StreamAccount(
         return result
     }
 
-    override fun toString(): String = "StreamAccount(origin=$origin, username=<redacted>, password=<redacted>)"
+    override fun toString(): String = "StreamAccount(scheme=$scheme, host=<redacted>, username=<redacted>, password=<redacted>)"
 
     private companion object {
         const val FORBIDDEN_HOST_CHARS = "/?#@:\\"

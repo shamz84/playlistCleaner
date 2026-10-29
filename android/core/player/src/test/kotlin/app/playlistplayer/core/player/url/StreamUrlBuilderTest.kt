@@ -86,5 +86,6 @@ class StreamUrlBuilderTest {
         val text = StreamAccount("http", "example.invalid", null, "secretuser", "secretpass").toString()
         assertThat(text).doesNotContain("secretuser")
         assertThat(text).doesNotContain("secretpass")
+        assertThat(text).doesNotContain("example.invalid")
     }
 }

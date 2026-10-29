@@ -1,0 +1,25 @@
+#EXTM3U
+#EXTINF:0 CUID="100" tvg-chno="null" tvg-name="### NATIONAL NETWORKS ###" tvg-id="local.gr" tvg-logo="https://logos.example.invalid/header.png" group-title="🇬🇧 TV Guide (UK)",### NATIONAL NETWORKS ###
+http://example.invalid:8080/live/user/pass/1000.ts
+#EXTINF:0 CUID="101" tvg-name="BBC One London" tvg-id="bbconelondon.uk" catchup-type="xc" catchup-days="3" tvg-logo="https://logos.example.invalid/bbc1.png" group-title="🇬🇧 TV Guide (UK)",BBC One London
+http://example.invalid:8080/live/user/pass/1001.ts
+#EXTINF:0 CUID="102" tvg-name="BBC Two" tvg-logo="https://logos.example.invalid/bbc2.png" group-title="🇬🇧 TV Guide (UK)",BBC Two
+http://example.invalid:8080/live/user/pass/1002.ts
+#EXTINF:0 CUID="103" tvg-name="ITV1 ᴴᴰ" tvg-id="itv1.uk" tvg-chno="103" group-title="🇬🇧 TV Guide (UK)",ITV1 ᴴᴰ
+#EXTVLCOPT:http-user-agent=Test
+http://example.invalid:8080/live/user/pass/1003.ts
+#EXTINF:0 CUID="200" tvg-name="Broken Entry" tvg-id="broken.uk" group-title="⚽ Sports",Broken Entry
+#EXTINF:0 CUID="201" tvg-name="Sky Sports Main Event ³⁸⁴⁰ᴾ" tvg-id="skysportsmainevent.uk" tvg-logo="https://logos.example.invalid/ssme.png" group-title="⚽ Sports",Sky Sports Main Event ³⁸⁴⁰ᴾ
+
+http://example.invalid:8080/live/user/pass/2001.ts
+#EXTINF:0 CUID="202" tvg-name="Sky Sports Main Event (Backup)" tvg-id="skysportsmainevent.uk" group-title="⚽ Sports",Sky Sports Main Event (Backup)
+http://other.example.invalid:2095/live/user2/pass2/2002.ts
+#EXTINF:0 CUID="203" tvg-name="Match, Day & Night" tvg-id="match.uk" group-title="⚽ Sports",Match, Day & Night
+http://example.invalid:8080/live/user/pass/2003.ts
+#EXTINF:0 CUID="300" tvg-name="Movies 24/7 — Action" group-title="🎬 Movies 24/7",Movies 24/7 — Action
+http://example.invalid:8080/live/user/pass/3001.ts
+#EXTINF:0 CUID="301" tvg-name="Movies 24/7 — Comedy" tvg-id="" tvg-logo="" group-title="🎬 Movies 24/7",Movies 24/7 — Comedy
+http://example.invalid:8080/live/user/pass/3002.ts
+#EXTINF:0 CUID="104" tvg-name="Channel 4" tvg-id="channel4.uk" catchup-type="xc" catchup-days="7" group-title="🇬🇧 TV Guide (UK)",Channel 4
+http://example.invalid:8080/live/user/pass/1004.ts
+#EXTINF:0 CUID="400" tvg-name="Trailing Without Url" group-title="Ελληνικά 🇬🇷",Trailing Without Url

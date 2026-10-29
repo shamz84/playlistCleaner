@@ -1,0 +1,360 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "8792602e301b945e1d72e40c6becf5d2",
+    "entities": [
+      {
+        "tableName": "playlist",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `sourceType` TEXT NOT NULL, `xtreamEnabled` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sourceType",
+            "columnName": "sourceType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "xtreamEnabled",
+            "columnName": "xtreamEnabled",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "channel_group",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`playlistId` INTEGER NOT NULL, `generation` INTEGER NOT NULL, `ordinal` INTEGER NOT NULL, `name` TEXT NOT NULL, `channelCount` INTEGER NOT NULL, PRIMARY KEY(`playlistId`, `generation`, `ordinal`))",
+        "fields": [
+          {
+            "fieldPath": "playlistId",
+            "columnName": "playlistId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "generation",
+            "columnName": "generation",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ordinal",
+            "columnName": "ordinal",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "channelCount",
+            "columnName": "channelCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "playlistId",
+            "generation",
+            "ordinal"
+          ]
+        }
+      },
+      {
+        "tableName": "channel",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`playlistId` INTEGER NOT NULL, `generation` INTEGER NOT NULL, `ordinal` INTEGER NOT NULL, `groupOrdinal` INTEGER NOT NULL, `name` TEXT NOT NULL, `streamId` INTEGER, `containerExtension` TEXT, `tvgId` TEXT, `tvgName` TEXT, `logo` TEXT, `cuid` TEXT, `tvgChno` TEXT, `catchupType` TEXT, `catchupDays` INTEGER NOT NULL, `isHeader` INTEGER NOT NULL, PRIMARY KEY(`playlistId`, `generation`, `ordinal`))",
+        "fields": [
+          {
+            "fieldPath": "playlistId",
+            "columnName": "playlistId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "generation",
+            "columnName": "generation",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ordinal",
+            "columnName": "ordinal",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "groupOrdinal",
+            "columnName": "groupOrdinal",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "streamId",
+            "columnName": "streamId",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "containerExtension",
+            "columnName": "containerExtension",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "tvgId",
+            "columnName": "tvgId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "tvgName",
+            "columnName": "tvgName",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "logo",
+            "columnName": "logo",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "cuid",
+            "columnName": "cuid",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "tvgChno",
+            "columnName": "tvgChno",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "catchupType",
+            "columnName": "catchupType",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "catchupDays",
+            "columnName": "catchupDays",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isHeader",
+            "columnName": "isHeader",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "playlistId",
+            "generation",
+            "ordinal"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_channel_playlistId_generation_groupOrdinal_ordinal",
+            "unique": false,
+            "columnNames": [
+              "playlistId",
+              "generation",
+              "groupOrdinal",
+              "ordinal"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_channel_playlistId_generation_groupOrdinal_ordinal` ON `${TABLE_NAME}` (`playlistId`, `generation`, `groupOrdinal`, `ordinal`)"
+          },
+          {
+            "name": "index_channel_playlistId_generation_tvgId",
+            "unique": false,
+            "columnNames": [
+              "playlistId",
+              "generation",
+              "tvgId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_channel_playlistId_generation_tvgId` ON `${TABLE_NAME}` (`playlistId`, `generation`, `tvgId`)"
+          },
+          {
+            "name": "index_channel_playlistId_generation_streamId",
+            "unique": false,
+            "columnNames": [
+              "playlistId",
+              "generation",
+              "streamId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_channel_playlistId_generation_streamId` ON `${TABLE_NAME}` (`playlistId`, `generation`, `streamId`)"
+          }
+        ]
+      },
+      {
+        "tableName": "sync_state",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`playlistId` INTEGER NOT NULL, `activeGeneration` INTEGER, `pendingGeneration` INTEGER, `lastGeneration` INTEGER NOT NULL, `contentUpdatedAt` INTEGER, `lastAttemptAt` INTEGER, `lastSuccessAt` INTEGER, `lastFailureAt` INTEGER, `lastFailureKind` TEXT, `lastFailureMessage` TEXT, `lastWarning` TEXT, `lastWarningAt` INTEGER, `sourceMd5` TEXT, `sourceVersion` TEXT, `sourceEtag` TEXT, `sourceLastModified` TEXT, `sourceModifiedTime` INTEGER, `channelCount` INTEGER NOT NULL, `groupCount` INTEGER NOT NULL, `mixedAccounts` INTEGER NOT NULL, `catalogStale` INTEGER NOT NULL, `epgStale` INTEGER NOT NULL, PRIMARY KEY(`playlistId`))",
+        "fields": [
+          {
+            "fieldPath": "playlistId",
+            "columnName": "playlistId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "activeGeneration",
+            "columnName": "activeGeneration",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "pendingGeneration",
+            "columnName": "pendingGeneration",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "lastGeneration",
+            "columnName": "lastGeneration",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "contentUpdatedAt",
+            "columnName": "contentUpdatedAt",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "lastAttemptAt",
+            "columnName": "lastAttemptAt",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "lastSuccessAt",
+            "columnName": "lastSuccessAt",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "lastFailureAt",
+            "columnName": "lastFailureAt",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "lastFailureKind",
+            "columnName": "lastFailureKind",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "lastFailureMessage",
+            "columnName": "lastFailureMessage",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "lastWarning",
+            "columnName": "lastWarning",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "lastWarningAt",
+            "columnName": "lastWarningAt",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "sourceMd5",
+            "columnName": "sourceMd5",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "sourceVersion",
+            "columnName": "sourceVersion",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "sourceEtag",
+            "columnName": "sourceEtag",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "sourceLastModified",
+            "columnName": "sourceLastModified",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "sourceModifiedTime",
+            "columnName": "sourceModifiedTime",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "channelCount",
+            "columnName": "channelCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "groupCount",
+            "columnName": "groupCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mixedAccounts",
+            "columnName": "mixedAccounts",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "catalogStale",
+            "columnName": "catalogStale",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "epgStale",
+            "columnName": "epgStale",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "playlistId"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '8792602e301b945e1d72e40c6becf5d2')"
+    ]
+  }
+}

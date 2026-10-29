@@ -33,6 +33,14 @@ room3 {
     schemaDirectory("$projectDir/schemas")
 }
 
+// Unit tests run on the host JVM: swap the Android-only bundled SQLite AAR (device .so files) for
+// its JVM variant, which carries desktop natives. Same classes, so production code is unchanged.
+configurations.configureEach {
+    if (name.endsWith("UnitTestRuntimeClasspath")) {
+        exclude(group = "androidx.sqlite", module = "sqlite-bundled-android")
+    }
+}
+
 dependencies {
     api(project(":core:model"))
     api(libs.androidx.room3.runtime)
@@ -44,4 +52,5 @@ dependencies {
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.androidx.room3.testing)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.androidx.sqlite.bundled.jvm)
 }
