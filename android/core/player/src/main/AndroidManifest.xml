@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- ExoPlayer wake mode network (C.WAKE_MODE_NETWORK) holds a wake lock and a Wi-Fi lock. -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- AndroidConnectivityMonitor: default network callback. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+</manifest>

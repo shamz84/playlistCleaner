@@ -28,12 +28,15 @@ android {
 
 dependencies {
     api(project(":core:model"))
-    implementation(project(":core:consolidation"))
+    // DeviceCapabilitiesProbe returns consolidation's DeviceCapabilities; PlayableSource carries QualityTier.
+    api(project(":core:consolidation"))
     implementation(project(":core:network"))
     api(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.exoplayer.hls)
     implementation(libs.androidx.media3.datasource.okhttp)
-    implementation(libs.kotlinx.coroutines.android)
+    // PlayerFactory accepts a shared OkHttpClient; pins the catalog version over the transitive 4.x.
+    api(libs.okhttp)
+    api(libs.kotlinx.coroutines.android)
 
     testImplementation(libs.bundles.unit.test)
     testImplementation(libs.robolectric)
