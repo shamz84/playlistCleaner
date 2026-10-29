@@ -1,0 +1,189 @@
+package app.playlistplayer.feature.settings
+
+import app.playlistplayer.core.consolidation.DeviceCapabilities
+import app.playlistplayer.core.consolidation.VersionPreferences
+import app.playlistplayer.core.player.catchup.CatchupUrlStyle
+import app.playlistplayer.core.player.url.LiveFormatPreference
+import java.util.Locale
+
+/** Highest quality to pick by default. [maxHeight] null = no cap (best available). */
+enum class QualityPreference(val maxHeight: Int?) {
+    BEST(null),
+    UHD(2160),
+    FHD(1080),
+    HD(720),
+    SD(576),
+}
+
+/**
+ * Content preferences (R14).
+ *
+ * @property languages ranked language tags, best first; lower-case provider codes such as
+ *   `en` or `in-tl`, non-empty and distinct.
+ */
+data class ContentPreferences(
+    val languages: List<String> = listOf("en"),
+    val quality: QualityPreference = QualityPreference.BEST,
+) {
+    init {
+        require(languages.isNotEmpty()) { "at least one language is required" }
+        require(languages.all { LANGUAGE.matches(it) }) { "invalid language tag" }
+        require(languages.distinct().size == languages.size) { "duplicate language" }
+    }
+
+    /** Moves the language at [from] to position [to] (D-pad reorder). */
+    fun moveLanguage(from: Int, to: Int): ContentPreferences {
+        require(from in languages.indices && to in languages.indices) { "index out of range" }
+        if (from == to) return this
+        val list = languages.toMutableList()
+        list.add(to, list.removeAt(from))
+        return copy(languages = list)
+    }
+
+    /** Adds [tag] at the end (or keeps its position when already present). */
+    fun addLanguage(tag: String): ContentPreferences {
+        val code = normalizeLanguage(tag)
+        return if (code in languages) this else copy(languages = languages + code)
+    }
+
+    /** Removes [tag]; the last remaining language cannot be removed. */
+    fun removeLanguage(tag: String): ContentPreferences {
+        val code = normalizeLanguage(tag)
+        if (code !in languages || languages.size == 1) return this
+        return copy(languages = languages - code)
+    }
+
+    /** Ranking inputs for `:core:consolidation`, capping the device height by [quality]. */
+    fun versionPreferences(device: DeviceCapabilities = DeviceCapabilities.UNRESTRICTED): VersionPreferences {
+        val cap = quality.maxHeight
+        val capped = if (cap == null) device else device.copy(maxVideoHeight = minOf(device.maxVideoHeight, cap))
+        return VersionPreferences(languages = languages, device = capped)
+    }
+
+    companion object {
+        internal val LANGUAGE = Regex("[a-z0-9]+(-[a-z0-9]+)*")
+
+        fun normalizeLanguage(tag: String): String = tag.trim().lowercase(Locale.ROOT)
+    }
+}
+
+/**
+ * Playback preferences.
+ *
+ * @property catchupOffsetHours correction applied to catch-up start times, in [CATCHUP_OFFSET_RANGE].
+ */
+data class PlaybackPreferences(
+    val liveFormat: LiveFormatPreference = LiveFormatPreference.TS,
+    val matchFrameRate: Boolean = false,
+    val tunneling: Boolean = false,
+    val catchupOffsetHours: Int = 0,
+    val catchupUrlStyle: CatchupUrlStyle = CatchupUrlStyle.PATH,
+) {
+    init {
+        require(catchupOffsetHours in CATCHUP_OFFSET_RANGE) { "catch-up offset out of range" }
+    }
+
+    companion object {
+        val CATCHUP_OFFSET_RANGE = -12..12
+    }
+}
+
+/**
+ * Sync preferences.
+ *
+ * @property refreshIntervalHours periodic playlist refresh, in [REFRESH_RANGE].
+ * @property staleWarningDays age after which cached data shows a staleness warning, in [STALE_RANGE].
+ */
+data class SyncPreferences(
+    val refreshIntervalHours: Int = 6,
+    val staleWarningDays: Int = 7,
+) {
+    init {
+        require(refreshIntervalHours in REFRESH_RANGE) { "refresh interval out of range" }
+        require(staleWarningDays in STALE_RANGE) { "stale warning out of range" }
+    }
+
+    companion object {
+        val REFRESH_RANGE = 1..168
+        val STALE_RANGE = 1..90
+    }
+}
+
+data class AppPreferences(
+    val content: ContentPreferences = ContentPreferences(),
+    val playback: PlaybackPreferences = PlaybackPreferences(),
+    val sync: SyncPreferences = SyncPreferences(),
+)
+
+/**
+ * Flattens [AppPreferences] to a string map for DataStore and back. Decoding is lenient so a
+ * bad or missing value never blocks start-up: an unparseable value falls back to its default,
+ * an out-of-range number is coerced into its range, and invalid language tags are dropped
+ * (an empty result falls back to the default list). Unknown keys are ignored.
+ */
+object PreferencesCodec {
+    const val KEY_VERSION = "prefs.version"
+    const val KEY_LANGUAGES = "content.languages"
+    const val KEY_QUALITY = "content.quality"
+    const val KEY_LIVE_FORMAT = "playback.liveFormat"
+    const val KEY_MATCH_FRAME_RATE = "playback.matchFrameRate"
+    const val KEY_TUNNELING = "playback.tunneling"
+    const val KEY_CATCHUP_OFFSET = "playback.catchupOffsetHours"
+    const val KEY_CATCHUP_STYLE = "playback.catchupUrlStyle"
+    const val KEY_REFRESH_HOURS = "sync.refreshIntervalHours"
+    const val KEY_STALE_DAYS = "sync.staleWarningDays"
+    private const val VERSION = "1"
+
+    fun encode(prefs: AppPreferences): Map<String, String> = mapOf(
+        KEY_VERSION to VERSION,
+        KEY_LANGUAGES to prefs.content.languages.joinToString(","),
+        KEY_QUALITY to prefs.content.quality.name,
+        KEY_LIVE_FORMAT to prefs.playback.liveFormat.name,
+        KEY_MATCH_FRAME_RATE to prefs.playback.matchFrameRate.toString(),
+        KEY_TUNNELING to prefs.playback.tunneling.toString(),
+        KEY_CATCHUP_OFFSET to prefs.playback.catchupOffsetHours.toString(),
+        KEY_CATCHUP_STYLE to prefs.playback.catchupUrlStyle.name,
+        KEY_REFRESH_HOURS to prefs.sync.refreshIntervalHours.toString(),
+        KEY_STALE_DAYS to prefs.sync.staleWarningDays.toString(),
+    )
+
+    fun decode(map: Map<String, String>): AppPreferences {
+        val d = AppPreferences()
+        val languages = map[KEY_LANGUAGES]
+            ?.split(',')
+            ?.map(ContentPreferences::normalizeLanguage)
+            ?.filter { ContentPreferences.LANGUAGE.matches(it) }
+            ?.distinct()
+            ?.takeIf { it.isNotEmpty() }
+            ?: d.content.languages
+        return AppPreferences(
+            content = ContentPreferences(
+                languages = languages,
+                quality = enumOr(map[KEY_QUALITY], d.content.quality),
+            ),
+            playback = PlaybackPreferences(
+                liveFormat = enumOr(map[KEY_LIVE_FORMAT], d.playback.liveFormat),
+                matchFrameRate = boolOr(map[KEY_MATCH_FRAME_RATE], d.playback.matchFrameRate),
+                tunneling = boolOr(map[KEY_TUNNELING], d.playback.tunneling),
+                catchupOffsetHours = intIn(map[KEY_CATCHUP_OFFSET], PlaybackPreferences.CATCHUP_OFFSET_RANGE, d.playback.catchupOffsetHours),
+                catchupUrlStyle = enumOr(map[KEY_CATCHUP_STYLE], d.playback.catchupUrlStyle),
+            ),
+            sync = SyncPreferences(
+                refreshIntervalHours = intIn(map[KEY_REFRESH_HOURS], SyncPreferences.REFRESH_RANGE, d.sync.refreshIntervalHours),
+                staleWarningDays = intIn(map[KEY_STALE_DAYS], SyncPreferences.STALE_RANGE, d.sync.staleWarningDays),
+            ),
+        )
+    }
+
+    private inline fun <reified E : Enum<E>> enumOr(value: String?, default: E): E =
+        value?.let { v -> enumValues<E>().firstOrNull { it.name == v.trim() } } ?: default
+
+    private fun boolOr(value: String?, default: Boolean): Boolean = when (value?.trim()?.lowercase(Locale.ROOT)) {
+        "true" -> true
+        "false" -> false
+        else -> default
+    }
+
+    private fun intIn(value: String?, range: IntRange, default: Int): Int =
+        value?.trim()?.toIntOrNull()?.coerceIn(range) ?: default
+}
