@@ -1,0 +1,43 @@
+# Gradle / Android Studio
+.gradle/
+build/
+.kotlin/
+.idea/
+*.iml
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Local machine config and secrets (sdk.dir, drive.apiKey, release signing)
+local.properties
+*.jks
+*.keystore
+
+# ---------------------------------------------------------------------------
+# Re-include Android sources that the repo-root .gitignore (a Visual Studio
+# template) would otherwise ignore. Patterns containing a slash are anchored to
+# this directory, hence the leading **/.
+# ---------------------------------------------------------------------------
+
+# Root ignores [Dd]ebug/, [Rr]elease/, [Bb]in/, [Oo]ut/, [Ll]og/, [Ll]ogs/, x64/, x86/,
+# [Aa][Rr][Mm]/, [Aa][Rr][Mm]64/, artifacts/, publish/, Backup*/ directories.
+!**/src/debug/
+!**/src/release/
+!**/src/*/[Dd]ebug/
+!**/src/*/[Rr]elease/
+!**/src/**/[Bb]in/
+!**/src/**/[Oo]ut/
+!**/src/**/[Ll]og/
+!**/src/**/[Ll]ogs/
+!**/src/**/x86/
+!**/src/**/x64/
+!**/src/**/[Aa][Rr][Mm]/
+!**/src/**/[Aa][Rr][Mm]64/
+!**/src/**/artifacts/
+!**/src/**/publish/
+!**/src/**/Backup*/
+
+# Root ignores *.xml (EPG files) -- Android manifests, resources and XMLTV fixtures are XML.
+# Root patterns protecting credentials/playlists (8k*.m3u, credentials*.json, gdrive_*.json,
+# xtream_api_config*.json, .env) intentionally stay in force here.
+!*.xml

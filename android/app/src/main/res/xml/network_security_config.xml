@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Cleartext is permitted app-wide because IPTV provider hosts are plain http:// and are only
+  known at runtime (they come from the user's playlist), so they cannot be listed as domains here.
+  Google Drive and other fixed endpoints are always called over https:// by the network layer.
+  Only system CAs are trusted; user-installed CAs are not.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>
