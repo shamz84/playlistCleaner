@@ -112,6 +112,9 @@ sealed interface OverlayEvent {
     data object PlayPause : OverlayEvent
     data class SeekKey(val direction: SeekDirection, val repeatCount: Int) : OverlayEvent
     data object SeekKeyUp : OverlayEvent
+
+    /** Seek to an absolute position (scrub bar or drag release), committed at once. */
+    data class SeekTo(val positionMs: Long) : OverlayEvent
     data class Progress(val positionMs: Long, val durationMs: Long, val isPlaying: Boolean, val nowMs: Long) : OverlayEvent
     data class Tick(val nowMs: Long) : OverlayEvent
     data object CancelNext : OverlayEvent
@@ -138,7 +141,7 @@ sealed interface OverlayCommand {
  * Pure state machine for the VOD playback overlay (R16, R19):
  * - Resume / Start over prompt at start when a resume position is offered;
  * - play/pause; D-pad seek with acceleration ([SeekAccelerator]), previewed and committed once
- *   on key up;
+ *   on key up; absolute seeks ([OverlayEvent.SeekTo]) from a scrub bar;
  * - next-episode card during the credits (last [CREDITS_REMAINING_MS] or ≥ [CREDITS_FRACTION]),
  *   counting down [COUNTDOWN_MS] then playing the next episode, unless cancelled;
  * - audio and subtitle track selection.
@@ -190,6 +193,12 @@ class VodPlayerOverlayState(initial: VodOverlayState = VodOverlayState()) {
             OverlayEvent.SeekKeyUp -> {
                 val target = s.seek?.targetMs ?: return emptyList()
                 state = s.copy(seek = null, positionMs = target).withCreditsReset(target)
+                listOf(OverlayCommand.SeekTo(target))
+            }
+            is OverlayEvent.SeekTo -> {
+                if (!s.started) return emptyList()
+                val target = clamp(event.positionMs, s.durationMs)
+                state = s.copy(seek = null, positionMs = target, controlsVisible = true).withCreditsReset(target)
                 listOf(OverlayCommand.SeekTo(target))
             }
             is OverlayEvent.Progress -> onProgress(s, event)

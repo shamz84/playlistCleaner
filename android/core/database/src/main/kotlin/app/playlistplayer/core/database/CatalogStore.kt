@@ -162,6 +162,10 @@ class CatalogStore(private val db: AppDatabase) {
 
     suspend fun channelWithLiveInfo(playlistId: Long, ordinal: Int): ChannelLiveInfo? = catalogDao.channelWithLiveInfo(playlistId, ordinal)
 
+    /** [channelsWithLiveInfo] for one group of the active generation, in playlist order. */
+    suspend fun channelsWithLiveInfoInGroup(playlistId: Long, groupOrdinal: Int): List<ChannelLiveInfo> =
+        catalogDao.channelsWithLiveInfoInGroup(playlistId, groupOrdinal)
+
     // ---- reads: VOD ----
 
     suspend fun vodCategories(playlistId: Long): List<VodCategoryEntity> = catalogDao.vodCategories(playlistId)

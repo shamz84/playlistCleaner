@@ -63,6 +63,8 @@ sealed interface MobileScreen {
         val request: PlaybackRequest,
         val onNextEpisode: (suspend () -> PlaybackRequest?)? = null,
         val onClosed: () -> Unit = {},
+        /** A version chosen in the player (persisted as the title's pick by the detail ViewModel). */
+        val onVersionPicked: (versionId: String) -> Unit = {},
     ) : MobileScreen
 }
 

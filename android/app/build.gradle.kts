@@ -139,6 +139,8 @@ dependencies {
     implementation(libs.coil.network.okhttp)
 
     debugImplementation(libs.androidx.compose.ui.tooling)
+    // Compose UI tests on Robolectric (createComposeRule needs the test manifest's activity).
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 
     testImplementation(libs.bundles.unit.test)
     testImplementation(libs.robolectric)
@@ -150,6 +152,8 @@ dependencies {
     testImplementation(libs.androidx.sqlite.bundled.jvm)
     testImplementation(libs.androidx.datastore.preferences)
     testImplementation(libs.okhttp.mockwebserver)
+    testImplementation(platform(libs.androidx.compose.bom))
+    testImplementation(libs.androidx.compose.ui.test.junit4)
 }
 
 // Unit tests run on the host JVM: swap the Android-only bundled SQLite AAR (device .so files) for

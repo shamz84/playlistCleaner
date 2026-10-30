@@ -1,9 +1,5 @@
 package app.playlistplayer.ui.mobile
 
-import android.os.Looper
-import android.view.ViewGroup
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.playlistplayer.feature.onboarding.OnboardingProgress
 import app.playlistplayer.feature.onboarding.OnboardingResult
@@ -15,19 +11,19 @@ import app.playlistplayer.ui.common.PlaylistSection
 import app.playlistplayer.ui.common.live.ChannelRow
 import app.playlistplayer.ui.common.live.LiveBrowseSource
 import app.playlistplayer.ui.tv.TvRootDependencies
-import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOf
+import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onRoot
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.Robolectric
-import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
 /**
- * Composition smoke tests (Robolectric, no Compose UI test dependency in `:app` yet): the phone
- * root composes without dependencies, on first run, and in a wide (rail) window.
+ * Composition smoke tests (Robolectric + Compose test rule): the phone root composes without
+ * dependencies, on first run, and in a wide (rail) window.
  */
 @RunWith(AndroidJUnit4::class)
 class MobileRootSmokeTest {
@@ -52,34 +48,34 @@ class MobileRootSmokeTest {
         hasPlaylists = flowOf(hasPlaylists),
     )
 
-    private fun compose(dependencies: MobileRootDependencies?): ComponentActivity {
-        val activity = Robolectric.buildActivity(ComponentActivity::class.java).setup().get()
-        activity.setContent { MobileRoot(dependencies) }
-        shadowOf(Looper.getMainLooper()).idle()
-        return activity
-    }
+    @get:Rule
+    val compose = createComposeRule()
 
-    private fun ComponentActivity.contentChildren(): Int =
-        (findViewById<ViewGroup>(android.R.id.content)).childCount
+    /** Composes the root and waits until it is idle (the rule's clock settles infinite animations). */
+    private fun render(dependencies: MobileRootDependencies?) {
+        compose.setContent { MobileRoot(dependencies) }
+        compose.waitForIdle()
+        compose.onRoot().assertExists()
+    }
 
     @Test
     fun `renders placeholders without dependencies`() {
-        assertThat(compose(null).contentChildren()).isEqualTo(1)
+        render(null)
     }
 
     @Test
     fun `renders first-run onboarding when there are no playlists`() {
-        assertThat(compose(MobileRootDependencies(shared(hasPlaylists = false))).contentChildren()).isEqualTo(1)
+        render(MobileRootDependencies(shared(hasPlaylists = false)))
     }
 
     @Test
     fun `renders the shell when playlists exist`() {
-        assertThat(compose(MobileRootDependencies(shared(hasPlaylists = true))).contentChildren()).isEqualTo(1)
+        render(MobileRootDependencies(shared(hasPlaylists = true)))
     }
 
     @Test
     @Config(qualifiers = "w840dp-h480dp-land")
     fun `renders the rail layout on a wide window`() {
-        assertThat(compose(MobileRootDependencies(shared(hasPlaylists = true))).contentChildren()).isEqualTo(1)
+        render(MobileRootDependencies(shared(hasPlaylists = true)))
     }
 }

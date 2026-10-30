@@ -25,6 +25,11 @@ data class PlaybackRequest(
     val resumeOfferMs: Long? = null,
     /** Title of the following episode, when there is one (drives the next-episode card). */
     val nextEpisodeLabel: String? = null,
+    /**
+     * Version id (`VodVersion` item id, the [TitlePickStore] value) of each source, keyed by
+     * [PlayableSource.id]: a version chosen in the player is persisted as the title's pick.
+     */
+    val versionIds: Map<String, String> = emptyMap(),
 )
 
 /** Why a play action could not build a request. */

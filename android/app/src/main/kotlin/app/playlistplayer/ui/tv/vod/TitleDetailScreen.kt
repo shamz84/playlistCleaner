@@ -33,6 +33,10 @@ import app.playlistplayer.feature.vod.TitleDetailViewModel
 import app.playlistplayer.feature.vod.VersionRow
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.launch
+import app.playlistplayer.ui.common.badge
+import app.playlistplayer.ui.common.formatClock
+import app.playlistplayer.ui.common.languageLabel
+import app.playlistplayer.ui.common.qualityLabel
 
 /** Movie detail: backdrop, plot, filter chips, version list, Play / Resume, favourite. */
 @Composable

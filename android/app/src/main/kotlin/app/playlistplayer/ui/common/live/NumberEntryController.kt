@@ -1,4 +1,4 @@
-package app.playlistplayer.ui.tv.live
+package app.playlistplayer.ui.common.live
 
 /**
  * Remote number entry (U9): digits typed on the remote jump to the Nth playable channel of the

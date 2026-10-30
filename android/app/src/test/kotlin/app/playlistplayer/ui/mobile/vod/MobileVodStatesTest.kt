@@ -9,6 +9,7 @@ import app.playlistplayer.feature.vod.VodPlaylist
 import app.playlistplayer.ui.common.UiState
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
+import app.playlistplayer.ui.common.formatClock
 
 class MobileVodStatesTest {
 
@@ -54,9 +55,9 @@ class MobileVodStatesTest {
 
     @Test
     fun `clock text formats minutes and hours`() {
-        assertThat(clockText(0)).isEqualTo("0:00")
-        assertThat(clockText(245_000)).isEqualTo("4:05")
-        assertThat(clockText(3_723_000)).isEqualTo("1:02:03")
-        assertThat(clockText(-5)).isEqualTo("0:00")
+        assertThat(formatClock(0)).isEqualTo("0:00")
+        assertThat(formatClock(245_000)).isEqualTo("4:05")
+        assertThat(formatClock(3_723_000)).isEqualTo("1:02:03")
+        assertThat(formatClock(-5)).isEqualTo("0:00")
     }
 }

@@ -45,34 +45,8 @@ import app.playlistplayer.ui.common.UiTokens
 import app.playlistplayer.ui.mobile.MobileDimens
 import coil3.compose.AsyncImage
 import java.util.Locale
-
-/** Short badge text for a quality tier ("4K", "FHD", …), or null for unlabeled. Same labels as TV. */
-internal fun QualityTier.mobileBadge(): String? = when (this) {
-    QualityTier.UHD_8K -> "8K"
-    QualityTier.UHD -> "4K"
-    QualityTier.RAW -> "RAW"
-    QualityTier.FHD -> "FHD"
-    QualityTier.HD -> "HD"
-    QualityTier.SD -> "SD"
-    QualityTier.UNLABELED, QualityTier.LOW_SOURCE -> null
-}
-
-@Composable
-internal fun languageText(code: String?): String =
-    if (code == null || code == UNKNOWN_LANGUAGE) stringResource(R.string.vod_language_unknown) else code.uppercase(Locale.ROOT)
-
-@Composable
-internal fun qualityText(key: String): String =
-    QualityTier.entries.firstOrNull { it.name == key }?.mobileBadge() ?: stringResource(R.string.vod_language_unknown)
-
-/** "1:02:03" / "4:05". */
-internal fun clockText(ms: Long): String {
-    val total = (ms / 1000).coerceAtLeast(0)
-    val h = total / 3600
-    val m = (total % 3600) / 60
-    val s = total % 60
-    return if (h > 0) String.format(Locale.ROOT, "%d:%02d:%02d", h, m, s) else String.format(Locale.ROOT, "%d:%02d", m, s)
-}
+import app.playlistplayer.ui.common.badge
+import app.playlistplayer.ui.common.languageLabel
 
 /** Poster with a dark placeholder while loading or when there is no artwork. Decorative. */
 @Composable
@@ -125,8 +99,8 @@ internal data class SheetOption(val id: String, val label: String, val supportin
 /** Supporting line of a version row: language · quality · HDR · Default. */
 @Composable
 internal fun versionSupporting(row: VersionRow): String = listOfNotNull(
-    languageText(row.language),
-    row.quality.mobileBadge(),
+    languageLabel(row.language),
+    row.quality.badge(),
     if (row.hdr) "HDR" else null,
     if (row.isDefault) stringResource(R.string.vod_version_default) else null,
 ).joinToString("  ·  ")

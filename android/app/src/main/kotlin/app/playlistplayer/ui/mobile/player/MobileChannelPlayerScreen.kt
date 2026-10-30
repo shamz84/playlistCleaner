@@ -41,14 +41,13 @@ import app.playlistplayer.feature.live.LivePlayerEvent
 import app.playlistplayer.feature.live.LivePlayerUiState
 import app.playlistplayer.feature.live.LivePlayerViewModel
 import app.playlistplayer.feature.live.LiveStartError
-import app.playlistplayer.feature.vod.TrackSelectionModel
 import app.playlistplayer.ui.mobile.MobileLoading
 import app.playlistplayer.ui.mobile.vod.OptionsSheet
 import app.playlistplayer.ui.mobile.vod.SheetOption
-import app.playlistplayer.ui.mobile.vod.mobileBadge
-import app.playlistplayer.ui.tv.vod.Media3Tracks
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
+import app.playlistplayer.ui.common.badge
+import app.playlistplayer.ui.common.Media3Tracks
 
 object MobileChannelPlayerTags {
     const val ROOT = "mobile.channelPlayer"
@@ -81,8 +80,10 @@ fun MobileChannelPlayerScreen(
     val channelChanged by rememberUpdatedState(onChannelChanged)
     val exit by rememberUpdatedState(onExit)
     var tracksOpen by remember { mutableStateOf(false) }
-    var tracks by remember { mutableStateOf(TrackSelectionModel()) }
+    val tracks = state.tracks
 
+    // Starts (or, shown again after catch-up, resumes) live playback after the previous player's dispose.
+    LaunchedEffect(viewModel) { viewModel.start() }
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
             when (event) {
@@ -101,7 +102,7 @@ fun MobileChannelPlayerScreen(
     DisposableEffect(viewModel, exo) {
         val listener = object : Player.Listener {
             override fun onTracksChanged(t: Tracks) {
-                tracks = tracks.withTracks(Media3Tracks.options(t))
+                viewModel.onTracksChanged(Media3Tracks.options(t))
             }
         }
         exo.addListener(listener)
@@ -178,7 +179,7 @@ fun MobileChannelPlayerScreen(
             title = stringResource(R.string.mobile_other_versions),
             options = state.versions.map { item ->
                 val supporting = listOfNotNull(
-                    item.version.quality.mobileBadge(),
+                    item.version.quality.badge(),
                     if (item.version.hasArchive) catchupLabel else null,
                     if (item.isCurrent) playingLabel else null,
                 ).joinToString("  ·  ").ifEmpty { null }
@@ -193,14 +194,8 @@ fun MobileChannelPlayerScreen(
         TracksSheet(
             audio = tracks.audio,
             subtitles = tracks.subtitles,
-            onAudio = { id ->
-                tracks = tracks.selectAudio(id)
-                Media3Tracks.apply(exo, tracks.selectedAudioId, tracks.selectedSubtitleId)
-            },
-            onSubtitle = { id ->
-                tracks = tracks.selectSubtitle(id)
-                Media3Tracks.apply(exo, tracks.selectedAudioId, tracks.selectedSubtitleId)
-            },
+            onAudio = viewModel::selectAudio,
+            onSubtitle = viewModel::selectSubtitle,
             onDismiss = {
                 tracksOpen = false
                 viewModel.showOverlay()

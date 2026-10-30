@@ -43,11 +43,11 @@ import app.playlistplayer.feature.live.CatchupPlayerViewModel
 import app.playlistplayer.feature.vod.SeekDirection
 import app.playlistplayer.ui.common.UiTokens
 import app.playlistplayer.ui.mobile.MobileLoading
-import app.playlistplayer.ui.mobile.vod.clockText
-import app.playlistplayer.ui.tv.player.rememberTimeFormatter
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlin.math.abs
+import app.playlistplayer.ui.common.formatClock
+import app.playlistplayer.ui.common.rememberTimeFormatter
 
 object MobileCatchupPlayerTags {
     const val ROOT = "mobile.catchupPlayer"
@@ -79,6 +79,8 @@ fun MobileCatchupPlayerScreen(
     var scrubMs by remember { mutableStateOf<Long?>(null) }
     var seekFeedback by remember { mutableStateOf<String?>(null) }
 
+    // Starts after the previous player screen's dispose (which stops the shared driver).
+    LaunchedEffect(viewModel) { viewModel.start() }
     LaunchedEffect(viewModel) {
         while (isActive) {
             delay(POLL_MS)
@@ -278,11 +280,11 @@ private fun CatchupControls(
                 state.ended -> Text(stringResource(R.string.catchup_ended), color = Color.White)
                 state.isPaused -> Text(stringResource(R.string.catchup_paused), color = Color.White)
             }
-            Text(clockText(shown), color = Color.White)
+            Text(formatClock(shown), color = Color.White)
             val duration = state.durationMs
             val available = state.availableMs.coerceIn(0, duration.coerceAtLeast(0))
             val label = stringResource(R.string.mobile_catchup_position)
-            val positionState = "${clockText(shown)} / ${clockText(duration)}"
+            val positionState = "${formatClock(shown)} / ${formatClock(duration)}"
             Slider(
                 value = if (duration > 0) (shown.toFloat() / duration).coerceIn(0f, 1f) else 0f,
                 onValueChange = { f -> if (duration > 0) onScrub((f * duration).toLong().coerceIn(0, available)) },
@@ -293,7 +295,7 @@ private fun CatchupControls(
                     stateDescription = positionState
                 },
             )
-            Text(clockText(duration), color = Color.White)
+            Text(formatClock(duration), color = Color.White)
         }
     }
 }

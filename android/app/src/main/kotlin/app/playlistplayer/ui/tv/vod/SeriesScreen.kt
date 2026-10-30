@@ -30,6 +30,9 @@ import app.playlistplayer.feature.vod.EpisodeRow
 import app.playlistplayer.feature.vod.PlaybackRequest
 import app.playlistplayer.feature.vod.SeriesViewModel
 import kotlinx.coroutines.launch
+import app.playlistplayer.ui.common.badge
+import app.playlistplayer.ui.common.languageLabel
+import app.playlistplayer.ui.common.qualityLabel
 
 /** Series detail: season tabs, then the episode list; versions per series source. */
 @OptIn(ExperimentalTvMaterial3Api::class)

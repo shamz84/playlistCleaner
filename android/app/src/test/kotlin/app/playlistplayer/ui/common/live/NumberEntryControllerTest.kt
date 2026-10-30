@@ -1,6 +1,6 @@
-package app.playlistplayer.ui.tv.live
+package app.playlistplayer.ui.common.live
 
-import app.playlistplayer.ui.tv.live.NumberEntryController.Outcome
+import app.playlistplayer.ui.common.live.NumberEntryController.Outcome
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 

@@ -44,7 +44,8 @@ data class CatchupPlayerUiState(
 /**
  * Catch-up player (U8): starts [request] through [controller], shows the programme-relative
  * timeline and applies D-pad seeks ([SeekAccelerator] steps, committed on key up) as a native
- * seek or a URL rebuild. The UI calls [tick] about every 500 ms to update the position.
+ * seek or a URL rebuild. The screen calls [start] once composed, then [tick] about every 500 ms
+ * to update the position.
  */
 class CatchupPlayerViewModel(
     private val request: CatchupRequest,
@@ -67,12 +68,23 @@ class CatchupPlayerViewModel(
     private var playback: CatchupPlayback? = null
     private var controlsJob: Job? = null
 
+    private var started = false
+
     init {
         viewModelScope.launch { driver.state.collect(::onPlaybackState) }
-        viewModelScope.launch { start() }
     }
 
-    private suspend fun start() {
+    /**
+     * Starts the catch-up session. Call from the screen once composed (not from `init`, so the
+     * previous player screen's dispose, which stops the shared driver, runs first). Idempotent.
+     */
+    fun start() {
+        if (started) return
+        started = true
+        viewModelScope.launch { begin() }
+    }
+
+    private suspend fun begin() {
         when (val result = controller.start(request)) {
             is CatchupStart.Started -> {
                 val p = result.playback
@@ -166,7 +178,7 @@ class CatchupPlayerViewModel(
     fun retry() {
         if (mutableState.value.error != null) {
             mutableState.update { it.copy(loading = true, error = null) }
-            viewModelScope.launch { start() }
+            viewModelScope.launch { begin() }
         } else {
             driver.retry()
         }

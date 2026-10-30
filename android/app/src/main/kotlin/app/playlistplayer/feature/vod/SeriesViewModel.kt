@@ -226,8 +226,9 @@ class SeriesViewModel(
         val others = prefs.rank(available.map { it.series })
             .mapNotNull { v -> available.firstOrNull { it.series === v } }
             .filter { it !== chosen }
+        val ordered = listOf(chosen) + others
         val sources = try {
-            (listOf(chosen) + others).map { VodSources.episode(account, playlistId, it.series.item.name, it) }
+            ordered.map { VodSources.episode(account, playlistId, it.series.item.name, it) }
         } catch (e: IllegalArgumentException) {
             mutableState.update { it.copy(playError = PlayError.INVALID_STREAM) }
             return null
@@ -243,6 +244,7 @@ class SeriesViewModel(
             label = episodeLabel(t, key, chosen),
             startPositionMs = if (resume) progress.resumePosition(progressKey) ?: 0L else 0L,
             nextEpisodeLabel = nextEpisode(key)?.let { next -> episodes[next]?.firstOrNull()?.let { episodeLabel(t, next, it) } },
+            versionIds = sources.zip(ordered) { source, version -> source.id to version.series.item.id }.toMap(),
         )
     }
 

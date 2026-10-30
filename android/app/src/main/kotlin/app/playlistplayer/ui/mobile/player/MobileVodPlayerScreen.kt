@@ -57,14 +57,14 @@ import app.playlistplayer.feature.vod.VodOverlayState
 import app.playlistplayer.feature.vod.VodPlayerOverlayState
 import app.playlistplayer.ui.mobile.vod.OptionsSheet
 import app.playlistplayer.ui.mobile.vod.SheetOption
-import app.playlistplayer.ui.mobile.vod.clockText
-import app.playlistplayer.ui.mobile.vod.mobileBadge
-import app.playlistplayer.ui.tv.vod.Media3Tracks
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlin.math.abs
+import app.playlistplayer.ui.common.badge
+import app.playlistplayer.ui.common.formatClock
+import app.playlistplayer.ui.common.Media3Tracks
 
 object MobileVodPlayerTags {
     const val ROOT = "mobile.vodPlayer"
@@ -78,7 +78,8 @@ object MobileVodPlayerTags {
  * this screen only maps touch onto overlay events:
  * - tap toggles the controls; double tap left / right seeks −10 s / +30 s (the overlay's D-pad
  *   steps); double tap in the middle plays / pauses; horizontal drag scrubs;
- * - "Versions" sheet restarts at the current position on another version (others stay as failover);
+ * - "Versions" sheet restarts at the current position on another version (others stay as failover)
+ *   and reports the choice through [onVersionPicked] (persisted as the title's pick);
  * - audio / subtitle sheet.
  *
  * [controller] and [player] are long-lived (owned by the app container), so rotation does not
@@ -94,6 +95,7 @@ fun MobileVodPlayerScreen(
     onNextEpisode: (suspend () -> PlaybackRequest?)?,
     onExit: () -> Unit,
     modifier: Modifier = Modifier,
+    onVersionPicked: (versionId: String) -> Unit = {},
 ) {
     FullscreenLandscapeEffect()
     val exo = player.exoPlayer
@@ -167,9 +169,7 @@ fun MobileVodPlayerScreen(
     fun commitScrub() {
         val target = scrubMs ?: return
         scrubMs = null
-        // The overlay has no "seek to position" event (gap reported); seek the player directly and
-        // let the next progress poll update the overlay.
-        exo.seekTo(target)
+        dispatch(OverlayEvent.SeekTo(target))
     }
     val gesture by rememberUpdatedState<(GestureCommand) -> Unit> { onGesture(it) }
 
@@ -296,7 +296,7 @@ fun MobileVodPlayerScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text(stringResource(R.string.vod_resume_prompt_title, clockText(prompt.positionMs)), style = MaterialTheme.typography.titleLarge, color = Color.White)
+                Text(stringResource(R.string.vod_resume_prompt_title, formatClock(prompt.positionMs)), style = MaterialTheme.typography.titleLarge, color = Color.White)
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Button(onClick = { dispatch(OverlayEvent.ChooseResume) }) { Text(stringResource(R.string.vod_resume)) }
                     OutlinedButton(onClick = { dispatch(OverlayEvent.ChooseStartOver) }) { Text(stringResource(R.string.vod_start_over)) }
@@ -341,12 +341,14 @@ fun MobileVodPlayerScreen(
         OptionsSheet(
             title = stringResource(R.string.vod_versions),
             options = current.sources.map { source ->
-                SheetOption(source.id, source.label, source.versionTier?.mobileBadge(), selected = source.id == playingId)
+                SheetOption(source.id, source.label, source.versionTier?.badge(), selected = source.id == playingId)
             },
             onPick = { id ->
                 if (id != playingId) {
                     // Restart on the chosen version at the current position; the others stay as failover.
                     controller.play(withPickedFirst(current.sources, id), exo.currentPosition.takeIf { it > 0 })
+                    // The choice becomes the title's pick, as on the detail screen.
+                    current.versionIds[id]?.let(onVersionPicked)
                 }
             },
             onDismiss = { versionsOpen = false },
@@ -398,10 +400,10 @@ private fun Controls(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             if (!state.isPlaying && state.started) Text(stringResource(R.string.vod_paused), color = Color.White)
-            Text(clockText(shown), color = Color.White)
+            Text(formatClock(shown), color = Color.White)
             val duration = state.durationMs
             val positionLabel = stringResource(R.string.mobile_seek_position)
-            val positionState = "${clockText(shown)} / ${clockText(duration)}"
+            val positionState = "${formatClock(shown)} / ${formatClock(duration)}"
             Slider(
                 value = if (duration > 0) (shown.toFloat() / duration).coerceIn(0f, 1f) else 0f,
                 onValueChange = { f -> if (duration > 0) onScrub((f * duration).toLong()) },
@@ -412,7 +414,7 @@ private fun Controls(
                     stateDescription = positionState
                 },
             )
-            Text(clockText(duration), color = Color.White)
+            Text(formatClock(duration), color = Color.White)
         }
     }
 }

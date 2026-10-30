@@ -1,5 +1,6 @@
 package app.playlistplayer
 
+import app.playlistplayer.core.network.Redactor
 import android.os.Bundle
 import android.util.Log
 import android.view.SurfaceView
@@ -83,7 +84,7 @@ class DebugPlaybackActivity : ComponentActivity() {
             player = configured,
             accountStatusChecker = AccountStatusChecker.UNKNOWN,
             connectivity = connectivity,
-            onTransition = { Log.d(TAG, DebugRedactor.redact(it.toString())) },
+            onTransition = { Log.d(TAG, Redactor.redact(it.toString())) },
         )
         displayModes = DisplayModeSwitcher(window, enabled = intent.getBooleanExtra(EXTRA_MATCH_FRAME_RATE, true))
 
@@ -94,7 +95,7 @@ class DebugPlaybackActivity : ComponentActivity() {
         }.map(String::trim).filter(String::isNotEmpty).distinct().take(MAX_ALTERNATIVES)
         val liveOverride: Boolean? = if (intent.hasExtra(EXTRA_LIVE)) intent.getBooleanExtra(EXTRA_LIVE, true) else null
 
-        Log.d(TAG, "Harness started with ${alternatives.size} alternative(s), url=${DebugRedactor.redact(initialUrl)}")
+        Log.d(TAG, "Harness started with ${alternatives.size} alternative(s), url=${Redactor.redact(initialUrl)}")
 
         setContent {
             MaterialTheme(colorScheme = darkColorScheme()) {
@@ -198,7 +199,7 @@ private fun DebugPlaybackScreen(
             }
             if (alternatives.isNotEmpty()) {
                 OverlayText("Alternatives (${alternatives.size}):")
-                alternatives.forEachIndexed { i, alt -> OverlayText("  ${i + 1}. ${DebugRedactor.redact(alt)}") }
+                alternatives.forEachIndexed { i, alt -> OverlayText("  ${i + 1}. ${Redactor.redact(alt)}") }
             }
             OverlayText("State: ${describe(state)}")
             OverlayText(statsLine(stats))

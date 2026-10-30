@@ -171,6 +171,19 @@ interface CatalogDao {
     )
     suspend fun channelWithLiveInfo(playlistId: Long, ordinal: Int): ChannelLiveInfo?
 
+    @Query(
+        """SELECT c.playlistId, c.ordinal, c.name, c.streamId, c.tvgId, c.catchupDays, c.isHeader,
+                  cs.activeGeneration AS catalogGeneration, i.tvArchive, i.archiveDays, i.epgChannelId
+           FROM channel c
+           JOIN sync_state s ON s.playlistId = c.playlistId AND s.activeGeneration = c.generation
+           LEFT JOIN catalog_sync_state cs ON cs.playlistId = c.playlistId
+           LEFT JOIN live_stream_info i ON i.playlistId = c.playlistId AND i.generation = cs.activeGeneration
+                AND i.streamId = c.streamId
+           WHERE c.playlistId = :playlistId AND c.groupOrdinal = :groupOrdinal
+           ORDER BY c.ordinal""",
+    )
+    suspend fun channelsWithLiveInfoInGroup(playlistId: Long, groupOrdinal: Int): List<ChannelLiveInfo>
+
     // ---- VOD ----
 
     @Query(

@@ -1,4 +1,4 @@
-package app.playlistplayer.ui.mobile.navigation
+package app.playlistplayer.ui.common.navigation
 
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner

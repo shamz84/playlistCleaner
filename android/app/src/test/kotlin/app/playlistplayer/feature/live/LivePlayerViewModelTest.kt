@@ -38,7 +38,7 @@ class LivePlayerViewModelTest {
     private val coordinator = LivePlaybackCoordinator(source, accounts, amsterdam, FakePreferences(), versionPrefs, InMemoryLastChannelStore())
 
     private fun viewModel(ordinal: Int = hd.ordinal) =
-        LivePlayerViewModel(1, ordinal, source, coordinator, nowNext, driver, clock = { now })
+        LivePlayerViewModel(1, ordinal, source, coordinator, nowNext, driver, clock = { now }).also { it.start() }
 
     private fun playingOrdinal(): String = driver.lastSources.first().id
 
@@ -203,7 +203,7 @@ class LivePlayerViewModelTest {
         assertThat(vm.state.value.canRestart).isFalse()
 
         val noArchive = NowNextSource { _, _ -> NowNext(airing, null, NowNext.Source.ROOM) }
-        val vm2 = LivePlayerViewModel(1, itv.ordinal, source, coordinator, noArchive, driver, clock = { now })
+        val vm2 = LivePlayerViewModel(1, itv.ordinal, source, coordinator, noArchive, driver, clock = { now }).also { it.start() }
         advanceUntilIdle()
         assertThat(vm2.state.value.canRestart).isFalse()
     }
@@ -214,5 +214,39 @@ class LivePlayerViewModelTest {
         advanceUntilIdle()
         assertThat(vm.state.value.startError).isEqualTo(LiveStartError.NOT_FOUND)
         assertThat(driver.plays).isEmpty()
+    }
+
+    @Test
+    fun `plays only after start and resumes live when shown again`() = runTest(main.dispatcher) {
+        val vm = LivePlayerViewModel(1, hd.ordinal, source, coordinator, nowNext, driver, clock = { now })
+        advanceUntilIdle()
+        assertThat(driver.plays).isEmpty()
+
+        vm.start()
+        advanceUntilIdle()
+        assertThat(driver.plays).hasSize(1)
+
+        // A catch-up session used the shared driver, then closed; the live screen starts again.
+        driver.stop()
+        vm.start()
+        advanceUntilIdle()
+        assertThat(driver.plays).hasSize(2)
+        assertThat(playingOrdinal()).isEqualTo("live:1:10")
+        assertThat(vm.state.value.channel?.ordinal).isEqualTo(hd.ordinal)
+    }
+
+    @Test
+    fun `track choices go through the driver`() = runTest(main.dispatcher) {
+        val vm = viewModel()
+        advanceUntilIdle()
+        vm.onTracksChanged(
+            listOf(
+                app.playlistplayer.feature.vod.TrackOption("0:0", app.playlistplayer.feature.vod.TrackType.AUDIO, "English", "en", selected = true),
+                app.playlistplayer.feature.vod.TrackOption("0:1", app.playlistplayer.feature.vod.TrackType.AUDIO, "Deutsch", "de"),
+            ),
+        )
+        vm.selectAudio("0:1")
+        assertThat(vm.state.value.tracks.selectedAudioId).isEqualTo("0:1")
+        assertThat(driver.appliedTracks).containsExactly("0:1" to null)
     }
 }

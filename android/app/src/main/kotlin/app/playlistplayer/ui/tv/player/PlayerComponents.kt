@@ -131,22 +131,3 @@ internal fun ProgressBar(fraction: Float, modifier: Modifier = Modifier, availab
     }
 }
 
-/** Wall-clock time in the device's 12/24 h setting. */
-@Composable
-internal fun rememberTimeFormatter(): (Long) -> String {
-    val context = LocalContext.current
-    return remember(context) {
-        val format = DateFormat.getTimeFormat(context)
-        val formatter: (Long) -> String = { millis -> format.format(Date(millis)) }
-        formatter
-    }
-}
-
-/** `h:mm:ss` / `m:ss` for positions and durations. */
-internal fun formatDuration(ms: Long): String {
-    val total = (ms / 1000).coerceAtLeast(0)
-    val h = total / 3600
-    val m = (total % 3600) / 60
-    val s = total % 60
-    return if (h > 0) String.format(Locale.ROOT, "%d:%02d:%02d", h, m, s) else String.format(Locale.ROOT, "%d:%02d", m, s)
-}

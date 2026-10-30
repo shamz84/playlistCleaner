@@ -64,12 +64,12 @@ import app.playlistplayer.ui.tv.components.TvButton
 import app.playlistplayer.ui.tv.components.TvEmptyState
 import app.playlistplayer.ui.tv.components.TvErrorState
 import app.playlistplayer.ui.tv.components.TvLoadingState
-import app.playlistplayer.ui.tv.player.rememberTimeFormatter
 import app.playlistplayer.ui.tv.theme.TvDimens
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import app.playlistplayer.ui.common.rememberTimeFormatter
 
 object EpgTags {
     const val GRID = "epg.grid"

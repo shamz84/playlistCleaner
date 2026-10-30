@@ -192,4 +192,15 @@ class VodPlayerOverlayStateTest {
         overlay.handle(OverlayEvent.HideControls)
         assertThat(overlay.state.trackPanelOpen).isFalse()
     }
+
+    @Test
+    fun `absolute seek commits at once and clamps to the duration`() {
+        assertThat(overlay.handle(OverlayEvent.SeekTo(10_000))).isEmpty() // not started yet
+        overlay.handle(OverlayEvent.Open(null))
+        progress(60_000, now = 0)
+        assertThat(overlay.handle(OverlayEvent.SeekTo(1_200_000))).containsExactly(OverlayCommand.SeekTo(1_200_000))
+        assertThat(overlay.state.positionMs).isEqualTo(1_200_000)
+        assertThat(overlay.state.seek).isNull()
+        assertThat(overlay.handle(OverlayEvent.SeekTo(duration + 60_000))).containsExactly(OverlayCommand.SeekTo(duration))
+    }
 }

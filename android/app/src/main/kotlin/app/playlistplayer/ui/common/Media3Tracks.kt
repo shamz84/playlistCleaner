@@ -1,4 +1,4 @@
-package app.playlistplayer.ui.tv.vod
+package app.playlistplayer.ui.common
 
 import androidx.annotation.OptIn
 import androidx.media3.common.C
@@ -13,7 +13,7 @@ import app.playlistplayer.feature.vod.TrackType
  * Maps Media3 [Tracks] to [TrackOption]s (id = "groupIndex:trackIndex" within the current
  * track list) and applies a selection back as track overrides.
  */
-internal object Media3Tracks {
+object Media3Tracks {
 
     fun options(tracks: Tracks): List<TrackOption> = buildList {
         tracks.groups.forEachIndexed { groupIndex, group ->

@@ -7,8 +7,9 @@ import app.playlistplayer.core.player.catchup.CatchupDecision
 import app.playlistplayer.core.player.catchup.ProgrammeWindow
 import app.playlistplayer.core.sync.epg.GuideProgramme
 import app.playlistplayer.core.sync.epg.NowNext
+import app.playlistplayer.feature.vod.TrackOption
+import app.playlistplayer.feature.vod.TrackSelectionModel
 import app.playlistplayer.ui.common.live.ChannelNavigator
-import app.playlistplayer.ui.tv.live.NumberEntryController
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -20,6 +21,8 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.Instant
+import app.playlistplayer.ui.common.badge
+import app.playlistplayer.ui.common.live.NumberEntryController
 
 /** Now/next for the overlay; [progress] is the airing programme's elapsed fraction. */
 data class NowNextUi(
@@ -66,6 +69,8 @@ data class LivePlayerUiState(
     /** The airing programme can be restarted from the archive (R8). */
     val canRestart: Boolean = false,
     val startError: LiveStartError? = null,
+    /** Audio and subtitle tracks of the playing stream (fed by the screen from the player). */
+    val tracks: TrackSelectionModel = TrackSelectionModel(),
 ) {
     val hasOtherVersions: Boolean get() = versions.size > 1
 }
@@ -80,7 +85,10 @@ sealed interface LivePlayerEvent {
  * state machine, channel up/down and number entry within the current group, and "Restart
  * programme" when the airing programme is catch-up eligible.
  *
- * The UI calls [tick] about every 30 s to refresh now/next and the restart offer.
+ * The screen calls [start] once it is composed (not from `init`: the previous player screen's
+ * dispose stops the shared driver, and must run first). Shown again after a catch-up session used
+ * the same driver, [start] resumes live ([resumeLive]). The UI calls [tick] about every 30 s to
+ * refresh now/next and the restart offer.
  */
 class LivePlayerViewModel(
     private val playlistId: Long,
@@ -108,12 +116,49 @@ class LivePlayerViewModel(
     private var overlayJob: Job? = null
     private var notFoundJob: Job? = null
 
+    private var started = false
+    private var startJob: Job? = null
+
     init {
         viewModelScope.launch { driver.state.collect(::onPlaybackState) }
-        viewModelScope.launch { start() }
     }
 
-    private suspend fun start() {
+    /**
+     * Starts playback of the initial channel. Later calls (the screen is shown again, e.g. back
+     * from catch-up) resume live playback of the channel last tuned.
+     */
+    fun start() {
+        if (started) {
+            resumeLive()
+            return
+        }
+        started = true
+        startJob = viewModelScope.launch { begin() }
+    }
+
+    /**
+     * Plays the current plan again (the version last playing first), e.g. after a catch-up
+     * session shared the driver. Re-tunes when the start had failed; no-op before [start].
+     */
+    fun resumeLive() {
+        if (!started) return
+        val current = plan
+        val channel = mutableState.value.channel
+        when {
+            current != null -> {
+                val playingId = mutableState.value.currentVersionId
+                val ordered = current.sources.sortedBy { if (it.id == playingId) 0 else 1 }
+                mutableState.update { it.copy(versionsOpen = false) }
+                showOverlay()
+                driver.play(ordered)
+                viewModelScope.launch { refreshNowNext() }
+            }
+            channel != null -> tune(channel)
+            startJob?.isActive != true -> startJob = viewModelScope.launch { begin() }
+        }
+    }
+
+    private suspend fun begin() {
         val channel = channels.channel(playlistId, initialOrdinal)
         if (channel == null) {
             mutableState.update { it.copy(loading = false, startError = LiveStartError.NOT_FOUND) }
@@ -310,6 +355,24 @@ class LivePlayerViewModel(
     }
 
     fun stop() = driver.stop()
+
+    // ---- audio and subtitle tracks ----
+
+    /** New track list from the player (`Media3Tracks.options`). */
+    fun onTracksChanged(tracks: List<TrackOption>) {
+        mutableState.update { it.copy(tracks = it.tracks.withTracks(tracks)) }
+    }
+
+    fun selectAudio(id: String) = applyTracks(mutableState.value.tracks.selectAudio(id))
+
+    /** [id] null turns subtitles off. */
+    fun selectSubtitle(id: String?) = applyTracks(mutableState.value.tracks.selectSubtitle(id))
+
+    private fun applyTracks(next: TrackSelectionModel) {
+        if (next == mutableState.value.tracks) return
+        mutableState.update { it.copy(tracks = next) }
+        driver.applyTracks(next.selectedAudioId, next.selectedSubtitleId)
+    }
 
     // ---- overlay ----
 

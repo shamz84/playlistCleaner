@@ -43,6 +43,7 @@ import app.playlistplayer.ui.common.UiTokens
 import app.playlistplayer.ui.mobile.MobileDimens
 import app.playlistplayer.ui.mobile.MobileError
 import app.playlistplayer.ui.mobile.MobileUiState
+import app.playlistplayer.ui.common.badge
 
 object MobileVodTags {
     const val BROWSE = "mobile.vod.browse"
@@ -135,7 +136,7 @@ private fun PosterCard(card: VodCard, onClick: () -> Unit) {
     val description = buildString {
         append(card.title)
         card.year?.let { append(", ").append(it) }
-        card.bestQuality?.mobileBadge()?.let { append(", ").append(it) }
+        card.bestQuality?.badge()?.let { append(", ").append(it) }
     }
     val versions = if (card.versionCount > 1) stringResource(R.string.vod_versions_count, card.versionCount) else null
     Card(
@@ -147,7 +148,7 @@ private fun PosterCard(card: VodCard, onClick: () -> Unit) {
                 contentDescription = listOfNotNull(description, versions).joinToString(", ")
             },
     ) {
-        Poster(url = card.posterUrl, width = MobileDimens.PosterWidth, badge = card.bestQuality?.mobileBadge())
+        Poster(url = card.posterUrl, width = MobileDimens.PosterWidth, badge = card.bestQuality?.badge())
         Column(modifier = Modifier.padding(UiTokens.SpaceS)) {
             Text(card.title, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
             card.year?.let { Text(it.toString(), style = MaterialTheme.typography.bodySmall, color = UiTokens.OnSurfaceMuted) }

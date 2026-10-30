@@ -38,6 +38,7 @@ import app.playlistplayer.feature.vod.RailStatus
 import app.playlistplayer.feature.vod.VodBrowseViewModel
 import app.playlistplayer.feature.vod.VodCard
 import coil3.compose.AsyncImage
+import app.playlistplayer.ui.common.badge
 
 /**
  * Movies / Series browse: a section per playlist name, then category rails of title cards.

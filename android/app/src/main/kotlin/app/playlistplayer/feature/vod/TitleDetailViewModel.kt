@@ -173,6 +173,7 @@ class TitleDetailViewModel(
             kind = VodKind.MOVIE,
             label = t.title.title,
             startPositionMs = resumeAt ?: 0L,
+            versionIds = sources.zip(ordered) { source, version -> source.id to version.item.id }.toMap(),
         )
     }
 

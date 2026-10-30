@@ -657,7 +657,7 @@ private fun Overlays(state: SettingsUiState, viewModel: SettingsViewModel) {
         val name = state.playlists.playlists.firstOrNull { it.id == visibility.playlistId }?.name.orEmpty()
         GroupVisibilityDialog(name, visibility, viewModel)
     }
-    state.pinPrompt?.let { PinPromptDialog(it, viewModel::submitPin, viewModel::cancelPin) }
+    state.pinPrompt?.let { MobilePinPromptDialog(it, viewModel::submitPin, viewModel::cancelPin) }
 }
 
 @Composable
@@ -696,8 +696,9 @@ private fun GroupVisibilityDialog(playlistName: String, state: GroupVisibilitySt
     )
 }
 
+/** The parental gate prompt (Settings, and the root's global prompt). */
 @Composable
-private fun PinPromptDialog(request: PinPromptRequest, onSubmit: (String) -> Unit, onCancel: () -> Unit) {
+internal fun MobilePinPromptDialog(request: PinPromptRequest, onSubmit: (String) -> Unit, onCancel: () -> Unit) {
     var pin by remember(request.id) { mutableStateOf("") }
     AlertDialog(
         onDismissRequest = onCancel,

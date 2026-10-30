@@ -5,6 +5,7 @@ import app.playlistplayer.core.player.ConfiguredPlayer
 import app.playlistplayer.core.player.ExoPlaybackController
 import app.playlistplayer.core.player.PlayableSource
 import app.playlistplayer.core.player.PlaybackState
+import app.playlistplayer.ui.common.Media3Tracks
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -29,6 +30,9 @@ interface PlayerDriver {
     fun resume()
     fun retry()
     fun stop()
+
+    /** Applies an audio / subtitle choice (`TrackOption` ids; null subtitle = off). */
+    fun applyTracks(audioId: String?, subtitleId: String?) {}
 }
 
 /** [PlayerDriver] over the app's [ExoPlaybackController] and its [ConfiguredPlayer]. */
@@ -54,4 +58,6 @@ class ExoPlayerDriver(
     override fun retry() = controller.retry()
 
     override fun stop() = controller.stop()
+
+    override fun applyTracks(audioId: String?, subtitleId: String?) = Media3Tracks.apply(player.exoPlayer, audioId, subtitleId)
 }

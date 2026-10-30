@@ -23,27 +23,29 @@ import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.playlistplayer.R
 import app.playlistplayer.core.consolidation.VodKind
-import app.playlistplayer.core.player.ConfiguredPlayer
-import app.playlistplayer.core.player.ExoPlaybackController
-import app.playlistplayer.core.player.PlayableSource
 import app.playlistplayer.feature.live.LiveChannel
 import app.playlistplayer.feature.onboarding.OnboardingViewModel
 import app.playlistplayer.feature.shell.Destination
-import app.playlistplayer.feature.vod.AccountProvider
-import app.playlistplayer.feature.vod.FavouritesStore
-import app.playlistplayer.feature.vod.MovieInfoLoader
-import app.playlistplayer.feature.vod.PlaybackProgressRepository
-import app.playlistplayer.feature.vod.SeriesInfoLoader
 import app.playlistplayer.feature.vod.SeriesViewModel
 import app.playlistplayer.feature.vod.TitleDetailViewModel
-import app.playlistplayer.feature.vod.TitlePickStore
-import app.playlistplayer.feature.vod.VersionPreferencesProvider
 import app.playlistplayer.feature.vod.VodBrowseViewModel
 import app.playlistplayer.feature.vod.VodCard
-import app.playlistplayer.feature.vod.VodCatalogRepository
 import app.playlistplayer.ui.common.GroupKey
 import app.playlistplayer.ui.common.PlaylistSection
 import app.playlistplayer.ui.common.UiTokens
+import app.playlistplayer.ui.common.PlaybackDependencies
+import app.playlistplayer.ui.common.VodDependencies
+import app.playlistplayer.ui.common.ScreenDependencies
+import app.playlistplayer.feature.settings.ParentalState
+import app.playlistplayer.feature.settings.PinPromptBroker
+import app.playlistplayer.ui.mobile.home.MobileHomeScreen
+import app.playlistplayer.ui.mobile.search.MobileSearchScreen
+import app.playlistplayer.ui.mobile.settings.MobilePinPromptDialog
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.LaunchedEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.playlistplayer.ui.common.live.ChannelRow
 import app.playlistplayer.ui.common.live.LiveBrowseSource
 import app.playlistplayer.ui.common.live.LiveBrowseText
@@ -51,7 +53,6 @@ import app.playlistplayer.ui.common.live.LiveBrowseViewModel
 import app.playlistplayer.ui.mobile.epg.MobileGuideDependencies
 import app.playlistplayer.ui.mobile.epg.MobileGuideScreen
 import app.playlistplayer.ui.mobile.live.MobileLiveScreen
-import app.playlistplayer.ui.mobile.navigation.EntryViewModelStores
 import app.playlistplayer.ui.mobile.navigation.MobileEntry
 import app.playlistplayer.ui.mobile.navigation.MobileNavState
 import app.playlistplayer.ui.mobile.navigation.MobileScreen
@@ -67,40 +68,15 @@ import app.playlistplayer.ui.mobile.vod.MobileSeriesScreen
 import app.playlistplayer.ui.mobile.vod.MobileTitleDetailScreen
 import app.playlistplayer.ui.mobile.vod.MobileVodBrowseScreen
 import app.playlistplayer.ui.tv.TvRootDependencies
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
+import app.playlistplayer.ui.common.navigation.EntryViewModelStores
 
-/**
- * What the VOD screens need: exactly the constructor inputs of the shared [VodBrowseViewModel],
- * [TitleDetailViewModel] and [SeriesViewModel]. Built once by the wiring unit (the TV tree needs the
- * same set when its Movies / Series destinations are wired).
- */
-class MobileVodDependencies(
-    val repository: VodCatalogRepository,
-    val movieInfo: MovieInfoLoader,
-    val seriesInfo: SeriesInfoLoader,
-    val picks: TitlePickStore,
-    val favourites: FavouritesStore,
-    val progress: PlaybackProgressRepository,
-    val preferences: VersionPreferencesProvider,
-    val accounts: AccountProvider,
-)
+/** The VOD screens' inputs; the same object the TV tree takes ([VodDependencies]). */
+typealias MobileVodDependencies = VodDependencies
 
-/**
- * The long-lived player (U6), owned outside the composition (AppContainer or a retained holder) so
- * rotation and screen changes never restart a stream.
- *
- * @property saveScope outlives the player screen (application scope), so the final progress save on exit completes.
- * @property liveSources resolves a channel to its playable versions: the channel first, then its
- *   `AlternativeFinder` alternatives, each with its stream URL built at play time (never stored).
- */
-class MobilePlaybackDependencies(
-    val controller: ExoPlaybackController,
-    val player: ConfiguredPlayer,
-    val saveScope: CoroutineScope,
-    val liveSources: suspend (ChannelRow) -> List<PlayableSource>,
-)
+/** The app-scoped player (see [PlaybackDependencies]); the same object the TV tree takes. */
+typealias MobilePlaybackDependencies = PlaybackDependencies
 
 /**
  * What the phone tree needs from the app container. [shared] is the same object the TV tree takes
@@ -128,10 +104,17 @@ fun MobileRoot(dependencies: MobileRootDependencies? = null) {
     MobileTheme {
         Surface(modifier = Modifier.fillMaxSize(), color = UiTokens.Background) {
             val shared = dependencies?.shared
+            val parentalState = shared?.app?.parentalState?.collectAsStateWithLifecycle()
+            if (parentalState?.value == ParentalState.ResetRequired) {
+                MobileResetRequired(onReset = shared.app.resetEverything)
+                return@Surface
+            }
             val hasPlaylists by remember(dependencies) { shared?.hasPlaylists ?: flowOf(true) }
                 .collectAsState(initial = null)
             var justOnboarded by rememberSaveable { mutableStateOf(false) }
             var onboardingRun by rememberSaveable { mutableIntStateOf(0) }
+            // A reset (or removing the last playlist) returns to first-run onboarding.
+            LaunchedEffect(hasPlaylists) { if (hasPlaylists == false) justOnboarded = false }
 
             when {
                 shared != null && hasPlaylists == null && !justOnboarded -> MobileLoading()
@@ -159,6 +142,8 @@ fun MobileRoot(dependencies: MobileRootDependencies? = null) {
 @Composable
 private fun MobileApp(dependencies: MobileRootDependencies?) {
     var nav by remember { mutableStateOf(MobileNavState()) }
+    /** Group to open when Live shows next (Home → live group). */
+    var pendingGroup by remember { mutableStateOf<GroupKey?>(null) }
     val stores = remember { EntryViewModelStores() }
     val saveable = rememberSaveableStateHolder()
     DisposableEffect(Unit) { onDispose { stores.clearAll() } }
@@ -180,6 +165,10 @@ private fun MobileApp(dependencies: MobileRootDependencies?) {
     BackHandler(enabled = nav.canGoBack) { nav.back()?.let(::navigate) }
 
     val top = nav.top
+    // PIN prompts raised outside Settings (Settings shows its own while it is on screen).
+    val settingsVisible = top == null && nav.destination == Destination.Settings && dependencies?.shared?.screens != null
+    dependencies?.shared?.app?.let { app -> if (!settingsVisible) MobileGlobalPinPrompt(app.pinPrompts) }
+
     if (top != null && nav.isFullscreen) {
         key(top.id) {
             EntryScope(top, stores, saveable) {
@@ -213,7 +202,18 @@ private fun MobileApp(dependencies: MobileRootDependencies?) {
     ) {
         if (top == null) {
             saveable.SaveableStateProvider("tab-${nav.destination.name}") {
-                TopLevel(nav.destination, dependencies, wide = isWideLayout(widthDp), push = { navigate(nav.push(it)) })
+                TopLevel(
+                    nav.destination,
+                    dependencies,
+                    wide = isWideLayout(widthDp),
+                    push = { navigate(nav.push(it)) },
+                    pendingGroup = pendingGroup,
+                    onPendingGroupConsumed = { pendingGroup = null },
+                    openGroup = { group ->
+                        pendingGroup = group
+                        navigate(nav.select(Destination.Live))
+                    },
+                )
             }
         } else {
             key(top.id) {
@@ -236,8 +236,22 @@ private fun EntryScope(entry: MobileEntry, stores: EntryViewModelStores, saveabl
 }
 
 @Composable
-private fun TopLevel(destination: Destination, dependencies: MobileRootDependencies?, wide: Boolean, push: (MobileScreen) -> Unit) {
+private fun TopLevel(
+    destination: Destination,
+    dependencies: MobileRootDependencies?,
+    wide: Boolean,
+    push: (MobileScreen) -> Unit,
+    pendingGroup: GroupKey? = null,
+    onPendingGroupConsumed: () -> Unit = {},
+    openGroup: (GroupKey) -> Unit = {},
+) {
     val vod = dependencies?.vod
+    val screens: ScreenDependencies? = dependencies?.shared?.screens
+    val players = dependencies?.playback != null && dependencies.guide != null
+    val openTitle: (VodKind, Long, String) -> Unit = { kind, playlistId, itemId ->
+        if (vod != null) push(if (kind == VodKind.SERIES) MobileScreen.SeriesDetail(playlistId, itemId) else MobileScreen.MovieDetail(playlistId, itemId))
+    }
+    val playChannel: (Long, Int) -> Unit = { playlistId, ordinal -> if (players) push(MobileScreen.ChannelPlayer(playlistId, ordinal)) }
     when (destination) {
         Destination.Live -> {
             val liveText = LiveBrowseText(
@@ -247,6 +261,12 @@ private fun TopLevel(destination: Destination, dependencies: MobileRootDependenc
             )
             val live = viewModel(key = "mobile-live") {
                 LiveBrowseViewModel(dependencies?.shared?.liveBrowseSource ?: EmptyLiveBrowseSource, liveText)
+            }
+            LaunchedEffect(pendingGroup) {
+                pendingGroup?.let {
+                    live.selectGroup(it)
+                    onPendingGroupConsumed()
+                }
             }
             MobileLiveScreen(
                 viewModel = live,
@@ -269,12 +289,18 @@ private fun TopLevel(destination: Destination, dependencies: MobileRootDependenc
             } else {
                 val kind = if (destination == Destination.Movies) VodKind.MOVIE else VodKind.SERIES
                 val browse = viewModel(key = "mobile-browse-${kind.name}") { VodBrowseViewModel(kind, vod.repository) }
+                LaunchedEffect(browse) { vod.visibilityChanges.collect { browse.refresh() } }
                 MobileVodBrowseScreen(viewModel = browse, onOpen = { card -> push(card.detailScreen()) })
             }
         }
-        Destination.Settings -> MobileSettingsScreen(
-            onAddPlaylist = if (dependencies != null) ({ push(MobileScreen.AddPlaylist) }) else null,
-        )
+        Destination.Settings -> if (screens != null) {
+            val settings = viewModel(key = "mobile-settings") { screens.settings() }
+            MobileSettingsScreen(viewModel = settings, onAddPlaylist = { push(MobileScreen.AddPlaylist) })
+        } else {
+            MobileSettingsScreen(
+                onAddPlaylist = if (dependencies != null) ({ push(MobileScreen.AddPlaylist) }) else null,
+            )
+        }
         Destination.Guide -> {
             val guide = dependencies?.guide
             if (guide == null) {
@@ -294,7 +320,28 @@ private fun TopLevel(destination: Destination, dependencies: MobileRootDependenc
                 )
             }
         }
-        Destination.Home, Destination.Search -> MobilePlaceholder(destination)
+        Destination.Home -> if (screens != null) {
+            val home = viewModel(key = "mobile-home") { screens.home() }
+            MobileHomeScreen(
+                viewModel = home,
+                onResume = { item -> openTitle(item.title.kind, item.title.playlistId, item.title.anchorId) },
+                onPlayChannel = { channel -> playChannel(channel.playlistId, channel.ordinal) },
+                onOpenTitle = { title -> openTitle(title.kind, title.playlistId, title.anchorId) },
+                onOpenGroup = { group -> openGroup(group.key) },
+            )
+        } else {
+            MobilePlaceholder(destination)
+        }
+        Destination.Search -> if (screens != null) {
+            val search = viewModel(key = "mobile-search") { screens.search() }
+            MobileSearchScreen(
+                viewModel = search,
+                onPlayChannel = { hit -> playChannel(hit.playlistId, hit.ordinal) },
+                onOpenTitle = { hit -> openTitle(hit.kind, hit.playlistId, hit.anchorId) },
+            )
+        } else {
+            MobilePlaceholder(destination)
+        }
     }
 }
 
@@ -319,7 +366,9 @@ private fun PushedEntry(entry: MobileEntry, dependencies: MobileRootDependencies
             MobileTitleDetailScreen(
                 viewModel = detail,
                 onPlay = { request ->
-                    if (dependencies.playback != null) push(MobileScreen.VodPlayer(request, onClosed = detail::refreshProgress))
+                    if (dependencies.playback != null) {
+                        push(MobileScreen.VodPlayer(request, onClosed = detail::refreshProgress, onVersionPicked = detail::selectVersion))
+                    }
                 },
             )
         }
@@ -335,7 +384,14 @@ private fun PushedEntry(entry: MobileEntry, dependencies: MobileRootDependencies
                 viewModel = series,
                 onPlay = { request ->
                     if (dependencies.playback != null) {
-                        push(MobileScreen.VodPlayer(request, onNextEpisode = series::nextEpisodeRequest, onClosed = series::refreshProgress))
+                        push(
+                            MobileScreen.VodPlayer(
+                                request,
+                                onNextEpisode = series::nextEpisodeRequest,
+                                onClosed = series::refreshProgress,
+                                onVersionPicked = series::selectVersion,
+                            ),
+                        )
                     }
                 },
             )
@@ -393,6 +449,7 @@ private fun FullscreenEntry(
                     screen.onClosed()
                     onClose()
                 },
+                onVersionPicked = screen.onVersionPicked,
             )
         }
         is MobileScreen.ChannelPlayer -> {
@@ -412,6 +469,41 @@ private fun FullscreenEntry(
             MobileCatchupPlayerHost(request = screen.request, guide = guide, playback = playback, onExit = onClose)
         }
         else -> Unit
+    }
+}
+
+@Composable
+private fun MobileGlobalPinPrompt(broker: PinPromptBroker) {
+    val request by broker.request.collectAsStateWithLifecycle()
+    request?.let { r ->
+        MobilePinPromptDialog(r, onSubmit = { pin -> broker.submit(r.id, pin) }, onCancel = { broker.cancel(r.id) })
+    }
+}
+
+/** Parental storage is unreadable (U12 fail-closed): only "Reset app" (confirmed) recovers. */
+@Composable
+private fun MobileResetRequired(onReset: () -> Unit) {
+    var confirming by remember { mutableStateOf(false) }
+    MobileEmpty(
+        title = stringResource(R.string.app_reset_required_title),
+        message = stringResource(R.string.settings_pin_reset_required),
+        actionLabel = stringResource(R.string.settings_app_reset),
+        onAction = { confirming = true },
+        modifier = Modifier.fillMaxSize(),
+    )
+    if (confirming) {
+        AlertDialog(
+            onDismissRequest = { confirming = false },
+            title = { Text(stringResource(R.string.settings_confirm_reset_title)) },
+            text = { Text(stringResource(R.string.settings_confirm_reset_message)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirming = false
+                    onReset()
+                }) { Text(stringResource(R.string.settings_reset), color = UiTokens.Error) }
+            },
+            dismissButton = { TextButton(onClick = { confirming = false }) { Text(stringResource(R.string.settings_cancel)) } },
+        )
     }
 }
 

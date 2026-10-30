@@ -50,12 +50,13 @@ import app.playlistplayer.feature.live.LivePlayerUiState
 import app.playlistplayer.feature.live.LivePlayerViewModel
 import app.playlistplayer.feature.live.LiveStartError
 import app.playlistplayer.feature.live.VersionItem
-import app.playlistplayer.feature.live.badge
 import app.playlistplayer.ui.common.UiTokens
 import app.playlistplayer.ui.tv.components.TvBadge
 import app.playlistplayer.ui.tv.components.TvButton
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
+import app.playlistplayer.ui.common.badge
+import app.playlistplayer.ui.common.rememberTimeFormatter
 
 object LivePlayerTags {
     const val ROOT = "livePlayer.root"
@@ -89,6 +90,8 @@ fun LivePlayerScreen(
     val buttonsFocus = remember { FocusRequester() }
     var longPressHandled by remember { mutableStateOf(false) }
 
+    // Starts (or, shown again after catch-up, resumes) live playback after the previous player's dispose.
+    LaunchedEffect(viewModel) { viewModel.start() }
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
             when (event) {

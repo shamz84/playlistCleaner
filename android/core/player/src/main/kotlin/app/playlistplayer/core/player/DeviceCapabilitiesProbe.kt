@@ -1,5 +1,9 @@
+@file:OptIn(UnstableApi::class)
+
 package app.playlistplayer.core.player
 
+import androidx.media3.common.util.UnstableApi
+import androidx.annotation.OptIn
 import android.content.Context
 import android.hardware.display.DisplayManager
 import android.media.MediaCodecInfo

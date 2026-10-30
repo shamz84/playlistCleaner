@@ -40,6 +40,9 @@ import app.playlistplayer.ui.mobile.MobileDimens
 import app.playlistplayer.ui.mobile.MobileUiState
 import kotlinx.coroutines.launch
 import java.util.Locale
+import app.playlistplayer.ui.common.formatClock
+import app.playlistplayer.ui.common.languageLabel
+import app.playlistplayer.ui.common.qualityLabel
 
 object MobileTitleDetailTags {
     const val PLAY = "mobile.detail.play"
@@ -73,7 +76,7 @@ fun MobileTitleDetailScreen(viewModel: TitleDetailViewModel, onPlay: (PlaybackRe
                 ) {
                     if (s.resumePositionMs != null) {
                         Button(onClick = { play(true) }, modifier = Modifier.testTag(MobileTitleDetailTags.PLAY)) {
-                            Text(stringResource(R.string.vod_resume) + "  " + clockText(s.resumePositionMs))
+                            Text(stringResource(R.string.vod_resume) + "  " + formatClock(s.resumePositionMs))
                         }
                         OutlinedButton(onClick = { play(false) }) { Text(stringResource(R.string.vod_start_over)) }
                     } else {
@@ -98,8 +101,8 @@ fun MobileTitleDetailScreen(viewModel: TitleDetailViewModel, onPlay: (PlaybackRe
             }
             s.playError?.let { error -> item { PlayErrorText(error) } }
             item { Details(s, onRetry = viewModel::retryDetails) }
-            item { MobileChipRow(stringResource(R.string.vod_filter_language), s.languageChips, { languageText(it) }, viewModel::selectLanguage) }
-            item { MobileChipRow(stringResource(R.string.vod_filter_quality), s.qualityChips, { qualityText(it) }, viewModel::selectQuality) }
+            item { MobileChipRow(stringResource(R.string.vod_filter_language), s.languageChips, { languageLabel(it) }, viewModel::selectLanguage) }
+            item { MobileChipRow(stringResource(R.string.vod_filter_quality), s.qualityChips, { qualityLabel(it) }, viewModel::selectQuality) }
             s.versions.firstOrNull { it.isSelected }?.let { selected ->
                 item {
                     Column(modifier = Modifier.padding(horizontal = MobileDimens.ScreenPadding)) {

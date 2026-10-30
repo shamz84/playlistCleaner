@@ -41,6 +41,8 @@ import app.playlistplayer.ui.common.UiTokens
 import app.playlistplayer.ui.tv.components.TvBadge
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
+import app.playlistplayer.ui.common.formatClock
+import app.playlistplayer.ui.common.rememberTimeFormatter
 
 object CatchupPlayerTags {
     const val ROOT = "catchupPlayer.root"
@@ -62,6 +64,8 @@ fun CatchupPlayerScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val rootFocus = remember { FocusRequester() }
 
+    // Starts after the previous player screen's dispose (which stops the shared driver).
+    LaunchedEffect(viewModel) { viewModel.start() }
     LaunchedEffect(viewModel) {
         while (isActive) {
             delay(POLL_MS)
@@ -171,14 +175,14 @@ private fun CatchupControls(state: CatchupPlayerUiState, modifier: Modifier) {
                 state.ended -> Text(text = stringResource(R.string.catchup_ended), color = Color.White)
                 state.isPaused -> Text(text = stringResource(R.string.catchup_paused), color = Color.White)
             }
-            Text(text = formatDuration(shown), color = Color.White)
+            Text(text = formatClock(shown), color = Color.White)
             val duration = state.durationMs.coerceAtLeast(1)
             ProgressBar(
                 fraction = shown.toFloat() / duration,
                 available = state.availableMs.toFloat() / duration,
                 modifier = Modifier.weight(1f),
             )
-            Text(text = formatDuration(state.durationMs), color = Color.White)
+            Text(text = formatClock(state.durationMs), color = Color.White)
             state.seek?.let {
                 Text(text = (if (it.stepMs > 0) "+" else "−") + "${kotlin.math.abs(it.stepMs) / 1000}s", color = Color.White)
             }

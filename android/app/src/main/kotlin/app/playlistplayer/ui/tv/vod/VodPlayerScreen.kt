@@ -63,6 +63,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import app.playlistplayer.ui.common.formatClock
+import app.playlistplayer.ui.common.Media3Tracks
 
 /**
  * VOD playback with the [VodPlayerOverlayState] overlay, driving [controller]. [player] is the
@@ -98,10 +100,14 @@ fun VodPlayerScreen(
 
     fun durationOf(): Long = exo.duration.takeIf { it != C.TIME_UNSET && it > 0 } ?: 0L
 
+    // Effects and listeners outlive a composition: they must reach the current episode's tracker,
+    // not the first composition's (the final save on exit went to the first episode).
+    val latestTracker by rememberUpdatedState(tracker)
+
     fun saveNow() {
         val position = exo.currentPosition
         val duration = durationOf()
-        val t = tracker
+        val t = latestTracker
         saveScope.launch { t.onStop(position, duration) }
     }
 
@@ -143,20 +149,22 @@ fun VodPlayerScreen(
 
     LaunchedEffect(playbackState) {
         val s = playbackState
-        s.source?.id?.let { tracker.versionId = it }
+        s.source?.id?.let { latestTracker.versionId = it }
         if (s is PlaybackState.Ended) dispatch(OverlayEvent.Ended)
     }
 
+    val latestDispatch by rememberUpdatedState(dispatch)
+    val latestSave by rememberUpdatedState<() -> Unit> { saveNow() }
     DisposableEffect(exo) {
         val listener = object : Player.Listener {
             override fun onTracksChanged(tracks: Tracks) {
-                dispatch(OverlayEvent.TracksChanged(Media3Tracks.options(tracks)))
+                latestDispatch(OverlayEvent.TracksChanged(Media3Tracks.options(tracks)))
             }
         }
         exo.addListener(listener)
         onDispose {
             exo.removeListener(listener)
-            saveNow()
+            latestSave()
             controller.stop()
         }
     }

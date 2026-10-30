@@ -65,6 +65,12 @@ class FakePlayerDriver : PlayerDriver {
         this.positionMs = positionMs
     }
 
+    val appliedTracks = mutableListOf<Pair<String?, String?>>()
+
+    override fun applyTracks(audioId: String?, subtitleId: String?) {
+        appliedTracks += audioId to subtitleId
+    }
+
     override fun pause() { paused = true }
     override fun resume() { paused = false }
     override fun retry() { retries++ }

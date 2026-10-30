@@ -59,13 +59,3 @@ sealed interface PlaybackErrorPanel {
     data class Failed(val label: String, val triedVersions: Int) : PlaybackErrorPanel
 }
 
-/** Short quality badge text (`4K`, `FHD`, …), or null for unlabeled/low sources. */
-fun QualityTier?.badge(): String? = when (this) {
-    QualityTier.UHD_8K -> "8K"
-    QualityTier.UHD -> "4K"
-    QualityTier.RAW -> "RAW"
-    QualityTier.FHD -> "FHD"
-    QualityTier.HD -> "HD"
-    QualityTier.SD -> "SD"
-    QualityTier.UNLABELED, QualityTier.LOW_SOURCE, null -> null
-}

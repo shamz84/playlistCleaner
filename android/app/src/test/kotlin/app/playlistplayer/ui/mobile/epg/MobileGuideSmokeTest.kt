@@ -1,9 +1,5 @@
 package app.playlistplayer.ui.mobile.epg
 
-import android.os.Looper
-import android.view.ViewGroup
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.playlistplayer.feature.epg.EpgGridViewModel
 import app.playlistplayer.feature.live.CatchupRequest
@@ -25,15 +21,22 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onRoot
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.Robolectric
-import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
 /**
- * Composition smoke tests for the phone Guide (Robolectric, no Compose UI test dependency in
- * `:app` yet): the screen composes over fake sources, the shared ViewModel loads the group's rows,
+ * Composition smoke tests for the phone Guide (Robolectric + Compose test rule): the screen
+ * composes over fake sources, the shared ViewModel loads the group's rows,
  * its events reach the host callbacks, and the airing / details bottom sheets compose.
  */
 @RunWith(AndroidJUnit4::class)
@@ -43,11 +46,29 @@ class MobileGuideSmokeTest {
     private val played = mutableListOf<CatchupRequest>()
     private val watched = mutableListOf<LiveChannel>()
 
-    private fun activity(): ComponentActivity = Robolectric.buildActivity(ComponentActivity::class.java).setup().get()
+    @get:Rule
+    val compose = createComposeRule()
 
-    private fun idle() = shadowOf(Looper.getMainLooper()).idle()
+    private val content = mutableStateOf<(@Composable () -> Unit)?>(null)
+    private var contentKey by mutableIntStateOf(0)
+    private var installed = false
 
-    private fun ComponentActivity.contentChildren(): Int = findViewById<ViewGroup>(android.R.id.content).childCount
+    /** Shows [body], replacing earlier content (the rule allows one `setContent` per test). */
+    private fun show(body: @Composable () -> Unit) {
+        content.value = body
+        contentKey++
+        if (!installed) {
+            installed = true
+            compose.setContent { key(contentKey) { content.value?.invoke() } }
+        }
+    }
+
+    /** Waits until composition, effects and the main looper are idle (infinite animations are settled by the rule). */
+    private fun idle() = compose.waitForIdle()
+
+    private fun assertComposed() {
+        compose.onRoot().assertExists()
+    }
 
     private fun gridViewModel() = EpgGridViewModel(
         f.group, f.channels, f.grid, f.coordinator, clock = f.clock, zone = f.zone, windowSlots = GuideGeometry.PHONE_WINDOW_SLOTS,
@@ -55,14 +76,13 @@ class MobileGuideSmokeTest {
 
     @Test
     fun `guide screen composes with a group picker and the selected group's grid`() {
-        val activity = activity()
-        activity.setContent {
+        show {
             MobileTheme {
                 MobileGuideScreen(flowOf(f.sections), f.dependencies, onPlayCatchup = { played += it }, onWatchLive = { watched += it })
             }
         }
         idle()
-        assertThat(activity.contentChildren()).isEqualTo(1)
+        assertComposed()
         // The first group of the first section was loaded through the shared ViewModel.
         assertThat(f.grid.calls).isNotEmpty()
     }
@@ -70,18 +90,16 @@ class MobileGuideSmokeTest {
     @Test
     fun `guide screen composes while sections load, fail or are empty`() {
         listOf<Flow<List<PlaylistSection>>>(emptyFlow(), flow { throw IllegalStateException("boom") }, flowOf(emptyList())).forEach { sections ->
-            val activity = activity()
-            activity.setContent { MobileTheme { MobileGuideScreen(sections, f.dependencies, onPlayCatchup = {}, onWatchLive = {}) } }
+            show { MobileTheme { MobileGuideScreen(sections, f.dependencies, onPlayCatchup = {}, onWatchLive = {}) } }
             idle()
-            assertThat(activity.contentChildren()).isEqualTo(1)
+            assertComposed()
         }
     }
 
     @Test
     fun `grid events reach the host and the sheets compose`() {
         val vm = gridViewModel()
-        val activity = activity()
-        activity.setContent { MobileTheme { MobileGuideGrid(vm, onPlayCatchup = { played += it }, onWatchLive = { watched += it }) } }
+        show { MobileTheme { MobileGuideGrid(vm, onPlayCatchup = { played += it }, onWatchLive = { watched += it }) } }
         idle()
         val rows = vm.state.value.rows
         assertThat(rows.map { it.channel }).containsExactly(f.bbcOne, f.bbcTwo, f.itv).inOrder()
@@ -110,7 +128,7 @@ class MobileGuideSmokeTest {
         vm.handle(GuideTap.Channel(13))
         idle()
         assertThat(watched.last()).isEqualTo(f.itv)
-        assertThat(activity.contentChildren()).isEqualTo(1)
+        assertComposed()
     }
 
     private object NoOnboarder : PlaylistOnboarder {
@@ -128,9 +146,9 @@ class MobileGuideSmokeTest {
     @Config(qualifiers = "w840dp-h480dp-land")
     fun `phone root composes with guide dependencies`() {
         val shared = TvRootDependencies(onboarder = NoOnboarder, isXtreamShaped = { false }, liveBrowseSource = Sections(), hasPlaylists = flowOf(true))
-        val activity = activity()
-        activity.setContent { MobileRoot(MobileRootDependencies(shared, guide = f.dependencies)) }
+        show { MobileRoot(MobileRootDependencies(shared, guide = f.dependencies)) }
         idle()
-        assertThat(activity.contentChildren()).isEqualTo(1)
+        assertComposed()
     }
+
 }

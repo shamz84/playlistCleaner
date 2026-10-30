@@ -134,7 +134,7 @@ class CatchupPlaybackControllerTest {
     @Test
     fun `catch-up player applies native seeks and rebuilds through the driver`() = runTest(main.dispatcher) {
         val nativeDriver = FakePlayerDriver()
-        val nativeVm = CatchupPlayerViewModel(request(), controller(seekable = true), nativeDriver, clock = { now })
+        val nativeVm = CatchupPlayerViewModel(request(), controller(seekable = true), nativeDriver, clock = { now }).also { it.start() }
         advanceUntilIdle()
         assertThat(nativeDriver.plays).hasSize(1)
         assertThat(nativeVm.state.value.durationMs).isEqualTo(65 * MINUTE)
@@ -147,7 +147,7 @@ class CatchupPlaybackControllerTest {
         assertThat(nativeVm.state.value.positionMs).isEqualTo(60_000)
 
         val rebuildDriver = FakePlayerDriver()
-        val rebuildVm = CatchupPlayerViewModel(request(), controller(seekable = false), rebuildDriver, clock = { now })
+        val rebuildVm = CatchupPlayerViewModel(request(), controller(seekable = false), rebuildDriver, clock = { now }).also { it.start() }
         advanceUntilIdle()
         rebuildVm.seekTo(35 * MINUTE)
         assertThat(rebuildDriver.seeks).isEmpty()
@@ -161,7 +161,7 @@ class CatchupPlaybackControllerTest {
     @Test
     fun `catch-up player shows not eligible without starting playback`() = runTest(main.dispatcher) {
         val driver = FakePlayerDriver()
-        val vm = CatchupPlayerViewModel(request(bbcOne.copy(archiveDays = 0)), controller(), driver, clock = { now })
+        val vm = CatchupPlayerViewModel(request(bbcOne.copy(archiveDays = 0)), controller(), driver, clock = { now }).also { it.start() }
         advanceUntilIdle()
         assertThat(vm.state.value.error).isEqualTo(CatchupError.NOT_ELIGIBLE)
         assertThat(driver.plays).isEmpty()

@@ -83,7 +83,6 @@ import app.playlistplayer.ui.mobile.MobileDimens
 import app.playlistplayer.ui.mobile.MobileEmpty
 import app.playlistplayer.ui.mobile.MobileError
 import app.playlistplayer.ui.mobile.MobileLoading
-import app.playlistplayer.ui.tv.player.rememberTimeFormatter
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -92,6 +91,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.isActive
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import app.playlistplayer.ui.common.rememberTimeFormatter
 
 object MobileGuideTags {
     const val ROOT = "mobile.guide"

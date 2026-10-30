@@ -22,40 +22,9 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.ViewModelStore
-import androidx.lifecycle.ViewModelStoreOwner
 import app.playlistplayer.R
 import app.playlistplayer.feature.live.PlaybackErrorPanel
 import app.playlistplayer.feature.live.PlaybackStatus
-
-/**
- * A [ViewModelStoreOwner] that lives exactly as long as the calling composition. Used for the
- * guide-driven live player: when a catch-up player covers it, its ViewModel is cleared, and a fresh
- * one re-tunes the channel when the screen shows again (the shared ViewModel has no "resume live"
- * call, and the driver's retry would replay the catch-up session).
- */
-@Composable
-internal fun rememberCompositionViewModelStoreOwner(): ViewModelStoreOwner {
-    val owner = remember {
-        object : ViewModelStoreOwner {
-            override val viewModelStore = ViewModelStore()
-        }
-    }
-    DisposableEffect(owner) { onDispose { owner.viewModelStore.clear() } }
-    return owner
-}
-
-/**
- * False during the first composition, true from the frame after it. The shared player ViewModels
- * start playback from `init`; creating them only after the previous player screen's `onDispose`
- * (which stops the driver) has run keeps that stop from cancelling the new stream.
- */
-@Composable
-internal fun rememberAfterFirstComposition(): Boolean {
-    var ready by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { ready = true }
-    return ready
-}
 
 @Composable
 internal fun indicatorText(indicator: PlaybackStatus.Indicator): String = when (indicator) {

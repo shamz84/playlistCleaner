@@ -21,25 +21,6 @@ import app.playlistplayer.feature.vod.FilterChipModel
 import app.playlistplayer.feature.vod.UNKNOWN_LANGUAGE
 import java.util.Locale
 
-/** Short badge text for a quality tier ("4K", "FHD", …), or null for unlabeled. */
-internal fun QualityTier.badge(): String? = when (this) {
-    QualityTier.UHD_8K -> "8K"
-    QualityTier.UHD -> "4K"
-    QualityTier.RAW -> "RAW"
-    QualityTier.FHD -> "FHD"
-    QualityTier.HD -> "HD"
-    QualityTier.SD -> "SD"
-    QualityTier.UNLABELED, QualityTier.LOW_SOURCE -> null
-}
-
-@Composable
-internal fun languageLabel(code: String?): String =
-    if (code == null || code == UNKNOWN_LANGUAGE) stringResource(R.string.vod_language_unknown) else code.uppercase(Locale.ROOT)
-
-@Composable
-internal fun qualityLabel(key: String): String =
-    QualityTier.entries.firstOrNull { it.name == key }?.badge() ?: stringResource(R.string.vod_language_unknown)
-
 /** A labelled row of filter chips; selecting the active chip clears the filter. */
 @OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
@@ -71,10 +52,3 @@ internal fun CenteredMessage(text: String, modifier: Modifier = Modifier, action
     }
 }
 
-internal fun formatClock(ms: Long): String {
-    val total = (ms / 1000).coerceAtLeast(0)
-    val h = total / 3600
-    val m = (total % 3600) / 60
-    val s = total % 60
-    return if (h > 0) String.format(Locale.ROOT, "%d:%02d:%02d", h, m, s) else String.format(Locale.ROOT, "%d:%02d", m, s)
-}

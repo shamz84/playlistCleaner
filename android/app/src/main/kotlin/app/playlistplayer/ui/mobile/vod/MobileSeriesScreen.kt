@@ -47,6 +47,9 @@ import app.playlistplayer.ui.mobile.MobileError
 import app.playlistplayer.ui.mobile.MobileLoading
 import app.playlistplayer.ui.mobile.MobileUiState
 import kotlinx.coroutines.launch
+import app.playlistplayer.ui.common.badge
+import app.playlistplayer.ui.common.languageLabel
+import app.playlistplayer.ui.common.qualityLabel
 
 object MobileSeriesTags {
     const val SEASONS = "mobile.series.seasons"
@@ -83,8 +86,8 @@ fun MobileSeriesScreen(viewModel: SeriesViewModel, onPlay: (PlaybackRequest) -> 
                 }
             }
             s.playError?.let { error -> item { PlayErrorText(error) } }
-            item { MobileChipRow(stringResource(R.string.vod_filter_language), s.languageChips, { languageText(it) }, viewModel::selectLanguage) }
-            item { MobileChipRow(stringResource(R.string.vod_filter_quality), s.qualityChips, { qualityText(it) }, viewModel::selectQuality) }
+            item { MobileChipRow(stringResource(R.string.vod_filter_language), s.languageChips, { languageLabel(it) }, viewModel::selectLanguage) }
+            item { MobileChipRow(stringResource(R.string.vod_filter_quality), s.qualityChips, { qualityLabel(it) }, viewModel::selectQuality) }
             when {
                 s.loading && s.episodes.isEmpty() -> item { MobileLoading(Modifier.fillMaxWidth().sizeIn(minHeight = MobileDimens.MinTouchTarget * 3)) }
                 s.episodesFailed -> item {
@@ -175,8 +178,8 @@ private fun EpisodeItem(row: EpisodeRow, onPlay: () -> Unit, onVersions: () -> U
     val version = row.versions.firstOrNull { it.id == row.selectedVersionId }
     val headline = stringResource(R.string.vod_episode, row.key.episode) + (row.title?.let { "  ·  $it" } ?: "")
     val supporting = listOfNotNull(
-        version?.let { languageText(it.language) },
-        version?.quality?.mobileBadge(),
+        version?.let { languageLabel(it.language) },
+        version?.quality?.badge(),
         row.durationSecs?.let { stringResource(R.string.vod_minutes, (it / 60).toInt()) },
         when {
             row.watched -> stringResource(R.string.vod_watched)

@@ -1,3 +1,5 @@
+@file:OptIn(UnstableApi::class)
+
 package app.playlistplayer.core.player
 
 import android.content.Context

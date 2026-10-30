@@ -46,10 +46,10 @@ import app.playlistplayer.ui.common.live.ChannelRow
 import app.playlistplayer.ui.mobile.MobileLoading
 import app.playlistplayer.ui.mobile.vod.OptionsSheet
 import app.playlistplayer.ui.mobile.vod.SheetOption
-import app.playlistplayer.ui.mobile.vod.mobileBadge
-import app.playlistplayer.ui.tv.vod.Media3Tracks
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
+import app.playlistplayer.ui.common.badge
+import app.playlistplayer.ui.common.Media3Tracks
 
 object MobileLivePlayerTags {
     const val ROOT = "mobile.livePlayer"
@@ -219,7 +219,7 @@ fun MobileLivePlayerScreen(
         val playingId = playbackState.source?.id ?: all.firstOrNull()?.id
         OptionsSheet(
             title = stringResource(R.string.mobile_other_versions),
-            options = all.map { SheetOption(it.id, it.label, it.versionTier?.mobileBadge(), selected = it.id == playingId) },
+            options = all.map { SheetOption(it.id, it.label, it.versionTier?.badge(), selected = it.id == playingId) },
             onPick = { id ->
                 if (id != playingId) {
                     val reordered = withPickedFirst(all, id)
