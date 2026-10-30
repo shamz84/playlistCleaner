@@ -61,8 +61,8 @@ python process_playlist_complete.py --skip-gdrive
 - Filters playlist: ✅  
 - Replaces credentials: ✅
 - Generated files:
-  - `8k_sparmar.m3u` (1.97MB)
-  - `8k_sparmar2.m3u` (1.98MB)
+  - `8k_<username>.m3u` (1.97MB)
+  - `8k_<username>.m3u` (1.98MB)
 
 ### ✅ Config Detection
 ```bash

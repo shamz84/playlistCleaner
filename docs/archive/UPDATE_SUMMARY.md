@@ -60,7 +60,7 @@ Replaced all references to `raw_playlist_20.m3u` with `downloaded_file.m3u` to u
 ```
 ✅ Download: downloaded_file.m3u (3.6MB)
 ✅ Filter: 7,179 entries processed
-✅ Credentials: 8k_sparmar.m3u (1.9MB), 8k_sparmar2.m3u (1.9MB)
+✅ Credentials: 8k_<username>.m3u (1.9MB), 8k_<username>.m3u (1.9MB)
 ✅ Export: All files copied to /app/data
 ⏱️  Total time: 1.05 seconds
 ```

@@ -12,8 +12,8 @@
 
 | File | Size | Description |
 |------|------|-------------|
-| `8k_sparmar.m3u` | 1.86 MB | Personalized playlist for user `sparmar` |
-| `8k_sparmar2.m3u` | 1.87 MB | Personalized playlist for user `sparmar2` |
+| `8k_<username>.m3u` | 1.86 MB | Personalized playlist for user `<username>` |
+| `8k_<username>.m3u` | 1.87 MB | Personalized playlist for user `<username>` |
 | `downloaded_file.m3u` | 3.44 MB | Downloaded source playlist |
 | `filtered_playlist_final.m3u` | 1.77 MB | Filtered playlist (intermediate) |
 
@@ -42,8 +42,8 @@ PlaylistCleaner/
 │   ├── gdrive_config.json          # Google Drive settings (moved to config folder)
 │   └── download_config.json        # Download parameters
 ├── data/                            # Output directory
-│   ├── 8k_sparmar.m3u              # Generated playlist 1
-│   ├── 8k_sparmar2.m3u             # Generated playlist 2
+│   ├── 8k_<username>.m3u              # Generated playlist 1
+│   ├── 8k_<username>.m3u             # Generated playlist 2
 │   └── ...                         # Other outputs
 └── docker-compose.yml              # Updated compose config
 ```

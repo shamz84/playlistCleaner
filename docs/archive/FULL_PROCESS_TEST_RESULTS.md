@@ -32,8 +32,8 @@
 ### 🔐 Step 3: Credentials Replacement (PASSED)
 - **Config Used**: `config/credentials.json` (2 users)
 - **Processing**:
-  - User 1 (sparmar): 234 URLs replaced → `8k_sparmar.m3u` (59,815 bytes)
-  - User 2 (sparmar2): 234 URLs replaced → `8k_sparmar2.m3u` (60,049 bytes)
+  - User 1 (<username>): 234 URLs replaced → `8k_<username>.m3u` (59,815 bytes)
+  - User 2 (<username>): 234 URLs replaced → `8k_<username>.m3u` (60,049 bytes)
 - **Success Rate**: 100% (2/2 credential sets)
 - **Status**: ✅ Multi-user credential replacement working
 
@@ -53,8 +53,8 @@
 |------|------|---------|
 | `downloaded_file.m3u` | 606 KB | Source playlist (ID 19) |
 | `filtered_playlist_final.m3u` | 55 KB | Filtered & ordered content |
-| `8k_sparmar.m3u` | 58 KB | Personalized for user 1 |
-| `8k_sparmar2.m3u` | 59 KB | Personalized for user 2 |
+| `8k_<username>.m3u` | 58 KB | Personalized for user 1 |
+| `8k_<username>.m3u` | 59 KB | Personalized for user 2 |
 
 ### Processing Efficiency
 - **Total Processing Time**: ~30 seconds (including 11.6s download)
