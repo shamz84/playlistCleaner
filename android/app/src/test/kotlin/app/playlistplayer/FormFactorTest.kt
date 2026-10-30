@@ -11,7 +11,9 @@ import org.junit.runner.RunWith
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
+// Every case runs on API 25 (Fire OS 6, the minSdk) and API 36 (targetSdk, the default runtime).
 @RunWith(AndroidJUnit4::class)
+@Config(sdk = [25, 36])
 class FormFactorTest {
 
     private val context: Context get() = ApplicationProvider.getApplicationContext()

@@ -1,8 +1,8 @@
 # Playlist Player (Android)
 
-A native Android app for Fire TV (Fire OS 7/8) and phones that plays the playlists produced by this repository's pipeline. It loads a playlist from a shared Google Drive file ID or an M3U URL, and offers live TV with a guide and catch-up, movies and series, search, favourites, continue watching, and a parental PIN. It ships no content and suggests none.
+A native Android app for Fire TV (Fire OS 6, 7 and 8) and phones that plays the playlists produced by this repository's pipeline. It loads a playlist from a shared Google Drive file ID or an M3U URL, and offers live TV with a guide and catch-up, movies and series, search, favourites, continue watching, and a parental PIN. It ships no content and suggests none.
 
-Package: `app.playlistplayer`. minSdk 28, targetSdk 36.
+Package: `app.playlistplayer`. minSdk 25 (Android 7.1 / Fire OS 6), targetSdk 36. Core library desugaring supplies `java.time` and `java.util.Base64` below API 26.
 
 ## Modules
 

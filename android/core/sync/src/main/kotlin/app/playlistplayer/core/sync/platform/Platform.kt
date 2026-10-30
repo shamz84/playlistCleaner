@@ -2,6 +2,7 @@ package app.playlistplayer.core.sync.platform
 
 import android.content.Context
 import android.content.pm.PackageManager
+import android.os.Build
 import android.util.Log
 import app.playlistplayer.core.network.LogLevel
 import app.playlistplayer.core.network.LogSink
@@ -25,8 +26,17 @@ object AppSignature {
      * in `X-Android-Cert` for Android-restricted API keys. Empty when it cannot be read.
      */
     fun certSha1(context: Context): String = try {
-        val info = context.packageManager.getPackageInfo(context.packageName, PackageManager.GET_SIGNING_CERTIFICATES)
-        val signer = info.signingInfo?.apkContentsSigners?.firstOrNull()
+        val signer = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            val info = context.packageManager.getPackageInfo(context.packageName, PackageManager.GET_SIGNING_CERTIFICATES)
+            info.signingInfo?.apkContentsSigners?.firstOrNull()
+        } else {
+            // API 25-27 (Fire OS 6): SigningInfo does not exist. GET_SIGNATURES returns the same
+            // certificate for a single-signer APK (key rotation needs API 28 anyway).
+            @Suppress("DEPRECATION")
+            val info = context.packageManager.getPackageInfo(context.packageName, PackageManager.GET_SIGNATURES)
+            @Suppress("DEPRECATION")
+            info.signatures?.firstOrNull()
+        }
         if (signer == null) {
             ""
         } else {

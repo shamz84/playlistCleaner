@@ -108,7 +108,9 @@ class AppWiringTest {
         nodes[nodes.fetchSemanticsNodes().size - 1].performSemanticsAction(SemanticsActions.OnClick)
     }
 
+    // Also runs on API 25 (Fire OS 6, the minSdk) to prove start-up and TV wiring there.
     @Test
+    @Config(sdk = [25, 36])
     fun `onboarding a Drive playlist lands on Home with its channels listed`() {
         val dependencies = container.uiDependencies()
         compose.setContent { TvRoot(dependencies.tv) }
@@ -238,8 +240,9 @@ class AppWiringTest {
         assertThat(source.accountKey).isEqualTo(id.toString())
     }
 
+    // Also runs on API 25 (Android 7.1, the minSdk) to prove phone wiring there.
     @Test
-    @Config(qualifiers = "w411dp-h891dp-port")
+    @Config(qualifiers = "w411dp-h891dp-port", sdk = [25, 36])
     fun `phone root composes with full dependencies`() {
         runBlocking { env.onboard(name = "Phone playlist") }
         val dependencies = container.uiDependencies()

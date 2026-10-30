@@ -48,7 +48,7 @@ android {
         getByName("debug") {
             // Fire OS guidance: v1 (JAR) + v2. Note AGP only emits v1 when minSdk < 24
             // (IncrementalPackagerBuilder: `minSdk < 24 && isV1SigningEnabled`), so with
-            // minSdk 28 the APK carries v2 only; every API 24+ device verifies v2.
+            // minSdk 25 the APK carries v2 only; every API 24+ device (Fire OS 6+) verifies v2.
             enableV1Signing = true
             enableV2Signing = true
         }
@@ -80,6 +80,8 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        // java.time / java.util.Base64 are API 26; desugaring backs them on API 25 (Fire OS 6).
+        isCoreLibraryDesugaringEnabled = true
     }
 
     buildFeatures {
@@ -111,6 +113,7 @@ android {
 }
 
 dependencies {
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
     implementation(project(":core:model"))
     implementation(project(":core:parsing"))
     implementation(project(":core:consolidation"))

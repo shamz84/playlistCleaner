@@ -5,11 +5,16 @@ kotlin = "2.4.21"
 ksp = "2.3.12"
 
 # Android SDK levels
-minSdk = "28"
+# minSdk 25 = Fire OS 6 (Android 7.1). java.time and java.util.Base64 (API 26) are covered by
+# core library desugaring (desugar_jdk_libs) in every Android module.
+minSdk = "25"
 # compileSdk 37: navigation-compose 2.10.2, Coil 3.6.3, OkHttp 5.5.1 and other current
 # libraries declare minCompileSdk 37 in their AAR metadata. targetSdk stays 36.
 compileSdk = "37"
 targetSdk = "36"
+
+# Core library desugaring (java.time, java.util.Base64 on API 25)
+desugarJdkLibs = "2.1.5"
 
 # AndroidX / UI
 coreKtx = "1.19.1"
@@ -45,6 +50,8 @@ androidxTestCore = "1.7.0"
 androidxTestExtJunit = "1.3.0"
 
 [libraries]
+desugar-jdk-libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugarJdkLibs" }
+
 # AndroidX core / Compose
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }

@@ -2,6 +2,10 @@
 
 This guide is for the person who runs this repository's pipeline. It explains how to hand each user a Google Drive file ID that the Android app (`android/`, package `app.playlistplayer`) uses to load that user's playlist.
 
+## Supported devices
+
+The app runs on Fire TV devices with Fire OS 6, 7 or 8 and on Android phones with Android 7.1 (API 25) or newer. Fire OS 6 devices include Fire TV Stick 4K (1st gen, 2018), Fire TV Cube (1st gen, 2018) and Fire TV (3rd gen, 2017). Fire OS 6 receives fewer security updates, and its keystore may be software-backed, so an ID stored on such a device is less well protected. Fire OS 5 devices such as Fire TV Stick (2nd gen) and Vega OS devices are not supported. The full list is in [android/docs/distribution.md](../android/docs/distribution.md).
+
 ## Security model
 
 - Every personalized `8k_<username>.m3u` contains that user's provider credentials in every stream URL.
