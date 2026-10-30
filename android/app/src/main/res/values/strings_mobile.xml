@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Phone shell -->
+    <string name="mobile_open_settings">Open settings</string>
+    <string name="mobile_back">Back</string>
+
+    <!-- Phone onboarding -->
+    <string name="mobile_paste">Paste</string>
+    <string name="mobile_paste_description">Paste from the clipboard</string>
+
+    <!-- Phone live browse -->
+    <string name="mobile_section_expanded">Expanded</string>
+    <string name="mobile_section_collapsed">Collapsed</string>
+    <string name="mobile_section_description">%1$s, %2$d groups</string>
+
+    <!-- Phone VOD -->
+    <string name="mobile_versions_button">Versions (%1$d)</string>
+    <string name="mobile_episode_versions">Versions of episode %1$d</string>
+    <string name="mobile_favourite_on">In favourites</string>
+    <string name="mobile_favourite_off">Not in favourites</string>
+
+    <!-- Phone settings -->
+    <string name="mobile_settings_playlists">Playlists</string>
+
+    <!-- Phone player -->
+    <string name="mobile_close_player">Close player</string>
+    <string name="mobile_play">Play</string>
+    <string name="mobile_pause">Pause</string>
+    <string name="mobile_seek_back">Back 10 seconds</string>
+    <string name="mobile_seek_forward">Forward 30 seconds</string>
+    <string name="mobile_seek_position">Playback position</string>
+    <string name="mobile_other_versions">Other versions</string>
+    <string name="mobile_no_other_versions">This channel has no other versions.</string>
+    <string name="mobile_previous_channel">Previous channel</string>
+    <string name="mobile_next_channel">Next channel</string>
+    <string name="mobile_live_unavailable">This channel can\'t be played.</string>
+</resources>
