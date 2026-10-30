@@ -18,6 +18,13 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    sourceSets {
+        // MigrationTestHelper reads exported schemas as assets (Robolectric unit tests).
+        getByName("test") {
+            assets.directories.add("$projectDir/schemas")
+        }
+    }
+
     testOptions {
         unitTests.isIncludeAndroidResources = true
         unitTests.all {

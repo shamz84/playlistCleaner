@@ -82,6 +82,13 @@ class SecureStore(
 
     suspend fun removeAccount(playlistId: Long) = remove(accountKey(playlistId))
 
+    /** The user's XMLTV override URL for [playlistId] (may carry a token, hence stored here). */
+    suspend fun putEpgOverrideUrl(playlistId: Long, url: String) = putString(epgOverrideKey(playlistId), url)
+
+    suspend fun epgOverrideUrl(playlistId: Long): String? = getString(epgOverrideKey(playlistId))?.trim()?.ifEmpty { null }
+
+    suspend fun removeEpgOverrideUrl(playlistId: Long) = remove(epgOverrideKey(playlistId))
+
     /** Removes every secret held for [playlistId]. */
     suspend fun removePlaylist(playlistId: Long) {
         val prefix = playlistPrefix(playlistId)
@@ -132,6 +139,7 @@ class SecureStore(
         private fun playlistPrefix(playlistId: Long) = "playlist.$playlistId."
         private fun sourceKey(playlistId: Long) = "${playlistPrefix(playlistId)}source"
         private fun accountKey(playlistId: Long) = "${playlistPrefix(playlistId)}account"
+        private fun epgOverrideKey(playlistId: Long) = "${playlistPrefix(playlistId)}epgOverride"
 
         /** Production instance: Keystore-backed cipher over `files/datastore/secure_store.preferences_pb`. */
         fun create(context: Context): SecureStore {

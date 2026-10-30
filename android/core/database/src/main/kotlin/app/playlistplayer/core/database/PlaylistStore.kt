@@ -30,6 +30,7 @@ class PlaylistStore(private val db: AppDatabase) {
     private val channelDao = db.channelDao()
     private val syncStateDao = db.syncStateDao()
     private val catalogStore by lazy { CatalogStore(db) }
+    private val epgStore by lazy { EpgStore(db) }
 
     // ---- Playlist registry ----
 
@@ -59,6 +60,7 @@ class PlaylistStore(private val db: AppDatabase) {
     /** Scoped delete of every row belonging to [id]. */
     suspend fun deletePlaylist(id: Long) = db.withWriteTransaction {
         catalogStore.deleteAllForPlaylist(id)
+        epgStore.deleteAllForPlaylist(id)
         channelDao.deleteAllChannels(id)
         channelDao.deleteAllGroups(id)
         syncStateDao.delete(id)

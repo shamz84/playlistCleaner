@@ -12,15 +12,21 @@ import app.playlistplayer.core.database.dao.CatalogCacheDao
 import app.playlistplayer.core.database.dao.CatalogDao
 import app.playlistplayer.core.database.dao.CatalogSyncStateDao
 import app.playlistplayer.core.database.dao.ChannelDao
+import app.playlistplayer.core.database.dao.ChannelEpgMapDao
+import app.playlistplayer.core.database.dao.EpgSourceStateDao
 import app.playlistplayer.core.database.dao.PlaylistDao
+import app.playlistplayer.core.database.dao.ProgrammeDao
 import app.playlistplayer.core.database.dao.SyncStateDao
 import app.playlistplayer.core.database.entity.AccountStatusEntity
 import app.playlistplayer.core.database.entity.CatalogSyncStateEntity
 import app.playlistplayer.core.database.entity.ChannelEntity
+import app.playlistplayer.core.database.entity.ChannelEpgMapEntity
 import app.playlistplayer.core.database.entity.ChannelGroupEntity
+import app.playlistplayer.core.database.entity.EpgSourceStateEntity
 import app.playlistplayer.core.database.entity.EpisodeEntity
 import app.playlistplayer.core.database.entity.LiveStreamInfoEntity
 import app.playlistplayer.core.database.entity.PlaylistEntity
+import app.playlistplayer.core.database.entity.ProgrammeEntity
 import app.playlistplayer.core.database.entity.SeasonEntity
 import app.playlistplayer.core.database.entity.SeriesCategoryEntity
 import app.playlistplayer.core.database.entity.SeriesEntity
@@ -56,11 +62,15 @@ import kotlin.coroutines.CoroutineContext
         SeasonEntity::class,
         EpisodeEntity::class,
         VodInfoCacheEntity::class,
+        // U7: EPG
+        ProgrammeEntity::class,
+        ChannelEpgMapEntity::class,
+        EpgSourceStateEntity::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = true,
-    // 1 -> 2 only adds the catalog tables.
-    autoMigrations = [AutoMigration(from = 1, to = 2)],
+    // 1 -> 2 only adds the catalog tables; 2 -> 3 only adds the EPG tables.
+    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3)],
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun playlistDao(): PlaylistDao
@@ -70,6 +80,9 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun accountStatusDao(): AccountStatusDao
     abstract fun catalogDao(): CatalogDao
     abstract fun catalogCacheDao(): CatalogCacheDao
+    abstract fun programmeDao(): ProgrammeDao
+    abstract fun channelEpgMapDao(): ChannelEpgMapDao
+    abstract fun epgSourceStateDao(): EpgSourceStateDao
 
     companion object {
         const val FILE_NAME: String = "playlist_player.db"

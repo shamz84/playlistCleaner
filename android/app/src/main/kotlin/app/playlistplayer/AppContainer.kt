@@ -5,11 +5,13 @@ import androidx.work.DelegatingWorkerFactory
 import androidx.work.WorkManager
 import app.playlistplayer.core.database.AppDatabase
 import app.playlistplayer.core.database.CatalogStore
+import app.playlistplayer.core.database.EpgStore
 import app.playlistplayer.core.database.PlaylistStore
 import app.playlistplayer.core.model.XtreamAccount
 import app.playlistplayer.core.network.RedactingLogger
 import app.playlistplayer.core.network.drive.DriveClient
 import app.playlistplayer.core.network.drive.DriveClientConfig
+import app.playlistplayer.core.network.epg.XmltvDownloader
 import app.playlistplayer.core.network.source.DefaultPlaylistSourceFactory
 import app.playlistplayer.core.network.source.PlaylistSourceFactory
 import app.playlistplayer.core.network.xtream.AccountStatusChecker
@@ -24,6 +26,13 @@ import app.playlistplayer.core.sync.catalog.CatalogSyncer
 import app.playlistplayer.core.sync.catalog.SeriesInfoRepository
 import app.playlistplayer.core.sync.catalog.VodInfoRepository
 import app.playlistplayer.core.sync.catalog.toAccountStatusEntity
+import app.playlistplayer.core.sync.epg.AndroidXmlPullSource
+import app.playlistplayer.core.sync.epg.CompositePlaylistSyncFollowUp
+import app.playlistplayer.core.sync.epg.EpgOverrideSettings
+import app.playlistplayer.core.sync.epg.EpgSyncChain
+import app.playlistplayer.core.sync.epg.EpgSyncWorkerFactory
+import app.playlistplayer.core.sync.epg.EpgSyncer
+import app.playlistplayer.core.sync.epg.NowNextRepository
 import app.playlistplayer.core.sync.platform.AndroidLogSink
 import app.playlistplayer.core.sync.platform.AppSignature
 import app.playlistplayer.core.sync.secure.SecureStore
@@ -115,12 +124,53 @@ class AppContainer(context: Context) {
         )
     }
 
+    // ---- EPG (U7) ----
+
+    val epgStore: EpgStore by lazy { EpgStore(database) }
+
+    /** Streams xmltv.php (16.6 MB gzip / 86 MB XML) or an override URL; generous read timeout. */
+    val xmltvDownloader: XmltvDownloader by lazy {
+        XmltvDownloader(okHttpClient.newBuilder().readTimeout(120, TimeUnit.SECONDS).build())
+    }
+
+    /** XMLTV import (provider or override + provider fallback) and archive backfill. */
+    val epgSyncer: EpgSyncer by lazy {
+        EpgSyncer(
+            playlistStore = playlistStore,
+            catalogStore = catalogStore,
+            epgStore = epgStore,
+            accounts = xtreamAccounts,
+            overrideUrls = { id -> secureStore.epgOverrideUrl(id) },
+            downloader = xmltvDownloader,
+            xtreamClient = xtreamClient,
+            pullFactory = AndroidXmlPullSource,
+            logger = logger.withTag("EpgSync"),
+        )
+    }
+
+    /** Settings: set/clear the XMLTV override (re-imports immediately). */
+    val epgOverrideSettings: EpgOverrideSettings by lazy { EpgOverrideSettings(secureStore, epgStore) { workManager } }
+
+    /** Now/next per channel: Room first, then get_short_epg on demand (U9 channel list/player). */
+    val nowNextRepository: NowNextRepository by lazy {
+        NowNextRepository(playlistStore, catalogStore, epgStore, xtreamAccounts, xtreamClient, logger = logger.withTag("NowNext"))
+    }
+
+    /** Queues the first EPG import after the catalog sync (or playlist sync for override-only playlists). */
+    val epgSyncChain: EpgSyncChain by lazy {
+        EpgSyncChain(playlistStore, epgStore, { id -> secureStore.epgOverrideUrl(id) != null }, logger.withTag("EpgSync")) { workManager }
+    }
+
     /** WorkManager worker factory; later units add their factories to this delegate. */
     val workerFactory: DelegatingWorkerFactory by lazy {
         DelegatingWorkerFactory().apply {
-            // A successful playlist sync chains the catalog sync for Xtream-enabled playlists.
-            addFactory(SyncWorkerFactory(CatalogSyncChain(playlistStore, logger.withTag("CatalogSync")) { workManager }) { playlistSyncer })
-            addFactory(CatalogSyncWorkerFactory { catalogSyncer })
+            // A successful playlist sync chains the catalog sync for Xtream-enabled playlists, and
+            // the EPG import for override-only playlists.
+            val catalogChain = CatalogSyncChain(playlistStore, logger.withTag("CatalogSync")) { workManager }
+            addFactory(SyncWorkerFactory(CompositePlaylistSyncFollowUp(catalogChain, epgSyncChain)) { playlistSyncer })
+            // A successful catalog sync chains the EPG import when it is stale or never ran.
+            addFactory(CatalogSyncWorkerFactory(epgSyncChain) { catalogSyncer })
+            addFactory(EpgSyncWorkerFactory { epgSyncer })
         }
     }
 

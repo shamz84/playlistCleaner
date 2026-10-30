@@ -29,13 +29,16 @@ class CatalogSyncWorker(
     context: Context,
     params: WorkerParameters,
     private val syncer: CatalogSyncer,
+    private val followUp: CatalogSyncFollowUp = CatalogSyncFollowUp.NONE,
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
         val playlistId = inputData.getLong(KEY_PLAYLIST_ID, -1L)
         if (playlistId < 0) return Result.failure(workDataOf(KEY_OUTCOME to "InvalidInput"))
         val force = inputData.getBoolean(KEY_FORCE, false)
-        return when (val outcome = syncer.sync(playlistId, force)) {
+        val outcome = syncer.sync(playlistId, force)
+        followUp.afterSync(playlistId, outcome)
+        return when (outcome) {
             is CatalogSyncOutcome.Failed ->
                 if (outcome.retryable && runAttemptCount + 1 < MAX_ATTEMPTS) {
                     Result.retry()
@@ -81,11 +84,26 @@ class CatalogSyncWorker(
     }
 }
 
+/**
+ * Work to start after each catalog sync attempt, e.g. the EPG import (`EpgSyncChain`). Must not
+ * throw for ordinary failures.
+ */
+fun interface CatalogSyncFollowUp {
+    suspend fun afterSync(playlistId: Long, outcome: CatalogSyncOutcome)
+
+    companion object {
+        val NONE: CatalogSyncFollowUp = CatalogSyncFollowUp { _, _ -> }
+    }
+}
+
 /** Creates [CatalogSyncWorker]; add it to the app's DelegatingWorkerFactory. */
-class CatalogSyncWorkerFactory(private val syncer: () -> CatalogSyncer) : WorkerFactory() {
+class CatalogSyncWorkerFactory(
+    private val followUp: CatalogSyncFollowUp = CatalogSyncFollowUp.NONE,
+    private val syncer: () -> CatalogSyncer,
+) : WorkerFactory() {
     override fun createWorker(appContext: Context, workerClassName: String, workerParameters: WorkerParameters): ListenableWorker? =
         when (workerClassName) {
-            CatalogSyncWorker::class.java.name -> CatalogSyncWorker(appContext, workerParameters, syncer())
+            CatalogSyncWorker::class.java.name -> CatalogSyncWorker(appContext, workerParameters, syncer(), followUp)
             else -> null
         }
 }
