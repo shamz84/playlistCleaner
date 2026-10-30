@@ -32,6 +32,12 @@ sealed class SourceError(val kind: String, val message: String) {
     /** Connectivity failure, including a connection dropped mid-download. */
     class Network(message: String, val cause: IOException? = null) : SourceError(KIND_NETWORK, message)
 
+    /** An M3U URL answered 401/403: wrong credentials, an expired account, or a blocked client. */
+    class Unauthorized(message: String = "The server refused the playlist URL") : SourceError(KIND_UNAUTHORIZED, message)
+
+    /** The body is not an M3U playlist (e.g. an HTML page from a portal or captive login). */
+    class NotAPlaylist(message: String = "The URL returned a web page, not an M3U playlist") : SourceError(KIND_NOT_A_PLAYLIST, message)
+
     class Other(message: String, val httpCode: Int? = null, val cause: Throwable? = null) : SourceError(KIND_OTHER, message)
 
     override fun toString(): String = "SourceError.$kind($message)"
@@ -41,6 +47,8 @@ sealed class SourceError(val kind: String, val message: String) {
         const val KIND_NOT_SHARED = "NotShared"
         const val KIND_QUOTA = "QuotaExceeded"
         const val KIND_NETWORK = "Network"
+        const val KIND_UNAUTHORIZED = "Unauthorized"
+        const val KIND_NOT_A_PLAYLIST = "NotAPlaylist"
         const val KIND_OTHER = "Other"
     }
 }

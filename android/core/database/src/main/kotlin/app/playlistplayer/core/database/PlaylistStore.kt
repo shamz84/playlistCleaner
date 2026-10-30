@@ -57,6 +57,19 @@ class PlaylistStore(private val db: AppDatabase) {
 
     suspend fun setXtreamEnabled(id: Long, enabled: Boolean) = playlistDao.setXtreamEnabled(id, enabled)
 
+    /**
+     * Records a new source type and forgets the old source's fingerprint (md5/version/ETag/
+     * Last-Modified), so the next sync downloads the new source in full. Channels stay visible.
+     */
+    suspend fun changeSource(id: Long, sourceType: PlaylistSourceType) = db.withWriteTransaction {
+        playlistDao.setSourceType(id, sourceType.name)
+        syncStateDao.get(id)?.let { state ->
+            syncStateDao.upsert(
+                state.copy(sourceMd5 = null, sourceVersion = null, sourceEtag = null, sourceLastModified = null, sourceModifiedTime = null),
+            )
+        }
+    }
+
     /** Scoped delete of every row belonging to [id]. */
     suspend fun deletePlaylist(id: Long) = db.withWriteTransaction {
         catalogStore.deleteAllForPlaylist(id)
@@ -80,6 +93,13 @@ class PlaylistStore(private val db: AppDatabase) {
         channelDao.observeChannelsInGroup(playlistId, groupOrdinal).map { list -> list.map { it.toModel() } }
 
     suspend fun activeChannelCount(playlistId: Long): Int = channelDao.countActiveChannels(playlistId)
+
+    /** Playable (non-header) active channels, and how many of them carry an Xtream stream id. */
+    suspend fun playableChannelCounts(playlistId: Long): Pair<Int, Int> =
+        channelDao.countActivePlayableChannels(playlistId) to channelDao.countActiveXtreamChannels(playlistId)
+
+    /** Active channel at [ordinal], or null. */
+    suspend fun channel(playlistId: Long, ordinal: Int): Channel? = channelDao.channel(playlistId, ordinal)?.toModel()
 
     suspend fun syncState(playlistId: Long): SyncStateEntity? = syncStateDao.get(playlistId)
 

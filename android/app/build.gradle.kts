@@ -146,4 +146,16 @@ dependencies {
     testImplementation(libs.androidx.test.ext.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.turbine)
+    // Playlist repository/onboarder tests (U15) use in-memory Room and a DataStore-backed SecureStore.
+    testImplementation(libs.androidx.sqlite.bundled.jvm)
+    testImplementation(libs.androidx.datastore.preferences)
+    testImplementation(libs.okhttp.mockwebserver)
+}
+
+// Unit tests run on the host JVM: swap the Android-only bundled SQLite AAR (device .so files) for
+// its JVM variant, which carries desktop natives (same classes).
+configurations.configureEach {
+    if (name.endsWith("UnitTestRuntimeClasspath")) {
+        exclude(group = "androidx.sqlite", module = "sqlite-bundled-android")
+    }
 }

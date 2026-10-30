@@ -4,6 +4,7 @@ import androidx.room3.withWriteTransaction
 import app.playlistplayer.core.database.entity.ChannelEpgKey
 import app.playlistplayer.core.database.entity.ChannelEpgMapEntity
 import app.playlistplayer.core.database.entity.ChannelProgramme
+import app.playlistplayer.core.database.entity.EpgMapOrigin
 import app.playlistplayer.core.database.entity.EpgSourceStateEntity
 import app.playlistplayer.core.database.entity.ProgrammeEntity
 import app.playlistplayer.core.database.entity.ProgrammeSource
@@ -217,6 +218,51 @@ class EpgStore(private val db: AppDatabase) {
     suspend fun programmeCount(playlistId: Long): Int = programmeDao.count(playlistId)
 
     // ---- scoped delete ----
+
+    /**
+     * Removes everything the provider guide contributed (Xtream processing turned off): provider
+     * and archive-only mappings, `get_simple_data_table` archive rows and XMLTV rows of channels no
+     * override mapping references. Override mappings and their programmes are kept, and the state's
+     * counts are recomputed; without an override mapping the playlist's EPG is cleared entirely.
+     */
+    suspend fun clearProviderData(playlistId: Long) = db.withWriteTransaction {
+        val override = EpgMapOrigin.OVERRIDE.name
+        val overrideMappings = mapDao.all(playlistId).count { it.origin == override }
+        val state = stateDao.get(playlistId)
+        if (overrideMappings == 0) {
+            programmeDao.deleteAll(playlistId)
+            mapDao.deleteAll(playlistId)
+            if (state != null) {
+                stateDao.upsert(
+                    EpgSourceStateEntity(
+                        playlistId = playlistId,
+                        overrideUrlPresent = state.overrideUrlPresent,
+                        lastImportId = state.lastImportId,
+                    ),
+                )
+            }
+            return@withWriteTransaction
+        }
+        programmeDao.deleteSource(playlistId, ProgrammeSource.XTREAM_ARCHIVE.name)
+        programmeDao.deleteXmltvNotMappedBy(playlistId, override)
+        mapDao.deleteAllExceptOrigin(playlistId, override)
+        if (state != null) {
+            val total = state.totalCount
+            stateDao.upsert(
+                state.copy(
+                    activeSource = override,
+                    matchedCount = overrideMappings,
+                    providerMatchedCount = 0,
+                    overrideMatchedCount = overrideMappings,
+                    matchRate = if (total == 0) 0.0 else overrideMappings.toDouble() / total,
+                    programmeCount = programmeDao.count(playlistId),
+                    coverageFrom = programmeDao.xmltvCoverageFrom(playlistId),
+                    coverageTo = programmeDao.xmltvCoverageTo(playlistId),
+                    backfilledChannels = 0,
+                ),
+            )
+        }
+    }
 
     /** Removes every EPG row of [playlistId] (playlist removed). */
     suspend fun clearPlaylist(playlistId: Long) = db.withWriteTransaction { deleteAllForPlaylist(playlistId) }

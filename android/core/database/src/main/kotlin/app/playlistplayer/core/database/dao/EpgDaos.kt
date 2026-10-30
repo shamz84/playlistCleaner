@@ -44,6 +44,10 @@ interface ChannelEpgMapDao {
     @Query("DELETE FROM channel_epg_map WHERE playlistId = :playlistId")
     suspend fun deleteAll(playlistId: Long)
 
+    /** Removes the mappings that did not come from [origin] (e.g. keep only OVERRIDE ones). */
+    @Query("DELETE FROM channel_epg_map WHERE playlistId = :playlistId AND origin != :origin")
+    suspend fun deleteAllExceptOrigin(playlistId: Long, origin: String)
+
     /** Guide keys of the playlist's active channels that have a mapping. */
     @Query(
         """SELECT c.ordinal AS channelOrdinal, m.channelKey AS channelKey FROM channel c
@@ -190,4 +194,14 @@ interface ProgrammeDao {
 
     @Query("DELETE FROM programme WHERE playlistId = :playlistId")
     suspend fun deleteAll(playlistId: Long)
+
+    @Query("DELETE FROM programme WHERE playlistId = :playlistId AND source = :source")
+    suspend fun deleteSource(playlistId: Long, source: String)
+
+    /** XMLTV rows whose guide channel no mapping of [origin] references (provider-only channels). */
+    @Query(
+        """DELETE FROM programme WHERE playlistId = :playlistId AND source = 'XMLTV'
+           AND channelKey NOT IN (SELECT channelKey FROM channel_epg_map WHERE playlistId = :playlistId AND origin = :origin)""",
+    )
+    suspend fun deleteXmltvNotMappedBy(playlistId: Long, origin: String)
 }

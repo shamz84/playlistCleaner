@@ -32,6 +32,9 @@ interface PlaylistDao {
     @Query("UPDATE playlist SET xtreamEnabled = :enabled WHERE id = :id")
     suspend fun setXtreamEnabled(id: Long, enabled: Boolean)
 
+    @Query("UPDATE playlist SET sourceType = :sourceType WHERE id = :id")
+    suspend fun setSourceType(id: Long, sourceType: String)
+
     @Query("DELETE FROM playlist WHERE id = :id")
     suspend fun delete(id: Long)
 }
@@ -103,6 +106,22 @@ interface ChannelDao {
            WHERE c.playlistId = :playlistId""",
     )
     suspend fun countActiveChannels(playlistId: Long): Int
+
+    /** Active non-header channels that carry an Xtream stream id. */
+    @Query(
+        """SELECT COUNT(*) FROM channel c
+           JOIN sync_state s ON s.playlistId = c.playlistId AND s.activeGeneration = c.generation
+           WHERE c.playlistId = :playlistId AND c.isHeader = 0 AND c.streamId IS NOT NULL""",
+    )
+    suspend fun countActiveXtreamChannels(playlistId: Long): Int
+
+    /** Active non-header channels. */
+    @Query(
+        """SELECT COUNT(*) FROM channel c
+           JOIN sync_state s ON s.playlistId = c.playlistId AND s.activeGeneration = c.generation
+           WHERE c.playlistId = :playlistId AND c.isHeader = 0""",
+    )
+    suspend fun countActivePlayableChannels(playlistId: Long): Int
 
     /** Row count across all generations; for cleanup checks. */
     @Query("SELECT COUNT(*) FROM channel WHERE playlistId = :playlistId")

@@ -57,9 +57,11 @@ class SyncHarness(private val tempDir: File) {
     )
     val registry = PlaylistRegistry(store, secureStore, clock = { now })
     var now: Long = 1_000_000L
+    val vaultDir = File(tempDir, "vault")
+    val vault = StreamUrlVault(vaultDir, AesGcmValueCipher { key }, { store.syncState(it)?.activeGeneration }, chunkSize = 4)
 
     fun syncer(factory: PlaylistSourceFactory, batchSize: Int = 4) =
-        PlaylistSyncer(store, secureStore, factory, clock = { now }, batchSize = batchSize)
+        PlaylistSyncer(store, secureStore, factory, clock = { now }, batchSize = batchSize, urlVault = vault)
 
     fun close() {
         db.close()

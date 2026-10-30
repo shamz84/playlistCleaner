@@ -35,8 +35,9 @@ class PlaylistSyncerDriveTest {
     fun setUp() = runBlocking<Unit> {
         h = SyncHarness(temp.root)
         server = MockWebServer().apply { start() }
+        val http = OkHttpClient.Builder().readTimeout(5, TimeUnit.SECONDS).build()
         val drive = DriveClient(
-            OkHttpClient.Builder().readTimeout(5, TimeUnit.SECONDS).build(),
+            http,
             DriveClientConfig(
                 apiKey = "TEST_KEY",
                 packageName = "app.playlistplayer",
@@ -45,7 +46,7 @@ class PlaylistSyncerDriveTest {
                 fallbackBaseUrl = server.url("/uc/"),
             ),
         )
-        syncer = h.syncer(DefaultPlaylistSourceFactory(drive), batchSize = 25)
+        syncer = h.syncer(DefaultPlaylistSourceFactory(drive, http), batchSize = 25)
         playlistId = h.registry.add("My playlist", SourceReference.Drive("FILE_ID"))
 
         // Initial good sync.

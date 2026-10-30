@@ -17,8 +17,13 @@ import app.playlistplayer.core.network.source.PlaylistSourceFactory
 import app.playlistplayer.core.network.xtream.AccountStatusChecker
 import app.playlistplayer.core.network.xtream.XtreamAccountStatusChecker
 import app.playlistplayer.core.network.xtream.XtreamClient
+import app.playlistplayer.core.sync.PipelineSteps
+import app.playlistplayer.core.sync.PipelineWorkerFactory
+import app.playlistplayer.core.sync.PlaylistOrchestrator
 import app.playlistplayer.core.sync.PlaylistRegistry
+import app.playlistplayer.core.sync.PlaylistSyncScheduler
 import app.playlistplayer.core.sync.PlaylistSyncer
+import app.playlistplayer.core.sync.StreamUrlVault
 import app.playlistplayer.core.sync.SyncWorkerFactory
 import app.playlistplayer.core.sync.catalog.CatalogSyncChain
 import app.playlistplayer.core.sync.catalog.CatalogSyncWorkerFactory
@@ -30,13 +35,23 @@ import app.playlistplayer.core.sync.epg.AndroidXmlPullSource
 import app.playlistplayer.core.sync.epg.CompositePlaylistSyncFollowUp
 import app.playlistplayer.core.sync.epg.EpgOverrideSettings
 import app.playlistplayer.core.sync.epg.EpgSyncChain
+import app.playlistplayer.core.sync.epg.EpgSyncWorker
 import app.playlistplayer.core.sync.epg.EpgSyncWorkerFactory
 import app.playlistplayer.core.sync.epg.EpgSyncer
 import app.playlistplayer.core.sync.epg.NowNextRepository
 import app.playlistplayer.core.sync.platform.AndroidLogSink
 import app.playlistplayer.core.sync.platform.AppSignature
+import app.playlistplayer.core.sync.secure.AndroidKeystoreKeys
 import app.playlistplayer.core.sync.secure.SecureStore
+import app.playlistplayer.feature.onboarding.PlaylistOnboarder
+import app.playlistplayer.feature.playlists.DefaultPlaylistOnboarder
+import app.playlistplayer.feature.playlists.PlaylistAuthorizer
+import app.playlistplayer.feature.playlists.PlaylistRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import okhttp3.OkHttpClient
+import java.io.File
 import java.util.concurrent.TimeUnit
 
 /**
@@ -82,12 +97,34 @@ class AppContainer(context: Context) {
         )
     }
 
-    val playlistSourceFactory: PlaylistSourceFactory by lazy { DefaultPlaylistSourceFactory(driveClient) }
+    /** Process-lifetime scope for work that outlives a screen (e.g. onboarding catalog/guide progress). */
+    val applicationScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    /** Drive file ids via [driveClient]; M3U URLs (U15) via a conditional GET on the shared client. */
+    val playlistSourceFactory: PlaylistSourceFactory by lazy { DefaultPlaylistSourceFactory(driveClient, okHttpClient) }
+
+    /**
+     * Encrypted stream URLs of non-Xtream playlist entries (Room never stores URLs). App-private,
+     * excluded from backup; data keys are wrapped by the Keystore key.
+     */
+    val streamUrlVault: StreamUrlVault by lazy {
+        StreamUrlVault(
+            directory = File(appContext.noBackupFilesDir, StreamUrlVault.DIRECTORY_NAME),
+            cipher = AndroidKeystoreKeys.cipher(),
+            activeGeneration = { id -> playlistStore.syncState(id)?.activeGeneration },
+        )
+    }
 
     val playlistRegistry: PlaylistRegistry by lazy { PlaylistRegistry(playlistStore, secureStore) }
 
     val playlistSyncer: PlaylistSyncer by lazy {
-        PlaylistSyncer(playlistStore, secureStore, playlistSourceFactory, logger = logger.withTag("PlaylistSync"))
+        PlaylistSyncer(
+            playlistStore,
+            secureStore,
+            playlistSourceFactory,
+            logger = logger.withTag("PlaylistSync"),
+            urlVault = streamUrlVault,
+        )
     }
 
     // ---- Xtream (U4) ----
@@ -161,6 +198,61 @@ class AppContainer(context: Context) {
         EpgSyncChain(playlistStore, epgStore, { id -> secureStore.epgOverrideUrl(id) != null }, logger.withTag("EpgSync")) { workManager }
     }
 
+    // ---- Multiple playlists (U15) ----
+
+    /** Serial per-playlist pipeline (playlist → catalog → guide), one playlist step at a time. */
+    val playlistOrchestrator: PlaylistOrchestrator by lazy { PlaylistOrchestrator(playlistStore, logger.withTag("Pipeline")) { workManager } }
+
+    val playlistSyncScheduler: PlaylistSyncScheduler get() = playlistOrchestrator
+
+    private val pipelineSteps: PipelineSteps by lazy {
+        PipelineSteps(
+            playlistStore = playlistStore,
+            playlistSyncer = { playlistSyncer },
+            catalogSyncer = { catalogSyncer },
+            epgSyncer = { epgSyncer },
+            needsEpgImport = { id -> epgSyncChain.needsImport(id) },
+            hasEpgOverride = { id -> secureStore.epgOverrideUrl(id) != null },
+            scheduleDailyGuide = { id -> EpgSyncWorker.schedulePeriodic(workManager, id) },
+            logger = logger.withTag("Pipeline"),
+        )
+    }
+
+    /**
+     * Gate for playlist edits/removal; the settings unit replaces it with the parental-PIN prompt
+     * (`ParentalControl.authorize`). Allows everything until then.
+     */
+    @Volatile
+    var playlistAuthorizer: PlaylistAuthorizer = { true }
+
+    /** Settings → Playlists. [playlistAuthorizer] is read on every action. */
+    val playlistRepository: PlaylistRepository by lazy {
+        PlaylistRepository(
+            playlistStore = playlistStore,
+            catalogStore = catalogStore,
+            epgStore = epgStore,
+            registry = playlistRegistry,
+            secureStore = secureStore,
+            vault = streamUrlVault,
+            scheduler = playlistSyncScheduler,
+            authorize = { action -> playlistAuthorizer(action) },
+            logger = logger.withTag("Playlists"),
+        )
+    }
+
+    /** First run and "Add playlist" (U9 onboarding screen). */
+    val playlistOnboarder: PlaylistOnboarder by lazy {
+        DefaultPlaylistOnboarder(
+            registry = playlistRegistry,
+            syncer = playlistSyncer,
+            playlistStore = playlistStore,
+            vault = streamUrlVault,
+            scheduler = playlistSyncScheduler,
+            scope = applicationScope,
+            logger = logger.withTag("Onboarding"),
+        )
+    }
+
     /** WorkManager worker factory; later units add their factories to this delegate. */
     val workerFactory: DelegatingWorkerFactory by lazy {
         DelegatingWorkerFactory().apply {
@@ -171,6 +263,8 @@ class AppContainer(context: Context) {
             // A successful catalog sync chains the EPG import when it is stale or never ran.
             addFactory(CatalogSyncWorkerFactory(epgSyncChain) { catalogSyncer })
             addFactory(EpgSyncWorkerFactory { epgSyncer })
+            // U15 serial pipeline steps and the periodic "refresh all playlists" worker.
+            addFactory(PipelineWorkerFactory({ pipelineSteps }, { playlistOrchestrator }))
         }
     }
 

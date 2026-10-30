@@ -4,9 +4,11 @@ import app.playlistplayer.core.database.PlaylistStore
 import app.playlistplayer.core.database.entity.ChannelEntity
 import app.playlistplayer.core.database.entity.ChannelGroupEntity
 import app.playlistplayer.core.database.entity.SyncStateEntity
+import app.playlistplayer.core.model.SourceReference
 import app.playlistplayer.core.model.XtreamAccount
 import app.playlistplayer.core.network.RedactingLogger
 import app.playlistplayer.core.network.Redactor
+import app.playlistplayer.core.network.source.M3uUrlSource
 import app.playlistplayer.core.network.source.PlaylistSourceFactory
 import app.playlistplayer.core.network.source.SourceError
 import app.playlistplayer.core.network.source.SourceFetchResult
@@ -63,7 +65,13 @@ sealed interface SyncOutcome {
  * previous playlist stays visible with a "using cached copy from <date>" banner. A refresh whose
  * channel count drops by more than [maxChannelDropFraction] is rejected with a warning.
  *
- * Only stream ids and attributes reach Room; URLs exist only while a line is being parsed.
+ * Only stream ids and attributes reach Room; URLs exist only while a line is being parsed. Entries
+ * that are not Xtream-shaped (no stream id) keep their URL in the encrypted [urlVault], written
+ * under the same generation and swapped/discarded with it, so generic M3U playlists stay playable.
+ *
+ * An M3U URL source of the form `get.php?username=&password=` names the account itself: it is used
+ * when the entries yield none, and makes Xtream processing available even when the entry URLs are
+ * not Xtream-shaped.
  */
 class PlaylistSyncer(
     private val store: PlaylistStore,
@@ -74,6 +82,7 @@ class PlaylistSyncer(
     private val parser: M3uParser = M3uParser(),
     private val batchSize: Int = PlaylistStore.DEFAULT_BATCH_SIZE,
     private val maxChannelDropFraction: Double = 0.5,
+    private val urlVault: StreamUrlVault? = null,
 ) {
     private val mutex = Mutex()
 
@@ -84,6 +93,7 @@ class PlaylistSyncer(
         val headerCount: Int,
         val skippedWithoutUrl: Int,
         val extraction: AccountExtraction,
+        val vaultEntries: Int,
     )
 
     suspend fun sync(playlistId: Long): SyncOutcome = mutex.withLock { syncLocked(playlistId) }
@@ -106,17 +116,18 @@ class PlaylistSyncer(
                 writeGeneration(playlistId, allocated, input)
             }
         } catch (e: CancellationException) {
-            generation?.let { withContext(NonCancellable) { store.discardGeneration(playlistId, it) } }
+            generation?.let { withContext(NonCancellable) { discard(playlistId, it) } }
             throw e
         } catch (e: Exception) {
-            generation?.let { store.discardGeneration(playlistId, it) }
+            generation?.let { discard(playlistId, it) }
             logger.e("Playlist $playlistId sync failed", e)
             return recordFailure(playlistId, SourceError.KIND_OTHER, Redactor.redact(e), retryable = false)
         }
 
         return when (result) {
             is SourceFetchResult.Unchanged -> {
-                generation?.let { store.discardGeneration(playlistId, it) }
+                // A content-hash match (M3U URL without validators) parsed into a generation: drop it.
+                generation?.let { discard(playlistId, it) }
                 val now = clock()
                 store.updateSyncState(playlistId) {
                     it.clearFailure().copy(
@@ -129,54 +140,75 @@ class PlaylistSyncer(
                 SyncOutcome.Unchanged
             }
             is SourceFetchResult.Failed -> {
-                generation?.let { store.discardGeneration(playlistId, it) }
+                generation?.let { discard(playlistId, it) }
                 val error = result.error
                 recordFailure(playlistId, error.kind, error.message, retryable = error.isRetryable())
             }
-            is SourceFetchResult.Fetched -> commit(playlistId, playlist.xtreamEnabled, state, result.value, result.version)
+            is SourceFetchResult.Fetched -> commit(playlistId, playlist.xtreamEnabled, reference, state, result.value, result.version)
         }
     }
 
     private suspend fun writeGeneration(playlistId: Long, generation: Long, input: InputStream): ParsedGeneration {
         val writer = store.writer(playlistId, generation, batchSize)
+        val vaultWriter = urlVault?.writer(playlistId, generation)
         val extractor = AccountExtractor()
         var headers = 0
-        // The source owns (and closes) the stream; the reader is not closed here.
-        val reader = parser.open(input)
-        for (entry in reader) {
-            extractor.add(entry.url)
-            if (entry.isHeader) headers++
-            writer.add(entry.toEntity(playlistId, generation))
+        try {
+            // The source owns (and closes) the stream; the reader is not closed here.
+            val reader = parser.open(input)
+            for (entry in reader) {
+                extractor.add(entry.url)
+                if (entry.isHeader) headers++
+                if (vaultWriter != null && entry.streamId == null && !entry.isHeader) vaultWriter.add(entry.ordinal, entry.url)
+                writer.add(entry.toEntity(playlistId, generation))
+            }
+            val groups = reader.groups.mapIndexed { ordinal, (name, count) ->
+                ChannelGroupEntity(playlistId, generation, ordinal, name, count)
+            }
+            writer.writeGroups(groups)
+            vaultWriter?.finish()
+            return ParsedGeneration(
+                generation, writer.channelsWritten, groups.size, headers, reader.skippedWithoutUrl, extractor.result(),
+                vaultWriter?.entriesWritten ?: 0,
+            )
+        } catch (e: Throwable) {
+            vaultWriter?.abort()
+            throw e
         }
-        val groups = reader.groups.mapIndexed { ordinal, (name, count) ->
-            ChannelGroupEntity(playlistId, generation, ordinal, name, count)
-        }
-        writer.writeGroups(groups)
-        return ParsedGeneration(generation, writer.channelsWritten, groups.size, headers, reader.skippedWithoutUrl, extractor.result())
+    }
+
+    /** Deletes an incomplete/rejected generation from Room and the URL vault. */
+    private suspend fun discard(playlistId: Long, generation: Long) {
+        store.discardGeneration(playlistId, generation)
+        urlVault?.discard(playlistId, generation)
     }
 
     private suspend fun commit(
         playlistId: Long,
         xtreamEnabled: Boolean,
+        reference: SourceReference,
         state: SyncStateEntity?,
         parsed: ParsedGeneration,
         version: SourceVersion,
     ): SyncOutcome {
         val now = clock()
         if (parsed.channelCount == 0) {
-            store.discardGeneration(playlistId, parsed.generation)
+            discard(playlistId, parsed.generation)
             return recordFailure(playlistId, KIND_EMPTY, "The downloaded playlist contains no channels", retryable = false)
         }
         val activeCount = if (state?.activeGeneration != null) state.channelCount else 0
         if (activeCount > 0 && parsed.channelCount < activeCount * (1.0 - maxChannelDropFraction)) {
-            store.discardGeneration(playlistId, parsed.generation)
+            discard(playlistId, parsed.generation)
             val warning = "Refresh rejected: channel count dropped from $activeCount to ${parsed.channelCount}; keeping the cached copy"
             store.updateSyncState(playlistId) { it.copy(lastAttemptAt = now, lastWarning = warning, lastWarningAt = now) }
             logger.w("Playlist $playlistId: $warning")
             return SyncOutcome.Rejected(activeCount, parsed.channelCount, warning)
         }
 
-        val newAccount = parsed.extraction.account
+        // A get.php M3U URL names the account itself; the entries' majority account wins when present.
+        val sourceAccount = (reference as? SourceReference.M3uUrl)?.let { M3uUrlSource.accountFromUrl(it.url) }
+        val newAccount = parsed.extraction.account ?: sourceAccount
+        val xtreamAvailable = parsed.extraction.isXtreamShaped || sourceAccount != null
         val oldAccount = secureStore.account(playlistId)
         val credentialsChanged = newAccount != oldAccount
 
@@ -200,14 +232,15 @@ class PlaylistSyncer(
                 epgStale = it.epgStale || credentialsChanged,
             )
         }
+        urlVault?.retain(playlistId, parsed.generation)
         if (credentialsChanged) storeAccount(playlistId, newAccount)
-        if (xtreamEnabled && !parsed.extraction.isXtreamShaped) {
+        if (xtreamEnabled && !xtreamAvailable) {
             // Xtream processing is unavailable when the playlist's URLs are not Xtream-shaped.
             store.setXtreamEnabled(playlistId, false)
         }
         logger.i(
             "Playlist $playlistId updated: ${parsed.channelCount} channels, ${parsed.groupCount} groups, " +
-                "${parsed.headerCount} headers, ${parsed.skippedWithoutUrl} skipped, credentialsChanged=$credentialsChanged, " +
+                "${parsed.headerCount} headers, ${parsed.skippedWithoutUrl} skipped, ${parsed.vaultEntries} vaulted, credentialsChanged=$credentialsChanged, " +
                 "mixedAccounts=${parsed.extraction.mixedAccounts}",
         )
         return SyncOutcome.Updated(parsed.channelCount, parsed.groupCount, credentialsChanged, parsed.extraction.mixedAccounts)
