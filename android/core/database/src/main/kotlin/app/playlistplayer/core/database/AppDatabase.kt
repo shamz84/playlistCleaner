@@ -5,7 +5,10 @@ import androidx.room3.AutoMigration
 import androidx.room3.Database
 import androidx.room3.Room
 import androidx.room3.RoomDatabase
+import androidx.room3.migration.AutoMigrationSpec
+import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.SQLiteDriver
+import androidx.sqlite.execSQL
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import app.playlistplayer.core.database.dao.AccountStatusDao
 import app.playlistplayer.core.database.dao.CatalogCacheDao
@@ -17,6 +20,7 @@ import app.playlistplayer.core.database.dao.EpgSourceStateDao
 import app.playlistplayer.core.database.dao.PlaylistDao
 import app.playlistplayer.core.database.dao.ProgrammeDao
 import app.playlistplayer.core.database.dao.SyncStateDao
+import app.playlistplayer.core.database.dao.UserDataDao
 import app.playlistplayer.core.database.entity.AccountStatusEntity
 import app.playlistplayer.core.database.entity.CatalogSyncStateEntity
 import app.playlistplayer.core.database.entity.ChannelEntity
@@ -35,6 +39,19 @@ import app.playlistplayer.core.database.entity.SyncStateEntity
 import app.playlistplayer.core.database.entity.VodCategoryEntity
 import app.playlistplayer.core.database.entity.VodInfoCacheEntity
 import app.playlistplayer.core.database.entity.VodStreamEntity
+import app.playlistplayer.core.database.entity.FavouriteEntity
+import app.playlistplayer.core.database.entity.LastChannelEntity
+import app.playlistplayer.core.database.entity.PlaybackProgressEntity
+import app.playlistplayer.core.database.entity.RecentChannelEntity
+import app.playlistplayer.core.database.entity.TitleOverrideEntity
+import app.playlistplayer.core.database.entity.TitlePickEntity
+import app.playlistplayer.core.database.search.SearchDao
+import app.playlistplayer.core.database.search.SearchFtsTriggers
+import app.playlistplayer.core.database.search.SearchIndexStateEntity
+import app.playlistplayer.core.database.search.SearchLiveEntity
+import app.playlistplayer.core.database.search.SearchLiveFts
+import app.playlistplayer.core.database.search.SearchVodEntity
+import app.playlistplayer.core.database.search.SearchVodFts
 import kotlinx.coroutines.Dispatchers
 import kotlin.coroutines.CoroutineContext
 
@@ -66,11 +83,25 @@ import kotlin.coroutines.CoroutineContext
         ProgrammeEntity::class,
         ChannelEpgMapEntity::class,
         EpgSourceStateEntity::class,
+        // U11: personal data
+        FavouriteEntity::class,
+        PlaybackProgressEntity::class,
+        TitlePickEntity::class,
+        LastChannelEntity::class,
+        RecentChannelEntity::class,
+        TitleOverrideEntity::class,
+        // U11: search index (FTS5 trigram, external content)
+        SearchLiveEntity::class,
+        SearchLiveFts::class,
+        SearchVodEntity::class,
+        SearchVodFts::class,
+        SearchIndexStateEntity::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = true,
-    // 1 -> 2 only adds the catalog tables; 2 -> 3 only adds the EPG tables.
-    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3)],
+    // Additive only: 1 -> 2 adds the catalog tables, 2 -> 3 the EPG tables, 3 -> 4 the personal
+    // data and search index tables (the empty index is built by the app's SearchIndexer).
+    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3), AutoMigration(from = 3, to = 4, spec = AppDatabase.Migration3To4::class)],
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun playlistDao(): PlaylistDao
@@ -83,6 +114,15 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun programmeDao(): ProgrammeDao
     abstract fun channelEpgMapDao(): ChannelEpgMapDao
     abstract fun epgSourceStateDao(): EpgSourceStateDao
+    abstract fun userDataDao(): UserDataDao
+    abstract fun searchDao(): SearchDao
+
+    /** Adds the FTS content-sync triggers that AutoMigration leaves out (see [SearchFtsTriggers]). */
+    class Migration3To4 : AutoMigrationSpec {
+        override suspend fun onPostMigrate(connection: SQLiteConnection) {
+            SearchFtsTriggers.ALL.forEach { connection.execSQL(it) }
+        }
+    }
 
     companion object {
         const val FILE_NAME: String = "playlist_player.db"

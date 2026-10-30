@@ -7,6 +7,33 @@ import app.playlistplayer.core.database.AppDatabase
 import app.playlistplayer.core.database.CatalogStore
 import app.playlistplayer.core.database.EpgStore
 import app.playlistplayer.core.database.PlaylistStore
+import app.playlistplayer.core.database.UserDataStore
+import app.playlistplayer.core.database.search.SearchStore
+import app.playlistplayer.feature.library.RecentChannelsStore
+import app.playlistplayer.feature.library.RoomFavouritesStore
+import app.playlistplayer.feature.library.RoomLastChannelStore
+import app.playlistplayer.feature.library.RoomPlaybackProgressStore
+import app.playlistplayer.feature.library.RoomRecentChannelsStore
+import app.playlistplayer.feature.library.RoomTitleOverrideStore
+import app.playlistplayer.feature.library.RoomTitlePickStore
+import app.playlistplayer.feature.library.TitleOverrideStore
+import app.playlistplayer.feature.live.FavouritesRepository
+import app.playlistplayer.feature.live.LastChannelStore
+import app.playlistplayer.feature.search.ContentVisibility
+import app.playlistplayer.feature.search.SearchIndexer
+import app.playlistplayer.feature.search.SearchPlaylist
+import app.playlistplayer.feature.search.SearchRepository
+import app.playlistplayer.feature.vod.CatalogStoreVodSource
+import app.playlistplayer.feature.vod.FavouritesStore
+import app.playlistplayer.feature.vod.PlaybackProgressRepository
+import app.playlistplayer.feature.vod.PlaybackProgressStore
+import app.playlistplayer.feature.vod.TitlePickStore
+import app.playlistplayer.feature.vod.VodCatalogRepository
+import app.playlistplayer.feature.vod.VodPlaylist
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.merge
 import app.playlistplayer.core.model.XtreamAccount
 import app.playlistplayer.core.network.RedactingLogger
 import app.playlistplayer.core.network.drive.DriveClient
@@ -236,6 +263,7 @@ class AppContainer(context: Context) {
             vault = streamUrlVault,
             scheduler = playlistSyncScheduler,
             authorize = { action -> playlistAuthorizer(action) },
+            onRemoved = { id -> onPlaylistRemoved(id) },
             logger = logger.withTag("Playlists"),
         )
     }
@@ -251,6 +279,99 @@ class AppContainer(context: Context) {
             scope = applicationScope,
             logger = logger.withTag("Onboarding"),
         )
+    }
+
+    // ---- Search, favourites, recent and continue watching (U11) ----
+
+    /** Favourites, progress, picks, last/recent channels and VOD grouping overrides (Room). */
+    val userDataStore: UserDataStore by lazy { UserDataStore(database) }
+
+    /** FTS5 trigram index over live entries and merged VOD titles. */
+    val searchStore: SearchStore by lazy { SearchStore(database) }
+
+    /**
+     * Parental visibility for search, home rows and VOD categories; the settings unit replaces it
+     * with a `ParentalControl`-backed implementation. Read on every use.
+     */
+    @Volatile
+    var contentVisibility: ContentVisibility = ContentVisibility.ALL_VISIBLE
+
+    val favouritesStore: FavouritesStore by lazy { RoomFavouritesStore(userDataStore) }
+
+    val playbackProgressStore: PlaybackProgressStore by lazy { RoomPlaybackProgressStore(userDataStore) }
+
+    val playbackProgressRepository: PlaybackProgressRepository by lazy { PlaybackProgressRepository(playbackProgressStore) }
+
+    val titlePickStore: TitlePickStore by lazy { RoomTitlePickStore(userDataStore) }
+
+    val recentChannelsStore: RecentChannelsStore by lazy { RoomRecentChannelsStore(userDataStore) }
+
+    /** Setting the last channel (on every tune) also records it as a recent channel. */
+    val lastChannelStore: LastChannelStore by lazy { RoomLastChannelStore(userDataStore, recentChannelsStore) }
+
+    /** U5 split/merge overrides; an edit drops the playlist's cached groupings. */
+    val titleOverrideStore: TitleOverrideStore by lazy {
+        RoomTitleOverrideStore(userDataStore, onChanged = { id -> vodCatalogRepository.invalidate(id) })
+    }
+
+    /** Merged VOD titles (U10) with persisted overrides and parental category filtering. */
+    val vodCatalogRepository: VodCatalogRepository by lazy {
+        VodCatalogRepository(
+            source = CatalogStoreVodSource(catalogStore) {
+                playlistStore.playlists().filter { it.xtreamEnabled }.map { VodPlaylist(it.id, it.name) }
+            },
+            overrides = { id -> titleOverrideStore.overrides(id) },
+            isCategoryHidden = { id, kind, category -> contentVisibility.isVodCategoryHidden(id, kind, category) },
+        )
+    }
+
+    /** Rebuilds the search index after generation flips; [startSearchIndexing] runs it. */
+    val searchIndexer: SearchIndexer by lazy {
+        SearchIndexer(
+            playlistStore = playlistStore,
+            catalogStore = catalogStore,
+            searchStore = searchStore,
+            vodRepository = vodCatalogRepository,
+            overrideStamp = { id -> titleOverrideStore.stamp(id) },
+            logger = logger.withTag("Search"),
+        )
+    }
+
+    val searchRepository: SearchRepository by lazy {
+        SearchRepository(
+            store = searchStore,
+            playlists = { playlistStore.playlists().map { SearchPlaylist(it.id, it.name) } },
+            visibility = { contentVisibility },
+            indexer = searchIndexer,
+        )
+    }
+
+    val favouritesRepository: FavouritesRepository by lazy {
+        FavouritesRepository(userDataStore, searchStore, visibility = { contentVisibility })
+    }
+
+    /** Re-runs Home's Continue watching when progress is saved or the VOD index is rebuilt. */
+    fun homeChanges(): Flow<Unit> = merge(
+        userDataStore.observeRecentProgress(1).map { },
+        searchStore.observeVodIndex().map { },
+    )
+
+    /** Starts index maintenance for the process lifetime; call once from `PlaylistPlayerApp.onCreate`. */
+    fun startSearchIndexing(): Job = searchIndexer.start(applicationScope)
+
+    /** Extra removal cleanup set by the settings unit (e.g. `ParentalControl.forgetPlaylist`). */
+    @Volatile
+    var playlistRemovedHook: suspend (playlistId: Long) -> Unit = {}
+
+    /**
+     * Runs after a playlist's rows are deleted (`PlaylistStore.deletePlaylist` already removed its
+     * personal rows and search index; clearing again is idempotent) and drops in-memory caches.
+     */
+    private suspend fun onPlaylistRemoved(playlistId: Long) {
+        userDataStore.clearPlaylist(playlistId)
+        searchStore.clearPlaylist(playlistId)
+        vodCatalogRepository.invalidate(playlistId)
+        playlistRemovedHook(playlistId)
     }
 
     /** WorkManager worker factory; later units add their factories to this delegate. */

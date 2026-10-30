@@ -1,6 +1,7 @@
 package app.playlistplayer.core.database
 
 import androidx.room3.withWriteTransaction
+import app.playlistplayer.core.database.search.SearchStore
 import app.playlistplayer.core.database.entity.ChannelEntity
 import app.playlistplayer.core.database.entity.ChannelGroupEntity
 import app.playlistplayer.core.database.entity.PlaylistEntity
@@ -31,6 +32,8 @@ class PlaylistStore(private val db: AppDatabase) {
     private val syncStateDao = db.syncStateDao()
     private val catalogStore by lazy { CatalogStore(db) }
     private val epgStore by lazy { EpgStore(db) }
+    private val userDataStore by lazy { UserDataStore(db) }
+    private val searchStore by lazy { SearchStore(db) }
 
     // ---- Playlist registry ----
 
@@ -70,10 +73,15 @@ class PlaylistStore(private val db: AppDatabase) {
         }
     }
 
-    /** Scoped delete of every row belonging to [id]. */
+    /**
+     * Scoped delete of every row belonging to [id]: channels, catalog, EPG, personal data
+     * (favourites, progress, picks, last/recent channels, title overrides) and the search index.
+     */
     suspend fun deletePlaylist(id: Long) = db.withWriteTransaction {
         catalogStore.deleteAllForPlaylist(id)
         epgStore.deleteAllForPlaylist(id)
+        userDataStore.deleteAllForPlaylist(id)
+        searchStore.deleteAllForPlaylist(id)
         channelDao.deleteAllChannels(id)
         channelDao.deleteAllGroups(id)
         syncStateDao.delete(id)

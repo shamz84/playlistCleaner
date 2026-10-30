@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Search (U11) -->
+    <string name="search_field_label">Search channels, movies and series</string>
+    <string name="search_field_placeholder">Type a name</string>
+    <string name="search_idle_title">Find anything in your playlists</string>
+    <string name="search_idle_message">Type part of a channel, movie or series name. Results update as you type.</string>
+    <string name="search_searching">Searching…</string>
+    <string name="search_no_results_title">No matches for “%1$s”</string>
+    <string name="search_no_results_message">Check the spelling or try fewer letters.</string>
+    <string name="search_error">Search isn\'t available right now.</string>
+    <string name="search_retry">Retry</string>
+    <string name="search_clear">Clear search</string>
+    <string name="search_section_live">Live</string>
+    <string name="search_section_movies">Movies</string>
+    <string name="search_section_series">Series</string>
+    <string name="search_result_count">%1$d results</string>
+
+    <!-- Home (U11) -->
+    <string name="home_loading">Loading…</string>
+    <string name="home_continue_watching">Continue watching</string>
+    <string name="home_favourite_channels">Favourite channels</string>
+    <string name="home_favourite_titles">Favourite movies and series</string>
+    <string name="home_recent_channels">Recently watched</string>
+    <string name="home_live_groups">%1$s · Live groups</string>
+    <string name="home_first_run_title">Home fills up as you watch</string>
+    <string name="home_first_run_message">Favourite channels, movies and series, and anything you start watching, appear here.</string>
+    <string name="home_empty_title">Nothing here yet</string>
+    <string name="home_empty_message">Add a playlist in Settings to start watching.</string>
+    <string name="home_progress_description">%1$d%% watched</string>
+    <string name="home_group_channels">%1$d channels</string>
+</resources>
