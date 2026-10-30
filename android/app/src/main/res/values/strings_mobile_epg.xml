@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Phone guide (U13 over U9) -->
+    <string name="mobile_guide_choose_group">Choose a group</string>
+    <string name="mobile_guide_group_button_description">Guide group %1$s, %2$s. Change group</string>
+    <string name="mobile_guide_earlier">Earlier</string>
+    <string name="mobile_guide_later">Later</string>
+    <string name="mobile_guide_days_description">Guide days</string>
+    <string name="mobile_guide_grid_description">Programme guide</string>
+    <string name="mobile_guide_channel_description">Channel %1$d, %2$s. Watch live</string>
+    <string name="mobile_guide_no_data_description">%1$s, no guide data. Watch live</string>
+    <string name="mobile_guide_details_action">Details</string>
+    <string name="mobile_guide_play_action">Play</string>
+    <string name="mobile_guide_updating">Updating guide</string>
+    <string name="mobile_guide_selected">Selected</string>
+
+    <!-- Phone catch-up player (U13 over U8) -->
+    <string name="mobile_catchup_position">Programme position</string>
+
+    <!-- Phone live player driven by the shared live ViewModel -->
+    <string name="mobile_channel_versions_current">Playing</string>
+</resources>

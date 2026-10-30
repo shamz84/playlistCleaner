@@ -26,6 +26,7 @@ import app.playlistplayer.core.consolidation.VodKind
 import app.playlistplayer.core.player.ConfiguredPlayer
 import app.playlistplayer.core.player.ExoPlaybackController
 import app.playlistplayer.core.player.PlayableSource
+import app.playlistplayer.feature.live.LiveChannel
 import app.playlistplayer.feature.onboarding.OnboardingViewModel
 import app.playlistplayer.feature.shell.Destination
 import app.playlistplayer.feature.vod.AccountProvider
@@ -47,6 +48,8 @@ import app.playlistplayer.ui.common.live.ChannelRow
 import app.playlistplayer.ui.common.live.LiveBrowseSource
 import app.playlistplayer.ui.common.live.LiveBrowseText
 import app.playlistplayer.ui.common.live.LiveBrowseViewModel
+import app.playlistplayer.ui.mobile.epg.MobileGuideDependencies
+import app.playlistplayer.ui.mobile.epg.MobileGuideScreen
 import app.playlistplayer.ui.mobile.live.MobileLiveScreen
 import app.playlistplayer.ui.mobile.navigation.EntryViewModelStores
 import app.playlistplayer.ui.mobile.navigation.MobileEntry
@@ -55,6 +58,8 @@ import app.playlistplayer.ui.mobile.navigation.MobileScreen
 import app.playlistplayer.ui.mobile.navigation.isWideLayout
 import app.playlistplayer.ui.mobile.navigation.navigationTypeFor
 import app.playlistplayer.ui.mobile.onboarding.MobileOnboardingScreen
+import app.playlistplayer.ui.mobile.player.MobileCatchupPlayerHost
+import app.playlistplayer.ui.mobile.player.MobileChannelPlayerHost
 import app.playlistplayer.ui.mobile.player.MobileLivePlayerScreen
 import app.playlistplayer.ui.mobile.player.MobileVodPlayerScreen
 import app.playlistplayer.ui.mobile.settings.MobileSettingsScreen
@@ -101,12 +106,15 @@ class MobilePlaybackDependencies(
  * What the phone tree needs from the app container. [shared] is the same object the TV tree takes
  * (onboarder, Xtream-shape check, live browse source, hasPlaylists, onPlayChannel), so the wiring
  * unit builds it once. [vod] enables Movies / Series; [playback] enables the in-app players (without
- * it a channel tap falls back to `shared.onPlayChannel`).
+ * it a channel tap falls back to `shared.onPlayChannel`). [guide] enables the Guide and catch-up;
+ * with [playback] too, live channels play through the shared `LivePlayerViewModel` (now/next,
+ * other versions, "Restart programme") instead of `playback.liveSources`.
  */
 class MobileRootDependencies(
     val shared: TvRootDependencies,
     val vod: MobileVodDependencies? = null,
     val playback: MobilePlaybackDependencies? = null,
+    val guide: MobileGuideDependencies? = null,
 )
 
 /**
@@ -175,7 +183,13 @@ private fun MobileApp(dependencies: MobileRootDependencies?) {
     if (top != null && nav.isFullscreen) {
         key(top.id) {
             EntryScope(top, stores, saveable) {
-                FullscreenEntry(top, dependencies, onChannelChanged = { screen -> navigate(nav.replaceTop(screen)) }, onClose = { close(top) })
+                FullscreenEntry(
+                    top,
+                    dependencies,
+                    onChannelChanged = { screen -> if (nav.top?.id == top.id) navigate(nav.replaceTop(screen)) },
+                    push = { navigate(nav.push(it)) },
+                    onClose = { close(top) },
+                )
             }
         }
         return
@@ -186,7 +200,8 @@ private fun MobileApp(dependencies: MobileRootDependencies?) {
         is MobileScreen.MovieDetail -> stringResource(R.string.nav_movies)
         is MobileScreen.SeriesDetail -> stringResource(R.string.nav_series)
         MobileScreen.AddPlaylist -> stringResource(R.string.settings_add_playlist)
-        null, is MobileScreen.LivePlayer, is MobileScreen.VodPlayer -> stringResource(nav.destination.mobileLabelRes())
+        null, is MobileScreen.LivePlayer, is MobileScreen.VodPlayer, is MobileScreen.ChannelPlayer, is MobileScreen.CatchupPlayer ->
+            stringResource(nav.destination.mobileLabelRes())
     }
     MobileShell(
         current = nav.destination,
@@ -237,7 +252,10 @@ private fun TopLevel(destination: Destination, dependencies: MobileRootDependenc
                 viewModel = live,
                 wide = wide,
                 onPlay = { channels, index ->
-                    if (dependencies?.playback != null) {
+                    val row = channels.getOrNull(index)
+                    if (dependencies?.playback != null && dependencies.guide != null && row != null) {
+                        push(MobileScreen.ChannelPlayer(row.playlistId, row.ordinal))
+                    } else if (dependencies?.playback != null) {
                         push(MobileScreen.LivePlayer(channels, index))
                     } else {
                         channels.getOrNull(index)?.let { dependencies?.shared?.onPlayChannel?.invoke(it) }
@@ -257,9 +275,31 @@ private fun TopLevel(destination: Destination, dependencies: MobileRootDependenc
         Destination.Settings -> MobileSettingsScreen(
             onAddPlaylist = if (dependencies != null) ({ push(MobileScreen.AddPlaylist) }) else null,
         )
-        Destination.Home, Destination.Guide, Destination.Search -> MobilePlaceholder(destination)
+        Destination.Guide -> {
+            val guide = dependencies?.guide
+            if (guide == null) {
+                MobilePlaceholder(destination)
+            } else {
+                MobileGuideScreen(
+                    sections = dependencies.shared.liveBrowseSource.sections(),
+                    guide = guide,
+                    onPlayCatchup = { request -> if (dependencies.playback != null) push(MobileScreen.CatchupPlayer(request)) },
+                    onWatchLive = { channel ->
+                        if (dependencies.playback != null) {
+                            push(MobileScreen.ChannelPlayer(channel.playlistId, channel.ordinal))
+                        } else {
+                            dependencies.shared.onPlayChannel(channel.toRow())
+                        }
+                    },
+                )
+            }
+        }
+        Destination.Home, Destination.Search -> MobilePlaceholder(destination)
     }
 }
+
+/** Fallback hand-off when there is no in-app player (the number is not known here). */
+private fun LiveChannel.toRow() = ChannelRow(playlistId, ordinal, number = null, name = name, logoUrl = logoUrl, hasCatchup = archiveDays > 0, isHeader = isHeader)
 
 private fun VodCard.detailScreen(): MobileScreen =
     if (kind == VodKind.SERIES) MobileScreen.SeriesDetail(playlistId, anchorId) else MobileScreen.MovieDetail(playlistId, anchorId)
@@ -310,7 +350,8 @@ private fun PushedEntry(entry: MobileEntry, dependencies: MobileRootDependencies
                 onCancel = onClose,
             )
         }
-        is MobileScreen.LivePlayer, is MobileScreen.VodPlayer -> Unit // rendered fullscreen by MobileApp
+        is MobileScreen.LivePlayer, is MobileScreen.VodPlayer, is MobileScreen.ChannelPlayer, is MobileScreen.CatchupPlayer ->
+            Unit // rendered fullscreen by MobileApp
     }
 }
 
@@ -319,6 +360,7 @@ private fun FullscreenEntry(
     entry: MobileEntry,
     dependencies: MobileRootDependencies?,
     onChannelChanged: (MobileScreen) -> Unit,
+    push: (MobileScreen) -> Unit,
     onClose: () -> Unit,
 ) {
     val playback = dependencies?.playback
@@ -352,6 +394,22 @@ private fun FullscreenEntry(
                     onClose()
                 },
             )
+        }
+        is MobileScreen.ChannelPlayer -> {
+            val guide = dependencies.guide ?: return
+            MobileChannelPlayerHost(
+                playlistId = screen.playlistId,
+                ordinal = screen.ordinal,
+                guide = guide,
+                playback = playback,
+                onStartCatchup = { request -> push(MobileScreen.CatchupPlayer(request)) },
+                onChannelChanged = { ordinal -> if (ordinal != screen.ordinal) onChannelChanged(screen.copy(ordinal = ordinal)) },
+                onExit = onClose,
+            )
+        }
+        is MobileScreen.CatchupPlayer -> {
+            val guide = dependencies.guide ?: return
+            MobileCatchupPlayerHost(request = screen.request, guide = guide, playback = playback, onExit = onClose)
         }
         else -> Unit
     }
