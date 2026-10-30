@@ -4,7 +4,10 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import app.playlistplayer.core.model.SourceReference
 import app.playlistplayer.core.model.XtreamAccount
 import app.playlistplayer.core.sync.secure.AesGcmValueCipher
+import app.playlistplayer.core.sync.secure.SecretRead
 import app.playlistplayer.core.sync.secure.SecureStore
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -94,6 +97,34 @@ class SecureStoreTest {
         val otherKey = newKey()
         assertThat(SecureStore(dataStore, AesGcmValueCipher { otherKey }).getString("x")).isNull()
         assertThat(SecureStore(dataStore, AesGcmValueCipher { key }).getString("x")).isEqualTo("value")
+    }
+
+    @Test
+    fun readStringDistinguishesMissingValueAndUnreadable() = runBlocking<Unit> {
+        val scope = CoroutineScope(Dispatchers.IO + SupervisorJob()).also { scopes += it }
+        val dataStore = PreferenceDataStoreFactory.create(scope = scope, produceFile = { File(temp.root, "d.preferences_pb") })
+        val store = SecureStore(dataStore, AesGcmValueCipher { key })
+
+        assertThat(store.readString("parental.pinHash")).isEqualTo(SecretRead.Missing)
+        store.putString("parental.pinHash", "v1\$hash")
+        assertThat(store.readString("parental.pinHash")).isEqualTo(SecretRead.Value("v1\$hash"))
+        assertThat(SecretRead.Value("v1\$hash").toString()).doesNotContain("hash")
+
+        // Key invalidated: present but undecryptable is Unreadable, not Missing.
+        val otherKey = newKey()
+        val rekeyed = SecureStore(dataStore, AesGcmValueCipher { otherKey })
+        assertThat(rekeyed.readString("parental.pinHash")).isEqualTo(SecretRead.Unreadable)
+        // The legacy convenience read still reports absent.
+        assertThat(rekeyed.getString("parental.pinHash")).isNull()
+
+        // Corrupt storage (not Base64, or a truncated blob) is Unreadable too.
+        dataStore.edit { it[stringPreferencesKey("parental.attempts")] = "%%% not base64 %%%" }
+        assertThat(store.readString("parental.attempts")).isEqualTo(SecretRead.Unreadable)
+        dataStore.edit { it[stringPreferencesKey("parental.lockedGroups")] = "AQ==" }
+        assertThat(store.readString("parental.lockedGroups")).isEqualTo(SecretRead.Unreadable)
+
+        store.remove("parental.pinHash")
+        assertThat(store.readString("parental.pinHash")).isEqualTo(SecretRead.Missing)
     }
 
     @Test

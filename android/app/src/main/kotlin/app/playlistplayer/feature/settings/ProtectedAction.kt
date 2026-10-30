@@ -30,6 +30,9 @@ sealed interface Authorization {
 
     /** Wrong PIN. [attemptsBeforeLockout] more wrong PINs trigger the next lockout. */
     data class Denied(val attemptsBeforeLockout: Int) : Authorization
+
+    /** Parental storage is unreadable; nothing is allowed until "Reset app" ([ParentalControl.resetAll]). */
+    data object ResetRequired : Authorization
 }
 
 /** Outcome of PIN and locked-group changes. */
@@ -54,6 +57,12 @@ sealed interface ParentalState {
 
     /** @property sessionUntilMillis end of the unlock, or null for "until locked or app exit". */
     data class Unlocked(val sessionUntilMillis: Long?) : ParentalState
+
+    /**
+     * The PIN, attempts or locked-groups storage is present but unreadable. Everything is hidden
+     * and only "Reset app" ([ParentalControl.resetAll]) recovers.
+     */
+    data object ResetRequired : ParentalState
 }
 
 /** A group or category of one playlist. [groupKey] is the stable group key the catalog uses. */

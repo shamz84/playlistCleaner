@@ -24,12 +24,14 @@ import app.playlistplayer.ui.mobile.MobileDimens
 
 object MobileSettingsTags {
     const val ADD_PLAYLIST = "mobile.settings.addPlaylist"
+    const val LIST = "mobile.settings.list"
+    const val PIN_FIELD = "mobile.settings.pinField"
 }
 
 /**
- * Settings on phone. Matches TV today: "Add playlist" plus the note that playlist, playback, guide
- * and parental settings arrive with the settings screens (U12 logic exists in `feature/settings`
- * but has no settings view model yet on either form factor).
+ * Settings on phone before a [app.playlistplayer.feature.settings.SettingsViewModel] is wired:
+ * "Add playlist" plus a note. The full screen is the `MobileSettingsScreen(viewModel, …)`
+ * overload in `MobileSettingsContent.kt`; the wiring unit switches `MobileRoot` to it.
  */
 @Composable
 fun MobileSettingsScreen(onAddPlaylist: (() -> Unit)?, modifier: Modifier = Modifier) {

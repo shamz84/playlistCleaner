@@ -17,6 +17,7 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.put
 import java.security.GeneralSecurityException
+import java.security.ProviderException
 import java.util.Base64
 
 /**
@@ -25,8 +26,14 @@ import java.util.Base64
  *
  * Values are AES-GCM encrypted with an Android Keystore key ([ValueCipher]) and the ciphertext is
  * held in a Preferences DataStore. The storage key is bound as associated data, so a ciphertext
- * cannot be moved to another key. A value that no longer decrypts (key lost/invalidated) reads as
- * absent.
+ * cannot be moved to another key.
+ *
+ * Missing vs damaged: [readString] tells a slot that was never written ([SecretRead.Missing]) from
+ * one that is present but cannot be decrypted or decoded ([SecretRead.Unreadable], e.g. the
+ * Keystore key was invalidated). Security decisions (the parental PIN) must use [readString] and
+ * fail closed on Unreadable. The convenience reads ([getString], [sourceReference], [account],
+ * [epgOverrideUrl]) keep treating an unreadable value as absent, which is safe for them: a lost
+ * source or account only forces the user to re-enter it.
  *
  * Exactly one instance must exist per DataStore file (DataStore requirement).
  */
@@ -104,15 +111,22 @@ class SecureStore(
         dataStore.edit { it[stringPreferencesKey(name)] = encoded }
     }
 
-    suspend fun getString(name: String): String? {
-        val encoded = dataStore.data.first()[stringPreferencesKey(name)] ?: return null
+    /** The decrypted value, or null when the slot is missing **or unreadable** (see [readString]). */
+    suspend fun getString(name: String): String? = (readString(name) as? SecretRead.Value)?.value
+
+    /** Reads a generic slot, distinguishing a missing slot from a present-but-undecryptable one. */
+    suspend fun readString(name: String): SecretRead {
+        val encoded = dataStore.data.first()[stringPreferencesKey(name)] ?: return SecretRead.Missing
         return try {
             val blob = Base64.getDecoder().decode(encoded)
-            cipher.decrypt(blob, name.toByteArray(Charsets.UTF_8)).toString(Charsets.UTF_8)
+            SecretRead.Value(cipher.decrypt(blob, name.toByteArray(Charsets.UTF_8)).toString(Charsets.UTF_8))
         } catch (_: GeneralSecurityException) {
-            null
+            SecretRead.Unreadable
         } catch (_: IllegalArgumentException) {
-            null
+            SecretRead.Unreadable
+        } catch (_: ProviderException) {
+            // Android Keystore reports some key failures (e.g. a wiped key blob) as ProviderException.
+            SecretRead.Unreadable
         }
     }
 
@@ -149,5 +163,23 @@ class SecureStore(
             )
             return SecureStore(dataStore, AndroidKeystoreKeys.cipher())
         }
+    }
+}
+
+/** Result of [SecureStore.readString]. */
+sealed interface SecretRead {
+    /** The slot was never written (or was removed). */
+    data object Missing : SecretRead
+
+    /** The slot holds ciphertext that no longer decrypts or decodes (key invalidated, corruption). */
+    data object Unreadable : SecretRead
+
+    /** The decrypted value. [toString] never prints it. */
+    class Value(val value: String) : SecretRead {
+        override fun equals(other: Any?): Boolean = other is Value && other.value == value
+
+        override fun hashCode(): Int = value.hashCode()
+
+        override fun toString(): String = "Value(<redacted>)"
     }
 }

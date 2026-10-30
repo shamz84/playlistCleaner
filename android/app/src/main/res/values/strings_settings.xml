@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Settings (U12), shared by the TV and phone trees. -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_section_playlists">Playlists</string>
+    <string name="settings_section_guide">Guide</string>
+    <string name="settings_section_playback">Playback</string>
+    <string name="settings_section_content">Content</string>
+    <string name="settings_section_app">App</string>
+
+    <string name="settings_cancel">Cancel</string>
+    <string name="settings_confirm">Confirm</string>
+    <string name="settings_save">Save</string>
+    <string name="settings_dismiss">Dismiss</string>
+    <string name="settings_on">On</string>
+    <string name="settings_off">Off</string>
+    <string name="settings_working">Working…</string>
+    <string name="settings_decrease">Decrease</string>
+    <string name="settings_increase">Increase</string>
+
+    <!-- Playlists -->
+    <string name="settings_playlists_empty">No playlists yet.</string>
+    <string name="settings_playlist_refresh">Refresh</string>
+    <string name="settings_playlist_refresh_all">Refresh all playlists</string>
+    <string name="settings_playlist_rename">Rename</string>
+    <string name="settings_playlist_edit_source">Edit source</string>
+    <string name="settings_playlist_remove">Remove</string>
+    <string name="settings_playlist_xtream">Process Xtream account</string>
+    <string name="settings_playlist_xtream_description">Movies, Series, provider guide and catch-up</string>
+    <string name="settings_playlist_xtream_unavailable">This playlist has no Xtream account; only live channels load</string>
+    <string name="settings_playlist_name_label">Playlist name</string>
+    <string name="settings_playlist_source_drive">Drive file ID</string>
+    <string name="settings_playlist_source_url">M3U URL</string>
+    <string name="settings_playlist_source_type">Source type</string>
+    <string name="settings_playlist_source_hint">The current source is not shown. Enter the new one.</string>
+    <string name="settings_health_ok">Up to date</string>
+    <string name="settings_health_never">Waiting for the first sync</string>
+    <string name="settings_health_cached">Refresh failed. Using cached copy from %1$s</string>
+    <string name="settings_health_cached_undated">Refresh failed. Using the cached copy</string>
+    <string name="settings_health_failed">Sync failed. No channels loaded</string>
+    <string name="settings_account_status">Account: %1$s</string>
+    <string name="settings_account_expires">Expires %1$s</string>
+    <string name="settings_account_no_expiry">No expiry date</string>
+    <string name="settings_account_connections">Connections: %1$d of %2$d in use</string>
+    <string name="settings_account_expired">The account has expired</string>
+    <string name="settings_storage_counts">%1$d groups · %2$d channels · %3$d movies · %4$d series · %5$d programmes</string>
+    <string name="settings_last_updated">Updated %1$s</string>
+
+    <!-- Guide -->
+    <string name="settings_guide_override_label">Guide override (XMLTV URL)</string>
+    <string name="settings_guide_override_none">Using the provider guide</string>
+    <string name="settings_guide_override_set">Guide override set</string>
+    <string name="settings_guide_edit">Edit guide override</string>
+    <string name="settings_guide_test">Test</string>
+    <string name="settings_guide_clear">Use provider guide</string>
+    <string name="settings_guide_testing">Testing…</string>
+    <string name="settings_guide_test_ok">Reachable: %1$d guide channels; %2$d of %3$d playlist channels match (%4$d%%)</string>
+    <string name="settings_guide_test_ok_partial">Reachable (first part checked): %1$d guide channels; at least %2$d of %3$d playlist channels match (%4$d%%)</string>
+    <string name="settings_guide_test_http">The server answered HTTP %1$d</string>
+    <string name="settings_guide_test_unreachable">Could not connect to the server</string>
+    <string name="settings_guide_test_not_xmltv">This URL does not serve an XMLTV guide</string>
+    <string name="settings_guide_test_invalid">Enter a valid http(s) URL</string>
+    <string name="settings_guide_match_rate">Guide matched %1$d of %2$d channels (%3$d%%)</string>
+    <string name="settings_guide_no_import">No guide imported yet</string>
+    <string name="settings_guide_import_error">The last guide update failed (%1$s)</string>
+    <string name="settings_guide_catchup_offset">Catch-up time offset</string>
+    <string name="settings_guide_catchup_offset_description">Shifts catch-up start times when programmes start early or late</string>
+    <string name="settings_hours_signed">%1$s h</string>
+
+    <!-- Playback -->
+    <string name="settings_playback_live_format">Live stream format</string>
+    <string name="settings_playback_format_ts">MPEG-TS</string>
+    <string name="settings_playback_format_hls">HLS</string>
+    <string name="settings_playback_hls_unavailable">HLS is not allowed by any account</string>
+    <string name="settings_playback_match_frame_rate">Match frame rate</string>
+    <string name="settings_playback_match_frame_rate_description">Switch the display to the video\'s frame rate</string>
+    <string name="settings_playback_tunneling">Tunneled playback</string>
+    <string name="settings_playback_tunneling_description">Smoother video on supported devices</string>
+
+    <!-- Content -->
+    <string name="settings_content_languages">Preferred languages</string>
+    <string name="settings_content_languages_description">The first language wins when a title has several versions</string>
+    <string name="settings_content_add_language">Add language</string>
+    <string name="settings_content_language_code">Language code (for example en or in-ta)</string>
+    <string name="settings_content_move_up">Move up</string>
+    <string name="settings_content_move_down">Move down</string>
+    <string name="settings_content_remove_language">Remove</string>
+    <string name="settings_content_language_position">%1$d. %2$s</string>
+    <string name="settings_content_quality">Preferred quality</string>
+    <string name="settings_quality_best">Best available</string>
+    <string name="settings_quality_uhd">Up to 4K</string>
+    <string name="settings_quality_fhd">Up to 1080p</string>
+    <string name="settings_quality_hd">Up to 720p</string>
+    <string name="settings_quality_sd">Up to SD</string>
+    <string name="settings_content_group_visibility">Group visibility</string>
+    <string name="settings_content_group_visibility_description">Hide groups and categories behind the parental PIN</string>
+    <string name="settings_group_hidden">Hidden</string>
+    <string name="settings_group_visible">Visible</string>
+    <string name="settings_group_kind_live">Live</string>
+    <string name="settings_group_kind_movies">Movies</string>
+    <string name="settings_group_kind_series">Series</string>
+    <string name="settings_groups_empty">No groups yet</string>
+    <string name="settings_groups_close">Done</string>
+
+    <!-- Parental PIN -->
+    <string name="settings_content_pin">Parental PIN</string>
+    <string name="settings_pin_not_set">Not set</string>
+    <string name="settings_pin_locked">Set. Hidden groups are locked</string>
+    <string name="settings_pin_unlocked">Set. Unlocked for this session</string>
+    <string name="settings_pin_reset_required">Parental settings cannot be read. Everything is hidden until you reset the app.</string>
+    <string name="settings_pin_set">Set PIN</string>
+    <string name="settings_pin_change">Change PIN</string>
+    <string name="settings_pin_remove">Remove PIN</string>
+    <string name="settings_pin_lock_now">Lock now</string>
+    <string name="settings_pin_enter_current">Enter the current PIN</string>
+    <string name="settings_pin_enter_new">Enter a new PIN (4 to 8 digits)</string>
+    <string name="settings_pin_enter_confirm">Enter the new PIN again</string>
+    <string name="settings_pin_prompt_title">Enter PIN</string>
+    <string name="settings_pin_wrong">Wrong PIN. Attempts left before a pause: %1$d</string>
+    <string name="settings_pin_locked_out">Too many wrong PINs. Try again at %1$s</string>
+    <string name="settings_pin_ok">OK</string>
+    <string name="settings_pin_delete">Delete</string>
+    <string name="settings_pin_entered">%1$d digits entered</string>
+    <string name="settings_action_edit_playlist">PIN needed to edit a playlist</string>
+    <string name="settings_action_remove_playlist">PIN needed to remove a playlist</string>
+    <string name="settings_action_change_groups">PIN needed to change group visibility</string>
+    <string name="settings_action_change_xtream">PIN needed to change Xtream processing</string>
+    <string name="settings_action_change_pin">PIN needed to change the PIN</string>
+    <string name="settings_action_remove_pin">PIN needed to remove the PIN</string>
+    <string name="settings_action_reveal_source">PIN needed to show the playlist source</string>
+
+    <!-- Adult group suggestions -->
+    <string name="settings_suggestions_title">Possible adult groups</string>
+    <string name="settings_suggestions_description">Lock these behind the PIN? Nothing is hidden until you confirm.</string>
+    <string name="settings_suggestions_lock_all">Lock all</string>
+    <string name="settings_suggestions_dismiss">Not now</string>
+    <string name="settings_suggestion_lock">Lock</string>
+    <string name="settings_suggestion_item">%1$s · %2$s</string>
+
+    <!-- App -->
+    <string name="settings_app_refresh_interval">Refresh playlists every</string>
+    <string name="settings_app_hours">%1$d h</string>
+    <string name="settings_app_stale_warning">Warn when data is older than</string>
+    <string name="settings_app_days">%1$d days</string>
+    <string name="settings_app_reset">Reset app</string>
+    <string name="settings_app_reset_description">Removes all playlists, settings and the parental PIN. Use this if you forgot the PIN.</string>
+
+    <!-- Dialogs -->
+    <string name="settings_confirm_remove_title">Remove %1$s?</string>
+    <string name="settings_confirm_remove_message">Its channels, movies, series, guide, favourites and progress are deleted. Other playlists are not affected.</string>
+    <string name="settings_confirm_reset_title">Reset app?</string>
+    <string name="settings_confirm_reset_message">Everything is deleted: playlists, settings, favourites and the parental PIN.</string>
+    <string name="settings_remove">Remove</string>
+    <string name="settings_reset">Reset</string>
+
+    <!-- Messages -->
+    <string name="settings_msg_saved">Saved</string>
+    <string name="settings_msg_refresh_queued">Refresh started</string>
+    <string name="settings_msg_removed">Playlist removed</string>
+    <string name="settings_msg_not_authorized">Not changed: the PIN was not accepted</string>
+    <string name="settings_msg_xtream_unavailable">This playlist has no Xtream account</string>
+    <string name="settings_msg_invalid_name">Enter a name</string>
+    <string name="settings_msg_invalid_drive">Enter a Drive file ID</string>
+    <string name="settings_msg_invalid_url">Enter a valid http(s) URL</string>
+    <string name="settings_msg_failed">Something went wrong. Try again.</string>
+    <string name="settings_msg_pin_set">PIN set</string>
+    <string name="settings_msg_pin_changed">PIN changed</string>
+    <string name="settings_msg_pin_removed">PIN removed. All groups are visible</string>
+    <string name="settings_msg_pin_mismatch">The PINs do not match</string>
+    <string name="settings_msg_pin_invalid">Use 4 to 8 digits</string>
+    <string name="settings_msg_pin_required">Enter the PIN</string>
+    <string name="settings_msg_no_pin">Set a parental PIN first</string>
+    <string name="settings_msg_groups_saved">Group visibility saved</string>
+    <string name="settings_msg_override_saved">Guide override saved. Importing the guide…</string>
+    <string name="settings_msg_override_cleared">Back to the provider guide</string>
+    <string name="settings_msg_override_not_saved">Not saved: %1$s</string>
+    <string name="settings_msg_invalid_language">Enter a language code such as en or in-ta</string>
+    <string name="settings_msg_hls_not_allowed">HLS is not allowed by your provider</string>
+    <string name="settings_msg_value_clamped">Out of range. Set to %1$d</string>
+    <string name="settings_msg_reset_done">App reset. Add a playlist to start again.</string>
+</resources>

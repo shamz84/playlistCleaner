@@ -24,6 +24,11 @@ import kotlinx.coroutines.withContext
  *   present).
  * - Forgotten PIN: [resetAll] wipes PIN, attempts and locked groups without a PIN; the caller
  *   confirms first and wipes the rest of the app data itself.
+ * - Fail closed on damaged storage: when the PIN, attempts or locked-groups slot is present but
+ *   unreadable ([SlotRead.Unreadable], e.g. the Keystore key was invalidated) or the locked-groups
+ *   record is corrupt, the control is [isDamaged]: state [ParentalState.ResetRequired], every
+ *   group of every playlist is hidden, every protected action and PIN change answers
+ *   [Authorization.ResetRequired], and only [resetAll] ("Reset app") recovers.
  *
  * Create with [load]. All mutating calls are serialised by a mutex, which also stops parallel
  * guessing.
@@ -38,8 +43,11 @@ class ParentalControl private constructor(
     pinHash: String?,
     attempts: AttemptRecord,
     lockedGroups: Set<LockedGroup>,
+    damaged: Boolean,
 ) {
     private val mutex = Mutex()
+
+    @Volatile private var damaged: Boolean = damaged
 
     @Volatile private var pinHash: String? = pinHash
     @Volatile private var attempts: AttemptRecord = attempts
@@ -57,29 +65,37 @@ class ParentalControl private constructor(
      */
     val state: StateFlow<ParentalState> = _state.asStateFlow()
 
-    /** Configured locked groups (empty when no PIN is set). */
+    /**
+     * Configured locked groups (empty when no PIN is set). Empty as well when [isDamaged], where
+     * every group is hidden: filter with [isGroupHidden], never with this set alone.
+     */
     val lockedGroups: StateFlow<Set<LockedGroup>> = _lockedGroups.asStateFlow()
 
     fun currentState(): ParentalState = computeState(clock.nowMillis()).also { _state.value = it }
 
-    val hasPin: Boolean get() = pinHash != null
+    /** True when a PIN is set, or when the PIN storage is damaged (a PIN may exist). */
+    val hasPin: Boolean get() = damaged || pinHash != null
 
-    /** True when the group is configured as locked (regardless of the session). */
+    /** Parental storage is unreadable: everything is hidden until [resetAll]. */
+    val isDamaged: Boolean get() = damaged
+
+    /** True when the group is configured as locked (regardless of the session); always when [isDamaged]. */
     fun isGroupLocked(playlistId: Long, groupKey: String): Boolean =
-        pinHash != null && LockedGroup(playlistId, groupKey) in groups
+        damaged || (pinHash != null && LockedGroup(playlistId, groupKey) in groups)
 
     /** True when the group must be excluded from browse, search, home rows and the guide now. */
     fun isGroupHidden(playlistId: Long, groupKey: String): Boolean =
-        isGroupLocked(playlistId, groupKey) && !sessionActive(clock.nowMillis())
+        damaged || (isGroupLocked(playlistId, groupKey) && !sessionActive(clock.nowMillis()))
 
     /** End of the active lockout (epoch millis), or null. */
-    fun lockedOutUntil(): Long? = policy.lockedUntil(attempts, clock.nowMillis())
+    fun lockedOutUntil(): Long? = if (damaged) null else policy.lockedUntil(attempts, clock.nowMillis())
 
     /**
      * Checks the PIN and unlocks the session on success. A blank [pin] returns
      * [Authorization.PinRequired] without counting an attempt. With no PIN set: Allowed.
      */
     suspend fun verify(pin: String): Authorization = mutex.withLock {
+        if (damaged) return@withLock Authorization.ResetRequired
         val hash = pinHash ?: return@withLock Authorization.Allowed
         val now = clock.nowMillis()
         policy.lockedUntil(attempts, now)?.let { return@withLock Authorization.LockedOut(it) }
@@ -106,8 +122,10 @@ class ParentalControl private constructor(
      * Setting the first PIN unlocks the session so the parent can pick groups to lock.
      */
     suspend fun setPin(newPin: String, currentPin: String? = null): ParentalResult {
+        if (damaged) return ParentalResult.Rejected(Authorization.ResetRequired)
         if (pinHash != null) return changePin(currentPin.orEmpty(), newPin)
         return mutex.withLock {
+            if (damaged) return@withLock ParentalResult.Rejected(Authorization.ResetRequired)
             if (pinHash != null) return@withLock ParentalResult.Rejected(Authorization.PinRequired)
             if (!PinFormat.isValid(newPin)) return@withLock ParentalResult.InvalidPinFormat
             val encoded = withContext(hashContext) { hasher.hash(newPin) }
@@ -121,6 +139,7 @@ class ParentalControl private constructor(
     }
 
     suspend fun changePin(currentPin: String, newPin: String): ParentalResult = mutex.withLock {
+        if (damaged) return@withLock ParentalResult.Rejected(Authorization.ResetRequired)
         if (pinHash == null) return@withLock ParentalResult.NoPinSet
         if (!PinFormat.isValid(newPin)) return@withLock ParentalResult.InvalidPinFormat
         val auth = authorizeLocked(ProtectedAction.ChangePin, currentPin)
@@ -133,6 +152,7 @@ class ParentalControl private constructor(
 
     /** Removes the PIN and, with it, every locked group (nothing can stay hidden without a PIN). */
     suspend fun removePin(currentPin: String): ParentalResult = mutex.withLock {
+        if (damaged) return@withLock ParentalResult.Rejected(Authorization.ResetRequired)
         if (pinHash == null) return@withLock ParentalResult.NoPinSet
         val auth = authorizeLocked(ProtectedAction.RemovePin, currentPin)
         if (auth != Authorization.Allowed) return@withLock ParentalResult.Rejected(auth)
@@ -145,6 +165,7 @@ class ParentalControl private constructor(
      * [ProtectedAction.ChangeGroupVisibility] authorization (unlocked session or [pin]).
      */
     suspend fun setLockedGroups(groups: Set<LockedGroup>, pin: String? = null): ParentalResult = mutex.withLock {
+        if (damaged) return@withLock ParentalResult.Rejected(Authorization.ResetRequired)
         if (pinHash == null) return@withLock ParentalResult.NoPinSet
         val auth = authorizeLocked(ProtectedAction.ChangeGroupVisibility, pin)
         if (auth != Authorization.Allowed) return@withLock ParentalResult.Rejected(auth)
@@ -157,6 +178,7 @@ class ParentalControl private constructor(
      * authorized [ProtectedAction.RemovePlaylist], so no PIN is checked here.
      */
     suspend fun forgetPlaylist(playlistId: Long) = mutex.withLock {
+        if (damaged) return@withLock
         val remaining = groups.filterTo(mutableSetOf()) { it.playlistId != playlistId }
         if (remaining.size != groups.size) writeGroups(remaining)
     }
@@ -170,6 +192,7 @@ class ParentalControl private constructor(
     // --- internals (call with mutex held) ---
 
     private suspend fun authorizeLocked(action: ProtectedAction, pin: String?): Authorization {
+        if (damaged) return Authorization.ResetRequired
         val hash = pinHash ?: return Authorization.Allowed
         val now = clock.nowMillis()
         if (pin.isNullOrEmpty() && !action.requiresFreshPin && sessionActive(now)) return Authorization.Allowed
@@ -218,6 +241,7 @@ class ParentalControl private constructor(
         attempts = AttemptRecord.NONE
         groups = emptySet()
         sessionUntil = null
+        damaged = false
         publish()
     }
 
@@ -227,11 +251,13 @@ class ParentalControl private constructor(
     }
 
     private fun sessionActive(now: Long): Boolean {
+        if (damaged) return false
         val until = sessionUntil ?: return false
         return pinHash != null && now < until
     }
 
     private fun computeState(now: Long): ParentalState = when {
+        damaged -> ParentalState.ResetRequired
         pinHash == null -> ParentalState.NoPin
         sessionActive(now) -> ParentalState.Unlocked(sessionUntil.takeUnless { it == Long.MAX_VALUE })
         else -> ParentalState.Locked
@@ -239,7 +265,7 @@ class ParentalControl private constructor(
 
     private fun publish() {
         _state.value = computeState(clock.nowMillis())
-        _lockedGroups.value = if (pinHash == null) emptySet() else groups
+        _lockedGroups.value = if (pinHash == null || damaged) emptySet() else groups
     }
 
     companion object {
@@ -263,16 +289,25 @@ class ParentalControl private constructor(
             hashContext: CoroutineContext = Dispatchers.Default,
         ): ParentalControl {
             require(unlockDurationMillis == null || unlockDurationMillis > 0)
-            val pinHash = store.get(SLOT_PIN)
-            val attempts = store.get(SLOT_ATTEMPTS)?.let { text ->
-                AttemptRecord.decode(text) ?: policy.failClosed(clock.nowMillis()).also {
-                    store.put(SLOT_ATTEMPTS, it.encode())
-                }
-            } ?: AttemptRecord.NONE
-            val groups = store.get(SLOT_GROUPS)?.let(::decodeGroups).orEmpty()
+            val pinRead = store.read(SLOT_PIN)
+            val attemptsRead = store.read(SLOT_ATTEMPTS)
+            val groupsRead = store.read(SLOT_GROUPS)
+            val groups = (groupsRead as? SlotRead.Present)?.value?.let(::decodeGroupsOrNull)
+            // Fail closed: an unreadable slot (or a corrupt group record) may hide a PIN or locks.
+            val damaged = pinRead == SlotRead.Unreadable ||
+                attemptsRead == SlotRead.Unreadable ||
+                groupsRead == SlotRead.Unreadable ||
+                (groupsRead is SlotRead.Present && groups == null)
+            val pinHash = (pinRead as? SlotRead.Present)?.value
+            val attempts = when {
+                damaged -> AttemptRecord.NONE
+                attemptsRead is SlotRead.Present -> AttemptRecord.decode(attemptsRead.value)
+                    ?: policy.failClosed(clock.nowMillis()).also { store.put(SLOT_ATTEMPTS, it.encode()) }
+                else -> AttemptRecord.NONE
+            }
             return ParentalControl(
                 store, clock, hasher, policy, unlockDurationMillis, hashContext,
-                pinHash, attempts, groups,
+                pinHash, attempts, groups.orEmpty(), damaged,
             )
         }
 
@@ -289,9 +324,12 @@ class ParentalControl private constructor(
             }
         }
 
-        internal fun decodeGroups(text: String): Set<LockedGroup> {
+        internal fun decodeGroups(text: String): Set<LockedGroup> = decodeGroupsOrNull(text).orEmpty()
+
+        /** Null when the record is not a v1 group list (corrupt or unknown version). */
+        internal fun decodeGroupsOrNull(text: String): Set<LockedGroup>? {
             val lines = text.split('\n')
-            if (lines.firstOrNull() != GROUPS_HEADER) return emptySet()
+            if (lines.firstOrNull() != GROUPS_HEADER) return null
             val decoder = Base64.getUrlDecoder()
             return lines.drop(1).mapNotNullTo(mutableSetOf()) { line ->
                 val tab = line.indexOf('\t')
