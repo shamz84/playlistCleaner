@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Live player overlay (U9) -->
+    <string name="player_buffering">Buffering</string>
+    <string name="player_reconnecting">Reconnecting</string>
+    <string name="player_waiting_for_network">No network connection. Waiting to reconnect</string>
+    <string name="player_switched_to">Switched to %1$s</string>
+    <string name="player_retry">Retry</string>
+    <string name="player_connection_limit_title">Connections in use</string>
+    <string name="player_connection_limit_counts">%1$d of %2$d connections in use. Stop playback on another device, then retry.</string>
+    <string name="player_connection_limit_unknown">All connections on this account are in use. Stop playback on another device, then retry.</string>
+    <string name="player_account_expired_title">Account expired</string>
+    <string name="player_account_expired_message">This playlist\'s account has expired or is disabled. Renew it with your provider, then retry.</string>
+    <string name="player_failed_title">Can\'t play this channel</string>
+    <string name="player_failed_single">%1$s could not be played.</string>
+    <string name="player_failed_multiple">%1$s and %2$d other version(s) could not be played.</string>
+    <string name="player_start_not_found">This channel is no longer in the playlist.</string>
+    <string name="player_start_not_playable">This entry can\'t be played.</string>
+    <string name="player_start_no_account">No account is stored for this playlist. Re-import it, then try again.</string>
+    <string name="player_now">Now: %1$s</string>
+    <string name="player_next">Next: %1$s</string>
+    <string name="player_no_guide">No guide data</string>
+    <string name="player_untitled">Untitled programme</string>
+    <string name="player_other_versions">Other versions</string>
+    <string name="player_other_versions_count">Other versions (%1$d)</string>
+    <string name="player_version_playing">Playing</string>
+    <string name="player_version_catchup">Catch-up</string>
+    <string name="player_restart_programme">Restart programme</string>
+    <string name="player_number_not_found">No channel %1$s in this group</string>
+    <string name="player_channel_number">%1$d</string>
+
+    <!-- Catch-up player (U8) -->
+    <string name="catchup_badge">Catch-up</string>
+    <string name="catchup_restart_badge">Restarted</string>
+    <string name="catchup_via_version">Playing from %1$s</string>
+    <string name="catchup_paused">Paused</string>
+    <string name="catchup_ended">Programme ended</string>
+    <string name="catchup_not_eligible">This programme is not available for catch-up.</string>
+    <string name="catchup_no_account">No account is stored for this playlist. Re-import it, then try again.</string>
+    <string name="catchup_back">Back</string>
+
+    <!-- Guide grid (U9) -->
+    <string name="epg_title">Guide</string>
+    <string name="epg_no_guide_data">No guide data</string>
+    <string name="epg_empty_group">This group has no channels.</string>
+    <string name="epg_load_failed">Couldn\'t load the guide.</string>
+    <string name="epg_today">Today</string>
+    <string name="epg_yesterday">Yesterday</string>
+    <string name="epg_tomorrow">Tomorrow</string>
+    <string name="epg_now">Now</string>
+    <string name="epg_catchup_icon_description">Available on catch-up</string>
+    <string name="epg_watch_live">Watch live</string>
+    <string name="epg_restart">Restart from the beginning</string>
+    <string name="epg_play_from_start">Play from start</string>
+    <string name="epg_close">Close</string>
+    <string name="epg_untitled">Untitled programme</string>
+    <string name="epg_cell_description">%1$s, %2$s to %3$s</string>
+    <string name="epg_row_description">Channel %1$d, %2$s</string>
+    <string name="epg_details_not_available">Not available on catch-up.</string>
+    <string name="epg_details_upcoming">Upcoming</string>
+    <string name="epg_details_airing">On now</string>
+</resources>
