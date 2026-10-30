@@ -1,5 +1,6 @@
 package app.playlistplayer.ui.mobile.navigation
 
+import app.playlistplayer.feature.live.CatchupRequest
 import app.playlistplayer.feature.shell.Destination
 import app.playlistplayer.feature.vod.PlaybackRequest
 import app.playlistplayer.ui.common.live.ChannelRow
@@ -46,6 +47,15 @@ sealed interface MobileScreen {
     data class LivePlayer(val channels: List<ChannelRow>, val index: Int) : MobileScreen
 
     /**
+     * Fullscreen live player over the shared `LivePlayerViewModel` (guide dependencies wired):
+     * channel up/down stays within the channel's group; [ordinal] follows the tuned channel.
+     */
+    data class ChannelPlayer(val playlistId: Long, val ordinal: Int) : MobileScreen
+
+    /** Fullscreen catch-up player (past programme from the Guide, or "Restart programme"). */
+    data class CatchupPlayer(val request: CatchupRequest) : MobileScreen
+
+    /**
      * Fullscreen VOD player. [onNextEpisode] builds the following episode's request (series only);
      * [onClosed] lets the screen below re-read progress. Not a data class: it carries callbacks.
      */
@@ -57,7 +67,8 @@ sealed interface MobileScreen {
 }
 
 val MobileScreen.isFullscreen: Boolean
-    get() = this is MobileScreen.LivePlayer || this is MobileScreen.VodPlayer
+    get() = this is MobileScreen.LivePlayer || this is MobileScreen.VodPlayer ||
+        this is MobileScreen.ChannelPlayer || this is MobileScreen.CatchupPlayer
 
 /** A pushed screen with a stable [id] (keys its ViewModel store and saved UI state). */
 data class MobileEntry(val id: Long, val screen: MobileScreen)
