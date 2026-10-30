@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="vod_loading">Loading…</string>
+    <string name="vod_empty_movies">No movies yet. They appear after the playlist\'s catalog syncs.</string>
+    <string name="vod_empty_series">No series yet. They appear after the playlist\'s catalog syncs.</string>
+    <string name="vod_section_failed">Couldn\'t load this playlist\'s catalog.</string>
+    <string name="vod_rail_failed">Couldn\'t load this category.</string>
+    <string name="vod_retry">Retry</string>
+    <string name="vod_versions_count">%1$d versions</string>
+    <string name="vod_title_not_found">This title is no longer in the catalog.</string>
+    <string name="vod_details_failed">Details are unavailable right now.</string>
+    <string name="vod_play">Play</string>
+    <string name="vod_resume">Resume</string>
+    <string name="vod_start_over">Start over</string>
+    <string name="vod_watched">Watched</string>
+    <string name="vod_favourite_add">Add to favourites</string>
+    <string name="vod_favourite_remove">Remove from favourites</string>
+    <string name="vod_filter_language">Language</string>
+    <string name="vod_filter_quality">Quality</string>
+    <string name="vod_filter_all">All</string>
+    <string name="vod_language_unknown">Unknown</string>
+    <string name="vod_versions">Versions</string>
+    <string name="vod_version_default">Default</string>
+    <string name="vod_no_account">No account is stored for this playlist. Re-import it, then try again.</string>
+    <string name="vod_invalid_stream">This version can\'t be played.</string>
+    <string name="vod_season">Season %1$d</string>
+    <string name="vod_specials">Specials</string>
+    <string name="vod_episode">Episode %1$d</string>
+    <string name="vod_episodes_failed">Couldn\'t load the episodes.</string>
+    <string name="vod_sources_failed">%1$d source(s) couldn\'t be loaded; some episodes may be missing.</string>
+    <string name="vod_minutes">%1$d min</string>
+    <string name="vod_resume_prompt_title">Resume from %1$s?</string>
+    <string name="vod_next_episode">Next: %1$s</string>
+    <string name="vod_next_episode_in">Starts in %1$d s</string>
+    <string name="vod_play_now">Play now</string>
+    <string name="vod_cancel">Cancel</string>
+    <string name="vod_tracks">Audio and subtitles</string>
+    <string name="vod_audio">Audio</string>
+    <string name="vod_subtitles">Subtitles</string>
+    <string name="vod_subtitles_off">Off</string>
+    <string name="vod_paused">Paused</string>
+    <string name="vod_retry_playback">Retry</string>
+</resources>
