@@ -16,6 +16,7 @@ This folder contains the current operating guides and an archive of older migrat
 - [Token maintenance](TOKEN_EXPIRY_MANAGEMENT.md)
 - [UK TV overrides](UK_TV_Override_Dynamic_README.md)
 - [Finding/removing stale group categories](MISSING_CATEGORIES_SCRIPT.md)
+- [Android player setup (sharing per-user Drive files)](ANDROID_PLAYER_SETUP.md)
 
 ## Historical documents
 
