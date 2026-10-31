@@ -5,10 +5,7 @@ The app is distributed as a signed APK for sideloading. There is no store listin
 ## Supported devices
 
 - Fire OS 7 and 8: Fire TV Stick 4K (2nd gen), Fire TV Stick 4K Max (1st and 2nd gen), Fire TV Cube.
-- Fire OS 6 (Android 7.1, API 25): Fire TV Stick 4K (1st gen, 2018), Fire TV Cube (1st gen, 2018), Fire TV (3rd gen, 2017), and Fire TV Edition TVs on Fire OS 6. Fire OS 6 receives fewer security updates than Fire OS 7/8, and its keystore may be software-backed rather than hardware-backed, so the stored credentials and Drive file IDs are less protected on these devices.
-- Android phones on Android 7.1 (API 25) or newer.
-
-Not supported: Fire OS 5 devices (API 22), for example Fire TV Stick (2nd gen, 2016) and Fire TV Stick Basic Edition.
+- Android phones on Android 9 (API 28) or newer.
 
 Not supported: devices running Vega OS (for example Fire TV Stick 4K Select and the newer 2026 sticks). Vega OS cannot install APKs, and v1 has no Vega build. Check Settings, My Fire TV, About on the device if unsure.
 
@@ -46,7 +43,7 @@ or as environment variables `RELEASE_STORE_FILE`, `RELEASE_STORE_PASSWORD`, `REL
 
 Output: `app\build\outputs\apk\release\`. If any of the four values is missing the release build is unsigned and will not install. Create a keystore once with `keytool -genkeypair -v -keystore <file> -alias <alias> -keyalg RSA -keysize 4096 -validity 10000`, keep it outside the repo, and back it up. Updates must be signed with the same key.
 
-Signing notes: the build enables v1 and v2 signing. With minSdk 25 the Android Gradle Plugin emits only v2 (it writes v1 only when minSdk is below 24), which every API 24+ device (including Fire OS 6/7/8) verifies. Never commit keystores, passwords or the Drive API key.
+Signing notes: the build enables v1 and v2 signing. With minSdk 28 the Android Gradle Plugin emits only v2, which every API 24+ device (including Fire OS 7/8) verifies. Never commit keystores, passwords or the Drive API key.
 
 To embed a Drive API key, see the last section of [../../docs/ANDROID_PLAYER_SETUP.md](../../docs/ANDROID_PLAYER_SETUP.md). The key restriction uses the SHA-1 of the key that signed the APK, so register the release key's SHA-1 before shipping.
 

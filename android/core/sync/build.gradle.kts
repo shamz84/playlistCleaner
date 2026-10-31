@@ -14,8 +14,6 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
-        // java.time / java.util.Base64 are API 26; desugaring backs them on API 25 (Fire OS 6).
-        isCoreLibraryDesugaringEnabled = true
     }
 
     sourceSets {
@@ -44,7 +42,6 @@ configurations.configureEach {
 }
 
 dependencies {
-    coreLibraryDesugaring(libs.desugar.jdk.libs)
     api(project(":core:model"))
     implementation(project(":core:parsing"))
     implementation(project(":core:consolidation"))

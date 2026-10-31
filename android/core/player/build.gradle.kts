@@ -14,8 +14,6 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
-        // java.time / java.util.Base64 are API 26; desugaring backs them on API 25 (Fire OS 6).
-        isCoreLibraryDesugaringEnabled = true
     }
 
     testOptions {
@@ -29,7 +27,6 @@ android {
 }
 
 dependencies {
-    coreLibraryDesugaring(libs.desugar.jdk.libs)
     api(project(":core:model"))
     // DeviceCapabilitiesProbe returns consolidation's DeviceCapabilities; PlayableSource carries QualityTier.
     api(project(":core:consolidation"))

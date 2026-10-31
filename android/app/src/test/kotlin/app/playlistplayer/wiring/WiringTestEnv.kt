@@ -1,10 +1,6 @@
 package app.playlistplayer.wiring
 
 import android.content.Context
-import android.os.Build
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.test.core.app.ApplicationProvider
 import app.playlistplayer.AppContainer
@@ -24,10 +20,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import mockwebserver3.Dispatcher
 import mockwebserver3.MockResponse
 import mockwebserver3.MockWebServer
@@ -73,14 +65,7 @@ class WiringTestEnv(tempDir: File) {
     private val key = KeyGenerator.getInstance("AES").apply { init(256) }.generateKey()
     val db: AppDatabase = AppDatabase.createInMemory(context)
     val secureStore = SecureStore(
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            PreferenceDataStoreFactory.create(scope = ioScope, produceFile = { File(tempDir, "secure.preferences_pb") })
-        } else {
-            // Robolectric at API 25: DataStore commits with File.renameTo below API 26, which replaces
-            // the target on Linux/Android but fails on a Windows host once the file exists. Keep the
-            // API 25 wiring tests host-independent with an in-memory store (same SecureStore code).
-            InMemoryPreferencesDataStore()
-        },
+        PreferenceDataStoreFactory.create(scope = ioScope, produceFile = { File(tempDir, "secure.preferences_pb") }),
         AesGcmValueCipher { key },
     )
     val scheduler = FakeScheduler()
@@ -143,16 +128,5 @@ class WiringTestEnv(tempDir: File) {
     companion object {
         const val FAKE_HOST = "xtream.example.invalid:8080"
         const val MOVIE_STREAM_ID = 501L
-    }
-}
-
-/** In-memory [DataStore] for host runs where the file-backed one cannot commit (see [WiringTestEnv.secureStore]). */
-private class InMemoryPreferencesDataStore : DataStore<Preferences> {
-    private val state = MutableStateFlow(emptyPreferences())
-    private val mutex = Mutex()
-    override val data: Flow<Preferences> = state
-
-    override suspend fun updateData(transform: suspend (t: Preferences) -> Preferences): Preferences = mutex.withLock {
-        transform(state.value).toPreferences().also { state.value = it }
     }
 }
