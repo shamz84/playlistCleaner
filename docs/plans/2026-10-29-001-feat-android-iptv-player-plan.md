@@ -88,6 +88,15 @@ Users may also hold more than one provider or playlist. They need to add them si
 - R32. Movies and TV Shows show, in order: Trending (TMDB weekly trending, refreshed at most daily, only titles present in the user's catalog), Continue watching (movies: started but not completed; TV Shows: show with an episode in progress or a next unwatched episode), then all titles of that kind.
 - R33. Xtream VOD categories are no longer shown. The full title list defaults to Recently added, with a per-section sort switch: Recently added, A–Z, Release year.
 
+**Performance and UX redesign (added 2026-11-01 after the second device test: the U18 build made the whole Fire TV sluggish)**
+- R34. The app must not degrade the Fire TV: UI stays at 60 fps while browsing, and background sync never makes the device feel slow. Targets are set from measurements on the user's Fire TV.
+- R35. Movies and TV Shows browsing uses only work the device can afford: no whole-catalog grouping or sorting on the device at browse time; data is loaded lazily per page or category from the database or the Xtream API.
+- R36. The Live TV guide follows the TiviMate layout (reference: tivimatenederland.com hidegroup screenshot): selected programme details and a live preview at the top, a dense channel guide below with logo, number and name, and groups in a side panel that can be hidden.
+- R37. Text and spacing are smaller and denser, sized correctly on 4K screens (TiviMate density as the reference).
+- R38. Changing channel shows the channel info overlay immediately instead of a loading spinner; buffering is indicated subtly.
+- R39. While watching live, one key/button jumps back to the previously viewed channel (TiviMate-style "last channel" shortcut).
+- R40. All on-demand playback (movies and episodes) offers audio-language and subtitle selection from the stream's tracks.
+
 ---
 
 ## Scope Boundaries
@@ -886,6 +895,80 @@ programme (UTC start/stop from EPG)
 
 **Verification:** On Fire TV, Movies and TV Shows open with Trending populated from the user's catalog, and switching sort reorders the full list.
 
+### Phase 5 — Performance and UX redesign
+
+Direction agreed in principle; details to confirm before building. Start with U19; its findings decide U20.
+
+### U19. Measure on the Fire TV
+
+**Goal:** Find what makes the device sluggish before redesigning.
+
+**Requirements:** R34
+
+**Dependencies:** none (needs the Fire TV on adb)
+
+**Approach:** Profile the current build over adb: `top`/`dumpsys cpuinfo` during first sync and while browsing, `dumpsys gfxinfo` frame stats on Live TV, Movies and TV Shows, `dumpsys meminfo`, and a Perfetto trace of opening Movies. Suspects: whole-catalog `TitleGrouper` runs (browse, trending, search index) over ~45k movies and ~11k series, the 86 MB EPG import, catalog sync and search rebuild running at the same time, and Compose recomposition in large grids. Record numbers and set targets (frame time, cold start, zap time, background CPU).
+
+**Test expectation:** none -- measurement unit; it produces targets and a ranked cause list.
+
+**Verification:** A short report in `android/docs/performance.md` with measured numbers and the top causes.
+
+### U20. Cheap VOD data path
+
+**Goal:** Browse Movies and TV Shows without heavy on-device computation.
+
+**Requirements:** R35
+
+**Dependencies:** U19
+
+**Approach (to confirm after U19):** Move title grouping out of the browse path: compute merged-title keys once per catalog sync in a background worker with low priority, store them in Room, and page from indexed queries. Use the Xtream API per category (`get_vod_streams&category_id=`, `get_series&category_id=`) where a full fetch is too heavy, and fetch details (`get_vod_info`, `get_series_info`) only on demand. Trending matches through an indexed tmdb column, not by grouping the catalog. Re-introduce a cleaned category list (empty, adult and duplicate categories hidden, A–Z) if a single list stays too heavy. Serialize background work so sync, EPG import and search indexing never run together.
+
+**Test scenarios:** browse first page from a 45k-row catalog completes within the U19 target on the JVM; no grouping runs on the main path; background jobs never overlap.
+
+**Verification:** Fire TV stays responsive during first sync and while scrolling Movies and TV Shows, against the U19 targets.
+
+### U21. TiviMate-style guide and density
+
+**Goal:** Rework Live TV into the TiviMate guide layout with smaller, 4K-correct typography.
+
+**Requirements:** R36, R37
+
+**Dependencies:** U17, U19
+
+**Approach:** Top area: programme title, time, description on the left and a live preview of the current channel on the right (it is the stream already playing, so no extra provider connection). Below: dense guide rows (logo, number, name, programmes). Groups in a side panel that slides in and can be hidden. New type scale and spacing tokens tuned on the device at 1080p and 4K.
+
+**Test scenarios:** layout state model (panel open/closed, focused programme drives the top area); preview reuses the single player.
+
+**Verification:** Side-by-side comparison with the TiviMate reference on the user's TV.
+
+### U22. Zapping experience and last-channel shortcut
+
+**Goal:** Faster-feeling channel changes and a jump back to the previous channel.
+
+**Requirements:** R38, R39
+
+**Dependencies:** U6, U17
+
+**Approach:** On zap, show the channel info overlay at once and keep the last frame until the new one renders; replace the centre spinner with a small buffering indicator. Store the previous channel; a remote key (e.g. Back-double-press or the "last" button on the overlay, matching TiviMate) and a phone button switch to it.
+
+**Test scenarios:** previous-channel stack updates on zap; shortcut toggles between the two most recent channels; overlay shows before first frame.
+
+**Verification:** On Fire TV, zapping shows channel info immediately and the shortcut returns to the previous channel.
+
+### U23. Audio and subtitle selection for all on-demand playback
+
+**Goal:** Make language audio and subtitle choice available on every movie and episode.
+
+**Requirements:** R40
+
+**Dependencies:** U10
+
+**Approach:** Verify the existing track selector on TV and phone VOD players with real multi-audio streams; add it wherever missing; remember the chosen audio language and subtitle preference per user setting.
+
+**Test scenarios:** track list mapping for multi-audio and multi-subtitle streams; preferred language auto-selected when present.
+
+**Verification:** A multi-language movie lets the user switch audio and subtitles on Fire TV and phone.
+
 ---
 
 ## System-Wide Impact
@@ -927,6 +1010,7 @@ programme (UTC start/stop from EPG)
 - **Phase 2 (U6–U8):** playback, guide, catch-up. Exit: live, 4K and catch-up play correctly on Fire TV 4K Max from a debug screen.
 - **Phase 3 (U9–U14):** full TV UX, VOD, library features, settings, mobile, hardening. Exit: the signed APK passes the device matrix.
 - **Phase 4 (U16–U18):** post-test refinements: keep-awake, merged Live TV start screen, Trending / Continue watching / sortable VOD lists.
+- **Phase 5 (U19–U23):** measure on the Fire TV, then a cheap VOD data path, TiviMate-style guide and density, faster zapping with a last-channel shortcut, and audio/subtitle selection for all on-demand playback.
 
 ---
 

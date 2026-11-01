@@ -30,6 +30,10 @@ Both agents were stopped by the spend limit before running tests.
 1. U16 + U17 are done and committed (`da44887`): 398 app tests pass apart from the known flaky settings test, which passed on rerun; lint 0 errors. Needs a Fire TV check: screensaver stays off during playback; app opens on Live TV.
 2. U18 is done and committed: TMDB weekly Trending (only catalog matches, refreshed at most daily, hidden without a key), Continue watching, full list with Recently added / A–Z / Release year sort, "Series" → "TV Shows". DB is v5. Tests and lint (0 errors) pass. Needs a device check: Trending fills from the real catalog, D-pad focus on TV sort chips (experimental tv-material chips), grid paging and column count, TV Shows "Next" episode for shows without cached episode lists (may trigger network calls).
 
+## Phase 5 (planned 2026-11-01, not started)
+
+Second device test: the U18 build made the whole Fire TV sluggish. User feedback is captured in the plan as R34–R40 and units U19–U23: measure first on the Fire TV (U19), then a cheap VOD data path (U20), TiviMate-style guide layout with smaller 4K-correct text (U21, reference image tivimatenederland.com hidegroup1), no spinner on zap plus a last-channel shortcut (U22, reference tivimate.com screen_01), audio/subtitle selection on all on-demand playback (U23). Open decision: return to a cleaned category list for Movies/TV Shows, or keep one list computed in the background — decide after U19 measurements.
+
 ## Next steps after that
 
 1. Rebuild the APK and device-test U16–U18 on Fire TV.
