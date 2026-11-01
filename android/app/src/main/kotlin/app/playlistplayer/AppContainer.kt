@@ -1,5 +1,11 @@
 package app.playlistplayer
 
+import app.playlistplayer.core.database.TrendingStore
+import app.playlistplayer.core.network.tmdb.TmdbClient
+import app.playlistplayer.core.network.tmdb.TmdbConfig
+import app.playlistplayer.feature.vod.RoomTrendingCache
+import app.playlistplayer.feature.vod.SharedPreferencesVodSortStore
+import app.playlistplayer.feature.vod.TrendingRepository
 import android.content.Context
 import androidx.work.DelegatingWorkerFactory
 import androidx.work.WorkManager
@@ -425,6 +431,23 @@ class AppContainer(context: Context, private val overrides: Overrides = Override
     /** Favourites, progress, picks, last/recent channels and VOD grouping overrides (Room). */
     val userDataStore: UserDataStore by lazy { UserDataStore(database) }
 
+    // ---- U18: TMDB trending and per-section sort ----
+
+    /** Build-time TMDB key (`tmdb.apiKey`); empty hides Trending. Never logged. */
+    private val tmdbApiKey: String = BuildConfig.TMDB_API_KEY
+
+    val trendingRepository: TrendingRepository by lazy {
+        val client = tmdbApiKey.takeIf { it.isNotBlank() }?.let { TmdbClient(okHttpClient, TmdbConfig(it)) }
+        TrendingRepository(
+            source = client,
+            cache = RoomTrendingCache(TrendingStore(database)),
+            logger = logger.withTag("Trending"),
+            secrets = listOfNotNull(tmdbApiKey.takeIf { it.isNotBlank() }),
+        )
+    }
+
+    val vodSortStore: SharedPreferencesVodSortStore by lazy { SharedPreferencesVodSortStore(appContext) }
+
     /** FTS5 trigram index over live entries and merged VOD titles. */
     val searchStore: SearchStore by lazy { SearchStore(database) }
 
@@ -696,6 +719,7 @@ class AppContainer(context: Context, private val overrides: Overrides = Override
         searchStore.clearPlaylist(playlistId)
         vodCatalogRepository.invalidate(playlistId)
         liveCoordinator.invalidate(playlistId)
+        vodSortStore.forgetPlaylist(playlistId)
         playlistRemovedHook(playlistId)
     }
 
@@ -713,6 +737,7 @@ class AppContainer(context: Context, private val overrides: Overrides = Override
         (overrides.cancelAllWork ?: { workManager.cancelAllWork() }).invoke()
         vodCatalogRepository.invalidate(null)
         liveCoordinator.invalidate()
+        vodSortStore.clear()
         secureStore.clear()
         try {
             scheduler.schedulePeriodic(app.playlistplayer.feature.settings.SyncPreferences().refreshIntervalHours.toLong())

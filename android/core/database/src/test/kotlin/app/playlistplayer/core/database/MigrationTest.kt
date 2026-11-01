@@ -13,7 +13,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import java.io.File
 
-/** AutoMigrations are additive: 2 -> 3 adds the EPG tables, 3 -> 4 personal data and search. */
+/** AutoMigrations are additive: 2 -> 3 adds the EPG tables, 3 -> 4 personal data and search, 4 -> 5 the trending cache. */
 @RunWith(RobolectricTestRunner::class)
 class MigrationTest {
     private val dbFile: File = ApplicationProvider.getApplicationContext<android.content.Context>().getDatabasePath("migration-test.db")
@@ -66,6 +66,26 @@ class MigrationTest {
         assertThat(count("SELECT COUNT(*) FROM search_live WHERE search_live MATCH '\"bbc one\"'")).isEqualTo(1)
         connection.execSQL("DELETE FROM search_live_content")
         assertThat(count("SELECT COUNT(*) FROM search_live WHERE search_live MATCH '\"bbc one\"'")).isEqualTo(0)
+        connection.close()
+    }
+
+    @Test
+    fun migrate4To5KeepsDataAndAddsTrendingTables() = runBlocking<Unit> {
+        helper.createDatabase(4).apply {
+            execSQL("INSERT INTO playlist (id, name, sourceType, xtreamEnabled, createdAt) VALUES (1, 'P', 'DRIVE', 1, 1)")
+            execSQL(
+                "INSERT INTO playback_progress (id, titleKey, season, episode, playlistId, kind, label, versionId, positionMs, durationMs, updatedAt, watched) " +
+                    "VALUES ('k#-#-', 'k', NULL, NULL, 1, 'MOVIE', 'Dune', '101', 10, 100, 5, 0)",
+            )
+            close()
+        }
+        val connection = helper.runMigrationsAndValidate(5)
+        fun count(sql: String): Long = connection.prepare(sql).use { it.step(); it.getLong(0) }
+
+        assertThat(count("SELECT COUNT(*) FROM playlist")).isEqualTo(1)
+        assertThat(count("SELECT COUNT(*) FROM playback_progress")).isEqualTo(1)
+        assertThat(count("SELECT COUNT(*) FROM trending_title")).isEqualTo(0)
+        assertThat(count("SELECT COUNT(*) FROM trending_state")).isEqualTo(0)
         connection.close()
     }
 }

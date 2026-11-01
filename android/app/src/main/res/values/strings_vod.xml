@@ -2,9 +2,8 @@
 <resources>
     <string name="vod_loading">Loading…</string>
     <string name="vod_empty_movies">No movies yet. They appear after the playlist\'s catalog syncs.</string>
-    <string name="vod_empty_series">No series yet. They appear after the playlist\'s catalog syncs.</string>
+    <string name="vod_empty_series">No TV shows yet. They appear after the playlist\'s catalog syncs.</string>
     <string name="vod_section_failed">Couldn\'t load this playlist\'s catalog.</string>
-    <string name="vod_rail_failed">Couldn\'t load this category.</string>
     <string name="vod_retry">Retry</string>
     <string name="vod_versions_count">%1$d versions</string>
     <string name="vod_title_not_found">This title is no longer in the catalog.</string>
@@ -40,4 +39,14 @@
     <string name="vod_subtitles_off">Off</string>
     <string name="vod_paused">Paused</string>
     <string name="vod_retry_playback">Retry</string>
+    <string name="vod_trending">Trending</string>
+    <string name="vod_tmdb_credit">Powered by TMDB</string>
+    <string name="vod_continue_watching">Continue watching</string>
+    <string name="vod_all_movies">All movies</string>
+    <string name="vod_all_tv_shows">All TV shows</string>
+    <string name="vod_sort_recently_added">Recently added</string>
+    <string name="vod_sort_a_z">A–Z</string>
+    <string name="vod_sort_release_year">Release year</string>
+    <string name="vod_episode_short">S%1$d E%2$d</string>
+    <string name="vod_up_next">Next: S%1$d E%2$d</string>
 </resources>

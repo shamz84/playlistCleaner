@@ -135,6 +135,23 @@ class VodCatalogRepository(
         } as PlaylistIndex
     }
 
+    /**
+     * Every merged title of a playlist and kind that parental controls let through, in provider
+     * order. A title is hidden when all of its versions sit in hidden categories (the rule Search
+     * and Home use); versions without a category never hide it.
+     */
+    suspend fun visibleTitles(playlistId: Long, kind: VodKind): List<CatalogTitle> {
+        val titles = index(playlistId, kind).titles
+        val categoryIds = HashSet<String>()
+        titles.forEach { t -> t.meta.values.forEach { m -> m.categoryId?.let(categoryIds::add) } }
+        val hidden = categoryIds.filterTo(HashSet()) { isCategoryHidden(playlistId, kind, it) }
+        if (hidden.isEmpty()) return titles
+        return titles.filterNot { t ->
+            val categories = t.title.versions.map { v -> t.meta[v.item.id]?.categoryId }
+            categories.isNotEmpty() && categories.all { it != null && it in hidden }
+        }
+    }
+
     /** The merged title holding [itemId] (a browse card's anchor), across all categories. */
     suspend fun title(playlistId: Long, kind: VodKind, itemId: String): CatalogTitle? =
         index(playlistId, kind).titleForItem(itemId)

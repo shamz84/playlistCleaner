@@ -20,6 +20,8 @@ fun String.asBuildConfigString(): String =
     "\"" + replace("\\", "\\\\").replace("\"", "\\\"") + "\""
 
 val driveApiKey: String = secret("drive.apiKey", "DRIVE_API_KEY").orEmpty()
+// TMDB v3 key for the Trending rows (U18); empty hides Trending.
+val tmdbApiKey: String = secret("tmdb.apiKey", "TMDB_API_KEY").orEmpty()
 
 val releaseStoreFile = secret("release.storeFile", "RELEASE_STORE_FILE")
 val releaseStorePassword = secret("release.storePassword", "RELEASE_STORE_PASSWORD")
@@ -42,6 +44,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         buildConfigField("String", "DRIVE_API_KEY", driveApiKey.asBuildConfigString())
+        buildConfigField("String", "TMDB_API_KEY", tmdbApiKey.asBuildConfigString())
     }
 
     signingConfigs {

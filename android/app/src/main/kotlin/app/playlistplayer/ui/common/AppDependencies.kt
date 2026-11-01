@@ -24,9 +24,13 @@ import app.playlistplayer.feature.vod.SeriesInfoLoader
 import app.playlistplayer.feature.vod.SeriesViewModel
 import app.playlistplayer.feature.vod.TitleDetailViewModel
 import app.playlistplayer.feature.vod.TitlePickStore
+import app.playlistplayer.feature.vod.TrendingProvider
 import app.playlistplayer.feature.vod.VersionPreferencesProvider
 import app.playlistplayer.feature.vod.VodBrowseViewModel
 import app.playlistplayer.feature.vod.VodCatalogRepository
+import app.playlistplayer.feature.vod.VodSortStore
+import app.playlistplayer.feature.vod.InMemoryVodSortStore
+import app.playlistplayer.core.consolidation.VodKind
 import app.playlistplayer.ui.common.live.ChannelRow
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -40,6 +44,8 @@ import java.time.ZoneId
  * What the VOD screens need: exactly the constructor inputs of the shared [VodBrowseViewModel],
  * [TitleDetailViewModel] and [SeriesViewModel], plus [visibilityChanges] (parental lock/unlock),
  * on which the browse screens reload so a newly locked category disappears at once.
+ * [trending] (null without a TMDB key) and [sorts] feed the browse screen's Trending row and
+ * per-section sort (U18).
  */
 class VodDependencies(
     val repository: VodCatalogRepository,
@@ -51,7 +57,12 @@ class VodDependencies(
     val preferences: VersionPreferencesProvider,
     val accounts: AccountProvider,
     val visibilityChanges: Flow<Unit> = emptyFlow(),
-)
+    val trending: TrendingProvider? = null,
+    val sorts: VodSortStore = InMemoryVodSortStore(),
+) {
+    fun browseViewModel(kind: VodKind): VodBrowseViewModel =
+        VodBrowseViewModel(kind, repository, trending = trending, progress = progress, seriesInfo = seriesInfo, sortStore = sorts)
+}
 
 /**
  * The long-lived player (U6), owned outside the composition (AppContainer) so rotation and

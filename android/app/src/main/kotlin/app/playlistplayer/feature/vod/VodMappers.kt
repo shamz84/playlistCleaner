@@ -20,6 +20,8 @@ data class ItemMeta(
     val plot: String? = null,
     val genre: String? = null,
     val releaseDate: String? = null,
+    /** When the provider added (movies) or last updated (series) the item, as the catalog stores it. */
+    val added: Long? = null,
 )
 
 /** A merged title plus the catalog attributes of each of its versions. */
@@ -44,13 +46,23 @@ data class CatalogTitle(
             .maxByOrNull { it.rank }
             ?.takeIf { it.rank > QualityTier.UNLABELED.rank }
 
+    /** The title's year, else the year of a version's release date. */
+    val releaseYear: Int?
+        get() = title.year ?: title.versions.firstNotNullOfOrNull { v ->
+            meta[v.item.id]?.releaseDate?.trim()?.takeIf { it.length >= 4 }?.substring(0, 4)?.toIntOrNull()
+        }
+
+    /** Newest provider "added" time among the versions (the Recently added sort key). */
+    val addedAt: Long?
+        get() = title.versions.mapNotNull { meta[it.item.id]?.added }.maxOrNull()
+
     fun card(): VodCard = VodCard(
         playlistId = playlistId,
         kind = kind,
         anchorId = anchorId,
         titleKey = key,
         title = title.title,
-        year = title.year,
+        year = releaseYear,
         posterUrl = posterUrl,
         bestQuality = bestQuality,
         versionCount = title.versions.size,
@@ -101,6 +113,7 @@ internal object VodMappers {
         icon = row.icon,
         containerExtension = row.containerExtension,
         rating = row.rating,
+        added = row.added,
     )
 
     fun seriesMeta(row: SeriesEntity): ItemMeta = ItemMeta(
@@ -113,6 +126,7 @@ internal object VodMappers {
         plot = row.plot,
         genre = row.genre,
         releaseDate = row.releaseDate,
+        added = row.lastModified,
     )
 }
 

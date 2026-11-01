@@ -39,7 +39,6 @@ import app.playlistplayer.feature.shell.Destination
 import app.playlistplayer.feature.shell.ShellViewModel
 import app.playlistplayer.feature.vod.SeriesViewModel
 import app.playlistplayer.feature.vod.TitleDetailViewModel
-import app.playlistplayer.feature.vod.VodBrowseViewModel
 import app.playlistplayer.ui.common.AppStateDependencies
 import app.playlistplayer.ui.common.GroupKey
 import app.playlistplayer.ui.common.GuideDependencies
@@ -308,8 +307,11 @@ private fun TvDestination(
         Destination.Movies, Destination.Series -> {
             if (vod == null) return PlaceholderDestination(destination)
             val kind = if (destination == Destination.Movies) VodKind.MOVIE else VodKind.SERIES
-            val browse = viewModel(key = "tv-browse-${kind.name}") { VodBrowseViewModel(kind, vod.repository) }
-            LaunchedEffect(browse) { vod.visibilityChanges.collect { browse.refresh() } }
+            val browse = viewModel(key = "tv-browse-${kind.name}") { vod.browseViewModel(kind) }
+            LaunchedEffect(browse) {
+                browse.refreshContinueWatching()
+                vod.visibilityChanges.collect { browse.refresh() }
+            }
             VodBrowseScreen(viewModel = browse, onOpen = { card -> openTitle(card.kind, card.playlistId, card.anchorId) })
         }
         Destination.Search -> {

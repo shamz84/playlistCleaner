@@ -28,7 +28,6 @@ import app.playlistplayer.feature.onboarding.OnboardingViewModel
 import app.playlistplayer.feature.shell.Destination
 import app.playlistplayer.feature.vod.SeriesViewModel
 import app.playlistplayer.feature.vod.TitleDetailViewModel
-import app.playlistplayer.feature.vod.VodBrowseViewModel
 import app.playlistplayer.feature.vod.VodCard
 import app.playlistplayer.ui.common.GroupKey
 import app.playlistplayer.ui.common.PlaylistSection
@@ -313,8 +312,11 @@ private fun TopLevel(
                 MobilePlaceholder(destination)
             } else {
                 val kind = if (destination == Destination.Movies) VodKind.MOVIE else VodKind.SERIES
-                val browse = viewModel(key = "mobile-browse-${kind.name}") { VodBrowseViewModel(kind, vod.repository) }
-                LaunchedEffect(browse) { vod.visibilityChanges.collect { browse.refresh() } }
+                val browse = viewModel(key = "mobile-browse-${kind.name}") { vod.browseViewModel(kind) }
+                LaunchedEffect(browse) {
+                    browse.refreshContinueWatching()
+                    vod.visibilityChanges.collect { browse.refresh() }
+                }
                 MobileVodBrowseScreen(viewModel = browse, onOpen = { card -> push(card.detailScreen()) })
             }
         }

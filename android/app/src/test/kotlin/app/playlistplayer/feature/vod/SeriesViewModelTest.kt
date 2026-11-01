@@ -116,7 +116,7 @@ class SeriesViewModelTest {
     @Test
     fun `get_series_info failure shows retry and leaves browse usable`() = runTest(main.dispatcher) {
         info.failing += setOf(201L, 202L)
-        val browse = VodBrowseViewModel(VodKind.SERIES, repository)
+        val browse = VodBrowseViewModel(VodKind.SERIES, repository, computeDispatcher = main.dispatcher)
         val vm = viewModel()
         advanceUntilIdle()
         assertThat(vm.state.value.episodesFailed).isTrue()
@@ -124,7 +124,7 @@ class SeriesViewModelTest {
         assertThat(vm.state.value.loading).isFalse()
         assertThat(vm.state.value.title).isEqualTo("Utopia")
         assertThat(browse.state.value.loading).isFalse()
-        assertThat(browse.state.value.sections.single().rails.flatMap { it.cards }.map { it.title }).contains("Utopia")
+        assertThat(browse.state.value.sections.single().titles.map { it.title }).contains("Utopia")
 
         info.failing.clear()
         vm.retry()

@@ -55,6 +55,9 @@ class PlaybackProgressRepository(
             .distinctBy { it.key.titleKey }
             .take(limit)
 
+    /** Every saved entry (watched ones too), most recently updated first. */
+    suspend fun recent(limit: Int): List<PlaybackProgress> = store.recent(limit)
+
     /** A tracker for one playback session of [key]. */
     fun tracker(key: ProgressKey, playlistId: Long, kind: VodKind, label: String, versionId: String): ProgressTracker =
         ProgressTracker(this, clock, key, playlistId, kind, label, versionId)

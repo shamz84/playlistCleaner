@@ -26,7 +26,7 @@
     <string name="settings_playlist_edit_source">Edit source</string>
     <string name="settings_playlist_remove">Remove</string>
     <string name="settings_playlist_xtream">Process Xtream account</string>
-    <string name="settings_playlist_xtream_description">Movies, Series, provider guide and catch-up</string>
+    <string name="settings_playlist_xtream_description">Movies, TV Shows, provider guide and catch-up</string>
     <string name="settings_playlist_xtream_unavailable">This playlist has no Xtream account; only live channels load</string>
     <string name="settings_playlist_name_label">Playlist name</string>
     <string name="settings_playlist_source_drive">Drive file ID</string>
@@ -43,7 +43,7 @@
     <string name="settings_account_no_expiry">No expiry date</string>
     <string name="settings_account_connections">Connections: %1$d of %2$d in use</string>
     <string name="settings_account_expired">The account has expired</string>
-    <string name="settings_storage_counts">%1$d groups · %2$d channels · %3$d movies · %4$d series · %5$d programmes</string>
+    <string name="settings_storage_counts">%1$d groups · %2$d channels · %3$d movies · %4$d TV shows · %5$d programmes</string>
     <string name="settings_last_updated">Updated %1$s</string>
 
     <!-- Guide -->
@@ -98,7 +98,7 @@
     <string name="settings_group_visible">Visible</string>
     <string name="settings_group_kind_live">Live</string>
     <string name="settings_group_kind_movies">Movies</string>
-    <string name="settings_group_kind_series">Series</string>
+    <string name="settings_group_kind_series">TV Shows</string>
     <string name="settings_groups_empty">No groups yet</string>
     <string name="settings_groups_close">Done</string>
 
@@ -147,7 +147,7 @@
 
     <!-- Dialogs -->
     <string name="settings_confirm_remove_title">Remove %1$s?</string>
-    <string name="settings_confirm_remove_message">Its channels, movies, series, guide, favourites and progress are deleted. Other playlists are not affected.</string>
+    <string name="settings_confirm_remove_message">Its channels, movies, TV shows, guide, favourites and progress are deleted. Other playlists are not affected.</string>
     <string name="settings_confirm_reset_title">Reset app?</string>
     <string name="settings_confirm_reset_message">Everything is deleted: playlists, settings, favourites and the parental PIN.</string>
     <string name="settings_remove">Remove</string>

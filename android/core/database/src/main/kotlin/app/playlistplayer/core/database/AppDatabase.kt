@@ -20,6 +20,7 @@ import app.playlistplayer.core.database.dao.EpgSourceStateDao
 import app.playlistplayer.core.database.dao.PlaylistDao
 import app.playlistplayer.core.database.dao.ProgrammeDao
 import app.playlistplayer.core.database.dao.SyncStateDao
+import app.playlistplayer.core.database.dao.TrendingDao
 import app.playlistplayer.core.database.dao.UserDataDao
 import app.playlistplayer.core.database.entity.AccountStatusEntity
 import app.playlistplayer.core.database.entity.CatalogSyncStateEntity
@@ -45,6 +46,8 @@ import app.playlistplayer.core.database.entity.PlaybackProgressEntity
 import app.playlistplayer.core.database.entity.RecentChannelEntity
 import app.playlistplayer.core.database.entity.TitleOverrideEntity
 import app.playlistplayer.core.database.entity.TitlePickEntity
+import app.playlistplayer.core.database.entity.TrendingStateEntity
+import app.playlistplayer.core.database.entity.TrendingTitleEntity
 import app.playlistplayer.core.database.search.SearchDao
 import app.playlistplayer.core.database.search.SearchFtsTriggers
 import app.playlistplayer.core.database.search.SearchIndexStateEntity
@@ -96,12 +99,21 @@ import kotlin.coroutines.CoroutineContext
         SearchVodEntity::class,
         SearchVodFts::class,
         SearchIndexStateEntity::class,
+        // U18: TMDB trending cache
+        TrendingTitleEntity::class,
+        TrendingStateEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = true,
     // Additive only: 1 -> 2 adds the catalog tables, 2 -> 3 the EPG tables, 3 -> 4 the personal
-    // data and search index tables (the empty index is built by the app's SearchIndexer).
-    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3), AutoMigration(from = 3, to = 4, spec = AppDatabase.Migration3To4::class)],
+    // data and search index tables (the empty index is built by the app's SearchIndexer), 4 -> 5
+    // the TMDB trending cache.
+    autoMigrations = [
+        AutoMigration(from = 1, to = 2),
+        AutoMigration(from = 2, to = 3),
+        AutoMigration(from = 3, to = 4, spec = AppDatabase.Migration3To4::class),
+        AutoMigration(from = 4, to = 5),
+    ],
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun playlistDao(): PlaylistDao
@@ -116,6 +128,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun epgSourceStateDao(): EpgSourceStateDao
     abstract fun userDataDao(): UserDataDao
     abstract fun searchDao(): SearchDao
+    abstract fun trendingDao(): TrendingDao
 
     /** Adds the FTS content-sync triggers that AutoMigration leaves out (see [SearchFtsTriggers]). */
     class Migration3To4 : AutoMigrationSpec {

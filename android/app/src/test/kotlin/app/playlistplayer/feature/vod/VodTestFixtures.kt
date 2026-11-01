@@ -45,10 +45,10 @@ class FakeVodCatalogSource : VodCatalogSource {
         vodCategoryRows += VodCategoryEntity(playlistId, 1, id, name, null, vodCategoryRows.count { it.playlistId == playlistId })
     }
 
-    fun movie(playlistId: Long, streamId: Long, name: String, categoryId: String, tmdb: String? = null, ext: String = "mkv") = apply {
+    fun movie(playlistId: Long, streamId: Long, name: String, categoryId: String, tmdb: String? = null, ext: String = "mkv", added: Long? = null) = apply {
         vodRows += VodStreamEntity(
             playlistId = playlistId, generation = 1, streamId = streamId, name = name, icon = "https://img.example/$streamId.jpg",
-            rating = 7.0, added = null, categoryId = categoryId, containerExtension = ext, tmdb = tmdb, isAdult = false,
+            rating = 7.0, added = added, categoryId = categoryId, containerExtension = ext, tmdb = tmdb, isAdult = false,
             providerOrder = vodRows.count { it.playlistId == playlistId },
         )
     }
@@ -57,10 +57,18 @@ class FakeVodCatalogSource : VodCatalogSource {
         seriesCategoryRows += SeriesCategoryEntity(playlistId, 1, id, name, null, seriesCategoryRows.count { it.playlistId == playlistId })
     }
 
-    fun series(playlistId: Long, seriesId: Long, name: String, categoryId: String, tmdb: String? = null) = apply {
+    fun series(
+        playlistId: Long,
+        seriesId: Long,
+        name: String,
+        categoryId: String,
+        tmdb: String? = null,
+        releaseDate: String? = null,
+        lastModified: Long? = null,
+    ) = apply {
         seriesRows += SeriesEntity(
             playlistId = playlistId, generation = 1, seriesId = seriesId, name = name, cover = null, plot = "Plot of $name",
-            genre = "Drama", releaseDate = null, rating = 8.0, categoryId = categoryId, tmdb = tmdb, lastModified = null,
+            genre = "Drama", releaseDate = releaseDate, rating = 8.0, categoryId = categoryId, tmdb = tmdb, lastModified = lastModified,
             providerOrder = seriesRows.count { it.playlistId == playlistId },
         )
     }

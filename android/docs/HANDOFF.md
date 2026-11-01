@@ -28,7 +28,7 @@ Updated: 2026-11-01
 Both agents were stopped by the spend limit before running tests.
 
 1. U16 + U17 are done and committed (`da44887`): 398 app tests pass apart from the known flaky settings test, which passed on rerun; lint 0 errors. Needs a Fire TV check: screensaver stays off during playback; app opens on Live TV.
-2. U18 (TMDB Trending, Continue watching, sortable full list, "Series" → "TV Shows"): only the string renames exist, in worktree `.claude\worktrees\agent-a657be38c19f380d7` (branch `worktree-agent-a657be38c19f380d7`). Simplest restart: discard that worktree (`git worktree remove --force <path>; git branch -D worktree-agent-a657be38c19f380d7`) and implement U18 in the main checkout after U16/U17 are committed.
+2. U18 is done and committed: TMDB weekly Trending (only catalog matches, refreshed at most daily, hidden without a key), Continue watching, full list with Recently added / A–Z / Release year sort, "Series" → "TV Shows". DB is v5. Tests and lint (0 errors) pass. Needs a device check: Trending fills from the real catalog, D-pad focus on TV sort chips (experimental tv-material chips), grid paging and column count, TV Shows "Next" episode for shows without cached episode lists (may trigger network calls).
 
 ## Next steps after that
 
