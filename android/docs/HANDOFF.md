@@ -27,7 +27,7 @@ Updated: 2026-11-01
 
 Both agents were stopped by the spend limit before running tests.
 
-1. U16 + U17 (keep-awake + merged Live TV start screen): ~31 files changed in the main checkout working tree (`git status -- android`). New files include `ui/common/KeepScreenOn.kt`, `ui/common/live/LiveTvViewModel.kt`, `ui/tv/livetv/`, `ui/mobile/livetv/` and tests. Next step: run `.\gradlew.bat :app:testDebugUnitTest assembleDebug --console=plain -q`, fix failures, run `:app:lintDebug`, then commit. Check the U16 and U17 test scenarios in the plan are covered.
+1. U16 + U17 are done and committed (`da44887`): 398 app tests pass apart from the known flaky settings test, which passed on rerun; lint 0 errors. Needs a Fire TV check: screensaver stays off during playback; app opens on Live TV.
 2. U18 (TMDB Trending, Continue watching, sortable full list, "Series" → "TV Shows"): only the string renames exist, in worktree `.claude\worktrees\agent-a657be38c19f380d7` (branch `worktree-agent-a657be38c19f380d7`). Simplest restart: discard that worktree (`git worktree remove --force <path>; git branch -D worktree-agent-a657be38c19f380d7`) and implement U18 in the main checkout after U16/U17 are committed.
 
 ## Next steps after that
