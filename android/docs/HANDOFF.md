@@ -1,0 +1,51 @@
+# Android player handoff
+
+Updated: 2026-11-01
+
+## Where things are
+
+- Repo: `Z:\training\playlistCleaner`, branch `feat/android-player` (based on `main`, not pushed). Android project in `android/`.
+- Plan (source of truth for scope): `docs/plans/2026-10-29-001-feat-android-iptv-player-plan.md`. Units U1–U15 are built; Phase 4 (U16–U18) was added on 2026-10-31 after the first device test.
+- Agent brief (environment, versions, module layout, every merged API, provider facts, open follow-ups): `android/docs/agent-build-brief.md`. Give it to any agent continuing the work.
+- Provider measurements: `android/docs/provider-spike.md`. Distribution and devices: `android/docs/distribution.md`. Operator guide: `docs/ANDROID_PLAYER_SETUP.md`.
+
+## Toolchain (user-scoped, already installed)
+
+- JDK 21: `%LOCALAPPDATA%\DevTools\jdk21`. Android SDK: `%LOCALAPPDATA%\Android\Sdk`. adb: `%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe`.
+- Build (PowerShell, from `android\`):
+  `$env:JAVA_HOME="$env:LOCALAPPDATA\DevTools\jdk21"; $env:ANDROID_HOME="$env:LOCALAPPDATA\Android\Sdk"; .\gradlew.bat assembleDebug test --console=plain -q`
+- Debug APK: `android\app\build\outputs\apk\debug\app-debug.apk`. Install: `adb connect <fire-tv-ip>:5555` then `adb install -r <apk>`.
+- `android/local.properties` (git-ignored) holds `sdk.dir` and `tmdb.apiKey`. No Drive API key is set, so Drive downloads use the public fallback URL.
+
+## Done (committed on the branch)
+
+- Phases 1–3 of the plan (U1–U15): playlist download from Drive or M3U URL, multiple playlists, Xtream catalog, EPG with catch-up backfill, Media3 player with failover, live/guide/catch-up/VOD screens on TV and phone, search, favourites, continue watching, settings, fail-closed parental PIN, docs. About 820 unit tests pass; lint has 0 errors.
+- minSdk is 28 (Android 9, Fire OS 7/8). Fire OS 6 support was built then reverted (commit `a9056d3`): too sluggish on the old stick.
+- First device test (Android phone and a Fire OS 7/8 Fire TV): app works.
+
+## In progress (NOT committed) — resume here
+
+Both agents were stopped by the spend limit before running tests.
+
+1. U16 + U17 (keep-awake + merged Live TV start screen): ~31 files changed in the main checkout working tree (`git status -- android`). New files include `ui/common/KeepScreenOn.kt`, `ui/common/live/LiveTvViewModel.kt`, `ui/tv/livetv/`, `ui/mobile/livetv/` and tests. Next step: run `.\gradlew.bat :app:testDebugUnitTest assembleDebug --console=plain -q`, fix failures, run `:app:lintDebug`, then commit. Check the U16 and U17 test scenarios in the plan are covered.
+2. U18 (TMDB Trending, Continue watching, sortable full list, "Series" → "TV Shows"): only the string renames exist, in worktree `.claude\worktrees\agent-a657be38c19f380d7` (branch `worktree-agent-a657be38c19f380d7`). Simplest restart: discard that worktree (`git worktree remove --force <path>; git branch -D worktree-agent-a657be38c19f380d7`) and implement U18 in the main checkout after U16/U17 are committed.
+
+## Next steps after that
+
+1. Rebuild the APK and device-test U16–U18 on Fire TV.
+2. U14 remainder: buffer/startup tuning and Baseline Profiles on the Fire TV over adb; release signing; device matrix.
+3. Device checks still outstanding from earlier units: D-pad focus restoration, PIN pad, 4K HEVC/HDR output, tunneling and frame-rate switching, catch-up landing within ±1 min, rotation on phone.
+4. Push the branch and open a PR when ready.
+
+## Known issues
+
+- Two tests are timing-sensitive and occasionally fail in full runs: `SettingsViewModelTest.removingAPlaylistRequiresThePinAndDeletesOnlyItsData`, `DefaultPlaylistOnboarderTest.xtreamPlaylistReportsChannelsThenCatalogAndGuideFromTheQueue`.
+- Gradle test runs are slow (20–30 min) when several agents build at once; run one build at a time.
+- Provider streams are plain HTTP with credentials in every URL; nothing the app can fix.
+
+## Rules
+
+- Never print, log or commit hostnames, usernames, passwords, Drive file IDs or API keys. Personalized `8k_*.m3u` files contain credentials. Tests use `example.invalid`.
+- Don't stage local data (`data/config/*` tokens and backups, generated playlists).
+- Commits end with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
+- The user's token budget is limited: keep agents few and reports short.
