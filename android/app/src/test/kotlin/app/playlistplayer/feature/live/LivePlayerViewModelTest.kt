@@ -249,4 +249,81 @@ class LivePlayerViewModelTest {
         assertThat(vm.state.value.tracks.selectedAudioId).isEqualTo("0:1")
         assertThat(driver.appliedTracks).containsExactly("0:1" to null)
     }
+
+    @Test
+    fun `zapping shows the new channel overlay before its first frame with a corner indicator`() = runTest(main.dispatcher) {
+        val vm = viewModel(ordinal = two.ordinal)
+        advanceUntilIdle()
+        driver.mutableState.value = PlaybackState.Playing(driver.lastSources.first())
+        runCurrent()
+        assertThat(vm.state.value.awaitingFirstFrame).isFalse()
+        assertThat(vm.state.value.cornerIndicator).isNull()
+        vm.hideOverlay()
+
+        vm.channelDown()
+        runCurrent()
+        val s = vm.state.value
+        assertThat(s.channel).isEqualTo(hd)
+        assertThat(s.overlayVisible).isTrue()
+        assertThat(s.nowNext?.now?.title).isEqualTo("The Celebrity Traitors")
+        assertThat(s.awaitingFirstFrame).isTrue()
+        assertThat(s.cornerIndicator).isEqualTo(PlaybackStatus.Indicator.BUFFERING)
+
+        // The new stream renders: the indicator goes away.
+        driver.mutableState.value = PlaybackState.Playing(driver.lastSources.first())
+        runCurrent()
+        assertThat(vm.state.value.awaitingFirstFrame).isFalse()
+        assertThat(vm.state.value.cornerIndicator).isNull()
+    }
+
+    @Test
+    fun `last channel toggles between the two most recent channels across groups`() = runTest(main.dispatcher) {
+        val history = ChannelHistory()
+        val vm = LivePlayerViewModel(1, hd.ordinal, source, coordinator, nowNext, driver, clock = { now }, history = history).also { it.start() }
+        advanceUntilIdle()
+        assertThat(vm.state.value.hasLastChannel).isFalse()
+        vm.lastChannel() // nothing to go back to
+        assertThat(driver.plays).hasSize(1)
+
+        vm.channelUp()
+        advanceUntilIdle()
+        assertThat(vm.state.value.hasLastChannel).isTrue()
+        assertThat(history.state.value).isEqualTo(ChannelHistoryState(ChannelRef(1, 11), ChannelRef(1, 10)))
+
+        vm.lastChannel()
+        advanceUntilIdle()
+        assertThat(playingOrdinal()).isEqualTo("live:1:10")
+        vm.lastChannel()
+        advanceUntilIdle()
+        assertThat(playingOrdinal()).isEqualTo("live:1:11")
+
+        // A later player (another group) shares the session history.
+        val other = LivePlayerViewModel(1, uhd.ordinal, source, coordinator, nowNext, driver, clock = { now }, history = history).also { it.start() }
+        advanceUntilIdle()
+        other.lastChannel()
+        advanceUntilIdle()
+        assertThat(playingOrdinal()).isEqualTo("live:1:11")
+        assertThat(other.state.value.channel).isEqualTo(two)
+        assertThat(other.state.value.number).isEqualTo(2)
+    }
+
+    @Test
+    fun `fullscreen on the channel already playing adopts the stream instead of opening a second one`() = runTest(main.dispatcher) {
+        viewModel()
+        advanceUntilIdle()
+        driver.mutableState.value = PlaybackState.Playing(driver.lastSources.first())
+        assertThat(driver.plays).hasSize(1)
+
+        val fullscreen = viewModel()
+        advanceUntilIdle()
+        assertThat(driver.plays).hasSize(1)
+        assertThat(driver.stops).isEqualTo(0)
+        assertThat(fullscreen.state.value.currentVersionId).isEqualTo("live:1:10")
+        assertThat(fullscreen.state.value.awaitingFirstFrame).isFalse()
+
+        // Another channel is a normal tune.
+        fullscreen.channelUp()
+        advanceUntilIdle()
+        assertThat(driver.plays).hasSize(2)
+    }
 }

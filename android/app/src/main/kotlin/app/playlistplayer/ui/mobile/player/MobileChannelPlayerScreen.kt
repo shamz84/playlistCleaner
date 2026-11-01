@@ -43,7 +43,9 @@ import app.playlistplayer.feature.live.LivePlayerEvent
 import app.playlistplayer.feature.live.LivePlayerUiState
 import app.playlistplayer.feature.live.LivePlayerViewModel
 import app.playlistplayer.feature.live.LiveStartError
-import app.playlistplayer.ui.mobile.MobileLoading
+import app.playlistplayer.ui.tv.player.indicatorText
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.foundation.layout.size
 import app.playlistplayer.ui.mobile.vod.OptionsSheet
 import app.playlistplayer.ui.mobile.vod.SheetOption
 import kotlinx.coroutines.delay
@@ -54,6 +56,8 @@ import app.playlistplayer.ui.common.Media3Tracks
 object MobileChannelPlayerTags {
     const val ROOT = "mobile.channelPlayer"
     const val CONTROLS = "mobile.channelPlayer.controls"
+    const val LAST_CHANNEL = "mobile.channelPlayer.lastChannel"
+    const val CORNER_INDICATOR = "mobile.channelPlayer.cornerIndicator"
 }
 
 /**
@@ -131,9 +135,24 @@ fun MobileChannelPlayerScreen(
                 .pointerInput(viewModel) { detectTapGestures(onTap = { viewModel.toggleOverlay() }) },
         )
 
-        PlaybackStatusBanner(state.status, Modifier.align(Alignment.TopCenter).safeDrawingPadding().padding(top = 56.dp))
-
-        if (state.loading && state.startError == null) MobileLoading()
+        // "Switched to" only; buffering is a small corner indicator instead of a centre spinner (U22).
+        PlaybackStatusBanner(state.status.copy(indicator = null), Modifier.align(Alignment.TopCenter).safeDrawingPadding().padding(top = 56.dp))
+        state.cornerIndicator?.let { indicator ->
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .safeDrawingPadding()
+                    .padding(end = 16.dp, bottom = if (state.overlayVisible) 120.dp else 16.dp)
+                    .background(Scrim, MaterialTheme.shapes.small)
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                    .testTag(MobileChannelPlayerTags.CORNER_INDICATOR),
+            ) {
+                CircularProgressIndicator(modifier = Modifier.size(12.dp), color = Color.White, strokeWidth = 2.dp)
+                Text(indicatorText(indicator), color = Color.White, style = MaterialTheme.typography.labelSmall)
+            }
+        }
 
         if ((state.overlayVisible || blocking) && !tracksOpen) {
             ChannelOverlay(
@@ -151,6 +170,10 @@ fun MobileChannelPlayerScreen(
                     viewModel.showOverlay()
                 },
                 onRestart = viewModel::restart,
+                onLastChannel = {
+                    viewModel.lastChannel()
+                    viewModel.showOverlay()
+                },
                 modifier = Modifier.fillMaxSize(),
             )
         }
@@ -217,6 +240,7 @@ private fun ChannelOverlay(
     onPrevious: () -> Unit,
     onNext: () -> Unit,
     onRestart: () -> Unit,
+    onLastChannel: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Box(modifier = modifier.testTag(MobileChannelPlayerTags.CONTROLS)) {
@@ -281,9 +305,14 @@ private fun ChannelOverlay(
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 PlayerIconButton("⏮", stringResource(R.string.mobile_previous_channel), onPrevious)
-                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                Row(modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)) {
                     if (state.canRestart) {
                         OutlinedButton(onClick = onRestart) { Text("↺  " + stringResource(R.string.player_restart_programme), color = Color.White) }
+                    }
+                    if (state.hasLastChannel) {
+                        OutlinedButton(onClick = onLastChannel, modifier = Modifier.testTag(MobileChannelPlayerTags.LAST_CHANNEL)) {
+                            Text(stringResource(R.string.player_last_channel), color = Color.White)
+                        }
                     }
                 }
                 PlayerIconButton("⏭", stringResource(R.string.mobile_next_channel), onNext)

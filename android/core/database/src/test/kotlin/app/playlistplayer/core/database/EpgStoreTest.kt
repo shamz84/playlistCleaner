@@ -125,6 +125,10 @@ class EpgStoreTest {
             0 to "now a", 0 to "next a", 1 to "now a", 1 to "next a",
         ).inOrder()
         assertThat(grid[0].programme.id).isEqualTo(grid[2].programme.id)
+        // Lazily loaded guide rows: only the channels in the ordinal range.
+        assertThat(epg.gridForGroupRange(id, 0, 1, 1, now, now + 3 * hour).map { it.channelOrdinal to it.programme.title }).containsExactly(
+            1 to "now a", 1 to "next a",
+        ).inOrder()
 
         assertThat(epg.channelKey(id, 1)).isEqualTo("a")
         assertThat(epg.channelKeysInGroup(id, 1).map { it.channelKey }).containsExactly("b")

@@ -117,6 +117,26 @@ interface ProgrammeDao {
         maxDurationMillis: Long,
     ): List<ChannelProgramme>
 
+    /** [forGroup] limited to the channels with an ordinal in `[fromOrdinal, toOrdinal]` (guide rows loaded lazily). */
+    @Query(
+        """SELECT c.ordinal AS channelOrdinal, p.* FROM channel c
+           JOIN sync_state s ON s.playlistId = c.playlistId AND s.activeGeneration = c.generation
+           JOIN channel_epg_map m ON m.playlistId = c.playlistId AND m.entryKey = COALESCE('s:' || c.streamId, 'o:' || c.ordinal)
+           JOIN programme p ON p.playlistId = c.playlistId AND p.channelKey = m.channelKey AND p.pending = 0
+                AND p.startMillis < :toMillis AND p.startMillis > :fromMillis - :maxDurationMillis AND p.stopMillis > :fromMillis
+           WHERE c.playlistId = :playlistId AND c.groupOrdinal = :groupOrdinal AND c.ordinal BETWEEN :fromOrdinal AND :toOrdinal
+           ORDER BY c.ordinal, p.startMillis""",
+    )
+    suspend fun forGroupRange(
+        playlistId: Long,
+        groupOrdinal: Int,
+        fromOrdinal: Int,
+        toOrdinal: Int,
+        fromMillis: Long,
+        toMillis: Long,
+        maxDurationMillis: Long,
+    ): List<ChannelProgramme>
+
     @Query(
         """SELECT * FROM programme
            WHERE playlistId = :playlistId AND channelKey = :channelKey AND pending = 0

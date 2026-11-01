@@ -1,6 +1,11 @@
 package app.playlistplayer.ui.common.live
 
+import app.playlistplayer.feature.epg.FocusedProgramme
+import app.playlistplayer.feature.epg.ProgrammeTiming
+import app.playlistplayer.feature.live.ChannelHistoryState
+import app.playlistplayer.feature.live.ChannelRef
 import app.playlistplayer.feature.live.LastChannel
+import app.playlistplayer.feature.live.LiveChannel
 import app.playlistplayer.ui.common.GroupItem
 import app.playlistplayer.ui.common.GroupKey
 import app.playlistplayer.ui.common.PlaylistSection
@@ -114,5 +119,68 @@ class LiveTvViewModelTest {
         }
         val error = vm(failing).state.value.sections as UiState.Error
         assertThat(error.message).isEqualTo("failed")
+    }
+
+    @Test
+    fun `the groups panel opens and hides, and choosing a group closes it and is remembered`() = runTest {
+        val vm = vm(FakeSource(listOf(first, second)))
+        assertThat(vm.state.value.groupsPanelOpen).isFalse()
+
+        vm.openGroupsPanel()
+        assertThat(vm.state.value.groupsPanelOpen).isTrue()
+        vm.selectGroup(GroupKey(2, 1))
+        assertThat(vm.state.value.groupsPanelOpen).isFalse()
+        assertThat(vm.state.value.selectedGroup).isEqualTo(GroupKey(2, 1))
+
+        // Opening and hiding the panel again keeps the chosen group.
+        vm.openGroupsPanel()
+        vm.closeGroupsPanel()
+        assertThat(vm.state.value.groupsPanelOpen).isFalse()
+        assertThat(vm.state.value.selectedGroup).isEqualTo(GroupKey(2, 1))
+    }
+
+    @Test
+    fun `the focused programme drives the details without touching the screen state`() = runTest {
+        val vm = vm(FakeSource(listOf(first)))
+        val before = vm.state.value
+        val focused = FocusedProgramme(
+            channel = LiveChannel(1, 5, 0, "BBC One HD", streamId = 5),
+            number = 1,
+            programmeId = 7,
+            title = "The Celebrity Traitors",
+            subTitle = null,
+            description = "Twenty-one celebrities.",
+            startMillis = 0,
+            stopMillis = 60_000,
+            timing = ProgrammeTiming.AIRING,
+            catchup = false,
+        )
+        vm.onFocused(focused)
+        assertThat(vm.focused.value).isEqualTo(focused)
+        assertThat(vm.state.value).isSameInstanceAs(before)
+        vm.onFocused(null)
+        assertThat(vm.focused.value).isNull()
+    }
+
+    @Test
+    fun `the preview shows the channel playing only while the shared player has a stream open`() = runTest {
+        val history = MutableStateFlow(ChannelHistoryState())
+        val active = MutableStateFlow(false)
+        val vm = LiveTvViewModel(FakeSource(listOf(first)), { null }, text, backgroundScope, history, active).also { runCurrent() }
+        assertThat(vm.state.value.playing).isNull()
+
+        history.value = ChannelHistoryState(current = ChannelRef(1, 5), previous = ChannelRef(1, 3))
+        runCurrent()
+        assertThat(vm.state.value.playing).isNull() // tuned earlier, stopped since: show the logo
+        assertThat(vm.state.value.lastChannel).isNull()
+
+        active.value = true
+        runCurrent()
+        assertThat(vm.state.value.playing).isEqualTo(ChannelRef(1, 5))
+        assertThat(vm.state.value.lastChannel).isEqualTo(ChannelRef(1, 3))
+
+        active.value = false
+        runCurrent()
+        assertThat(vm.state.value.playing).isNull()
     }
 }

@@ -41,6 +41,11 @@ import java.time.temporal.ChronoUnit
  * - remembers the focused programme, so returning from the player restores it.
  *
  * The UI calls [tick] about once a minute to move the now-line.
+ *
+ * Performance (TV): the focus lives in its own [focusedCell] / [focusedProgramme] flows, so moving focus
+ * never re-emits the rows; unchanged rows keep their instance across publishes; with [rowBlock] > 0
+ * only the blocks of [rowBlock] channels around the visible rows ([onVisibleRows]) and the focus
+ * are loaded, the others are placeholders until scrolled near. [rowBlock] 0 loads the whole group.
  */
 class EpgGridViewModel(
     private val group: GroupKey,
@@ -50,6 +55,7 @@ class EpgGridViewModel(
     private val clock: () -> Long = System::currentTimeMillis,
     private val zone: ZoneId = ZoneId.systemDefault(),
     private val windowSlots: Int = DEFAULT_WINDOW_SLOTS,
+    private val rowBlock: Int = 0,
 ) : ViewModel() {
 
     init {
@@ -58,6 +64,16 @@ class EpgGridViewModel(
 
     private val mutableState = MutableStateFlow(EpgGridUiState())
     val state: StateFlow<EpgGridUiState> = mutableState.asStateFlow()
+
+    private val focusFlow = MutableStateFlow<EpgFocus?>(null)
+
+    /** The remembered focus (separate from [state]: focus moves must not re-emit the rows). */
+    val focusedCell: StateFlow<EpgFocus?> = focusFlow.asStateFlow()
+
+    private val focusedFlow = MutableStateFlow<FocusedProgramme?>(null)
+
+    /** Details of the focused cell (TV details area). */
+    val focusedProgramme: StateFlow<FocusedProgramme?> = focusedFlow.asStateFlow()
 
     private val eventChannel = Channel<EpgEvent>(Channel.BUFFERED)
     val events: Flow<EpgEvent> = eventChannel.receiveAsFlow()
@@ -70,6 +86,10 @@ class EpgGridViewModel(
     private var windowStart = 0L
     private var focus: EpgFocus? = null
     private var loadJob: Job? = null
+    private var rowsJob: Job? = null
+    private val loadedBlocks = HashSet<Int>()
+    private var visibleFirst = 0
+    private var visibleLast = 0
 
     init {
         viewModelScope.launch { open() }
@@ -138,17 +158,75 @@ class EpgGridViewModel(
     private suspend fun load(now: Long) {
         val from = windowStart
         val to = windowStart + windowMillis
+        rowsJob?.cancel()
         mutableState.update { it.copy(loading = true, loadFailed = false) }
-        val rows = try {
-            grid.gridForGroup(group.playlistId, group.groupOrdinal, from, to)
+        loadedBlocks.clear()
+        programmes = emptyMap()
+        try {
+            fetch(neededBlocks(), from, to)
         } catch (e: CancellationException) {
             throw e
         } catch (_: Exception) {
             mutableState.update { it.copy(loading = false, loadFailed = true) }
             return
         }
-        programmes = rows.groupBy({ it.channelOrdinal }, { it.programme })
         publish(now)
+    }
+
+    /** Loads the programmes of [blocks] for the window `[from, to)` and marks them loaded. */
+    private suspend fun fetch(blocks: Collection<Int>, from: Long, to: Long) {
+        val loaded = HashMap(programmes)
+        for (block in blocks) {
+            if (block in loadedBlocks) continue
+            val rows = if (rowBlock <= 0) {
+                grid.gridForGroup(group.playlistId, group.groupOrdinal, from, to)
+            } else {
+                val channels = playable.subList(block * rowBlock, minOf(playable.size, (block + 1) * rowBlock))
+                val ordinals = channels.mapTo(HashSet()) { it.ordinal }
+                grid.gridForChannels(group.playlistId, group.groupOrdinal, channels.minOf { it.ordinal }, channels.maxOf { it.ordinal }, from, to)
+                    .filter { it.channelOrdinal in ordinals }
+            }
+            rows.groupBy({ it.channelOrdinal }, { it.programme }).forEach { (ordinal, list) -> loaded[ordinal] = list }
+            loadedBlocks += block
+        }
+        programmes = loaded
+    }
+
+    private fun blockOf(index: Int): Int = if (rowBlock <= 0) 0 else index / rowBlock
+
+    /** Blocks covering the visible rows and the focused row, half a block of margin each side. */
+    private fun neededBlocks(): Set<Int> {
+        if (rowBlock <= 0 || playable.isEmpty()) return setOf(0)
+        val focusIndex = focus?.let { f -> playable.indexOfFirst { it.ordinal == f.channelOrdinal } }?.takeIf { it >= 0 }
+        val first = (minOf(visibleFirst, focusIndex ?: visibleFirst) - rowBlock / 2).coerceAtLeast(0)
+        val last = (maxOf(visibleLast, focusIndex ?: visibleLast) + rowBlock / 2).coerceIn(0, playable.size - 1)
+        return (blockOf(first)..blockOf(last)).toSet()
+    }
+
+    /**
+     * The guide shows rows [firstIndex]..[lastIndex] (row indexes): loads the blocks around them
+     * that are not loaded yet (no-op when [rowBlock] is 0).
+     */
+    fun onVisibleRows(firstIndex: Int, lastIndex: Int) {
+        visibleFirst = firstIndex.coerceAtLeast(0)
+        visibleLast = lastIndex.coerceAtLeast(visibleFirst)
+        if (rowBlock <= 0 || playable.isEmpty() || mutableState.value.loading || rowsJob?.isActive == true) return
+        val missing = neededBlocks() - loadedBlocks
+        if (missing.isEmpty()) return
+        val from = windowStart
+        val to = windowStart + windowMillis
+        rowsJob = viewModelScope.launch {
+            try {
+                fetch(missing, from, to)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                return@launch // the rows stay placeholders; the next scroll retries
+            }
+            publish(clock())
+            // More rows may have scrolled into view meanwhile.
+            onVisibleRows(visibleFirst, visibleLast)
+        }
     }
 
     /** Reloads the current window (e.g. after the guide imported). */
@@ -169,8 +247,12 @@ class EpgGridViewModel(
     private fun publish(now: Long) {
         val from = windowStart
         val to = windowStart + windowMillis
+        val previous = mutableState.value.rows
         val rows = playable.mapIndexed { index, channel ->
-            EpgRow(channel = channel, number = index + 1, cells = cellsFor(channel, from, to, now))
+            val loaded = rowBlock <= 0 || blockOf(index) in loadedBlocks
+            val row = EpgRow(channel = channel, number = index + 1, cells = if (loaded) cellsFor(channel, from, to, now) else emptyList(), loaded = loaded)
+            // Same instance for unchanged rows: the guide skips recomposing them.
+            previous.getOrNull(index)?.takeIf { it == row } ?: row
         }
         val dayOffset = dayOffsetOf(from, now)
         mutableState.update {
@@ -187,9 +269,10 @@ class EpgGridViewModel(
                 selectedDayOffset = dayOffset,
                 canPageBack = from > minStart(now),
                 canPageForward = to < maxEnd(now),
-                focus = resolveFocus(rows, now),
             )
         }
+        focusFlow.value = resolveFocus(rows, now)
+        updateFocused()
     }
 
     private fun cellsFor(channel: LiveChannel, from: Long, to: Long, now: Long): List<EpgCell> {
@@ -231,7 +314,36 @@ class EpgGridViewModel(
         val cell = programmeId?.let { id -> mutableState.value.rows.firstOrNull { it.channel.ordinal == channelOrdinal }?.cells?.firstOrNull { it.programmeId == id } }
         val time = cell?.let { maxOf(it.startMillis, windowStart) } ?: focus?.timeMillis ?: clock()
         focus = EpgFocus(channelOrdinal, programmeId, time)
-        mutableState.update { it.copy(focus = focus) }
+        focusFlow.value = focus
+        updateFocused()
+    }
+
+    /** Details of the focused cell; on a channel name (or "No guide data") the programme airing now. */
+    private fun updateFocused() {
+        val f = focus
+        val index = f?.let { playable.indexOfFirst { c -> c.ordinal == it.channelOrdinal } } ?: -1
+        if (f == null || index < 0) {
+            focusedFlow.value = null
+            return
+        }
+        val channel = playable[index]
+        val now = clock()
+        val list = programmes[channel.ordinal].orEmpty()
+        val programme = f.programmeId?.let { id -> list.firstOrNull { it.id == id } }
+            ?: list.firstOrNull { now >= it.startMillis && now < it.stopMillis }
+        val cell = programme?.let { cellOf(channel, it, now) }
+        focusedFlow.value = FocusedProgramme(
+            channel = channel,
+            number = index + 1,
+            programmeId = programme?.id,
+            title = programme?.title,
+            subTitle = programme?.subTitle,
+            description = programme?.description,
+            startMillis = programme?.startMillis,
+            stopMillis = programme?.stopMillis,
+            timing = cell?.timing,
+            catchup = cell?.catchup == true,
+        )
     }
 
     private fun resolveFocus(rows: List<EpgRow>, now: Long): EpgFocus? {

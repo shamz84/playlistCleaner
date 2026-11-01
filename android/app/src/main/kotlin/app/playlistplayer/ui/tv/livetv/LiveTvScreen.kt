@@ -5,15 +5,24 @@ import androidx.compose.runtime.setValue
 import android.os.SystemClock
 import android.view.KeyEvent as AndroidKeyEvent
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -25,51 +34,74 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel as storedViewModel
+import androidx.tv.material3.ClickableSurfaceDefaults
+import androidx.tv.material3.MaterialTheme
+import androidx.tv.material3.Surface
+import androidx.tv.material3.Text
 import app.playlistplayer.R
 import app.playlistplayer.feature.epg.EpgGridViewModel
+import app.playlistplayer.feature.epg.FocusedProgramme
+import app.playlistplayer.feature.epg.ProgrammeTiming
 import app.playlistplayer.feature.live.CatchupRequest
+import app.playlistplayer.feature.live.ChannelRef
 import app.playlistplayer.feature.live.LiveChannel
 import app.playlistplayer.ui.common.GuideDependencies
 import app.playlistplayer.ui.common.UiState
 import app.playlistplayer.ui.common.UiTokens
 import app.playlistplayer.ui.common.live.LiveTvViewModel
 import app.playlistplayer.ui.common.live.NumberEntryController
+import app.playlistplayer.ui.common.rememberTimeFormatter
+import app.playlistplayer.ui.tv.components.TvButton
 import app.playlistplayer.ui.tv.components.TvUiState
+import app.playlistplayer.ui.tv.epg.EpgDayRow
 import app.playlistplayer.ui.tv.epg.EpgGridScreen
+import app.playlistplayer.ui.tv.epg.TV_GUIDE_ROW_BLOCK
 import app.playlistplayer.ui.tv.live.GroupRail
 import app.playlistplayer.ui.tv.live.NumberEntryOverlay
 import app.playlistplayer.ui.tv.live.digitFor
-import app.playlistplayer.ui.tv.theme.TvDimens
+import app.playlistplayer.ui.tv.player.ProgressBar
+import app.playlistplayer.ui.tv.theme.TvDensity
+import coil3.compose.AsyncImage
 import kotlinx.coroutines.delay
 
 object LiveTvTags {
     const val ROOT = "livetv"
     const val GRID_PANE = "livetv.grid"
+    const val DETAILS = "livetv.details"
+    const val PREVIEW = "livetv.preview"
+    const val GROUPS_PANEL = "livetv.groups"
+    const val LAST_CHANNEL = "livetv.lastChannel"
 }
 
 /**
- * Live TV (U9; the former Live and Guide destinations): the group rail sectioned by playlist name
- * (R25) beside the guide grid of the selected group ([EpgGridScreen] over the shared
- * [EpgGridViewModel], one per group in the activity store so returning from a player restores its
- * window and focus).
+ * Live TV (U9, U21; TiviMate layout): the top ~35 % shows the focused programme (channel logo,
+ * number and name, title, time with progress, description, catch-up badge) beside a live preview;
+ * below, the dense guide of the selected group ([EpgGridScreen] over the shared
+ * [EpgGridViewModel], one per group in the activity store, rows loaded lazily). Groups (sectioned by
+ * playlist name, R25) are in a side panel that slides in over the guide.
  *
- * - OK on a group selects it and moves focus into its grid; focusing a group alone does not
- *   (no guide load per focused group).
- * - In the grid, OK on a channel name (or a "No guide data" row) plays the channel live via
- *   [onPlayChannel]; programmes keep the guide's routing (eligible past → catch-up, airing →
- *   Watch live / Restart, otherwise details).
- * - Shown (cold start or back from a player): focus goes into the grid at the remembered channel,
- *   on first open the last channel played ([LiveTvViewModel] restores its group).
- * - Digits jump to the Nth channel of the group ([NumberEntryController]); Back in the grid returns
- *   to the group rail, Back on the rail is left to the shell.
+ * - Preview: [preview] renders the app's single player while [LiveTvViewModel] reports a live
+ *   channel playing (it IS the playing stream; nothing opens a second connection); otherwise the
+ *   focused channel's logo. Selecting the preview calls [onFullscreen] with the playing channel
+ *   (the player adopts the stream); "Last channel" tunes the previous one.
+ * - Groups panel: Left on the channel column, Menu, or Back in the guide open it; OK on a group
+ *   selects it, closes the panel and focuses the guide; Right or Back hides it.
+ * - In the guide, OK on a channel plays it via [onPlayChannel] (the playing one goes fullscreen
+ *   without re-tuning); programmes keep the guide's routing.
+ * - Digits jump to the Nth channel of the group ([NumberEntryController]).
  */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -79,10 +111,11 @@ fun LiveTvScreen(
     onPlayChannel: (LiveChannel) -> Unit,
     onPlayCatchup: (CatchupRequest) -> Unit,
     modifier: Modifier = Modifier,
+    preview: (@Composable (Modifier) -> Unit)? = null,
+    onFullscreen: (ChannelRef) -> Unit = {},
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val groupsFocus = remember { FocusRequester() }
-    var railHasFocus by remember { mutableStateOf(false) }
     var gridHasFocus by remember { mutableStateOf(false) }
     /** Starts pending: the grid takes focus once loaded each time the screen is shown. */
     var gridFocusRequest by remember { mutableIntStateOf(1) }
@@ -93,12 +126,16 @@ fun LiveTvScreen(
     val group = state.selectedGroup
     val grid: EpgGridViewModel? = group?.let { key ->
         storedViewModel(key = "tv-livetv-${key.playlistId}-${key.groupOrdinal}") {
-            EpgGridViewModel(key, guide.channels, guide.grid, guide.coordinator, guide.clock, guide.zone)
+            EpgGridViewModel(key, guide.channels, guide.grid, guide.coordinator, guide.clock, guide.zone, rowBlock = TV_GUIDE_ROW_BLOCK)
         }
     }
-    val rows = grid?.state?.collectAsStateWithLifecycle()?.value?.rows.orEmpty()
-    val playableCount = rows.size
+    val rowsState = grid?.state?.collectAsStateWithLifecycle()
+    val playableCount by remember(rowsState) { derivedStateOf { rowsState?.value?.rows?.size ?: 0 } }
 
+    // The focused cell of the selected group's guide drives the details area.
+    LaunchedEffect(grid) {
+        if (grid == null) viewModel.onFocused(null) else grid.focusedProgramme.collect(viewModel::onFocused)
+    }
     // First open: focus the last channel played in its restored group.
     LaunchedEffect(grid, state.restoreChannel) {
         val ordinal = state.restoreChannel ?: return@LaunchedEffect
@@ -107,10 +144,16 @@ fun LiveTvScreen(
         viewModel.onRestoreHandled()
         gridFocusRequest++
     }
+    LaunchedEffect(state.groupsPanelOpen) {
+        if (state.groupsPanelOpen) {
+            delay(PANEL_FOCUS_DELAY_MS) // let the panel compose
+            runCatching { groupsFocus.requestFocus() }
+        }
+    }
 
     fun handle(outcome: NumberEntryController.Outcome?) {
         when (outcome) {
-            is NumberEntryController.Outcome.Jump -> rows.firstOrNull { it.number == outcome.number }?.let { row ->
+            is NumberEntryController.Outcome.Jump -> rowsState?.value?.rows?.firstOrNull { it.number == outcome.number }?.let { row ->
                 grid?.onFocus(row.channel.ordinal, null)
                 gridFocusRequest++
             }
@@ -133,11 +176,17 @@ fun LiveTvScreen(
         }
     }
 
+    fun closePanel() {
+        viewModel.closeGroupsPanel()
+        gridFocusRequest++
+    }
+
     BackHandler(enabled = entry.isActive) {
         numberEntry.cancel()
         entry = numberEntry.state
     }
-    BackHandler(enabled = !entry.isActive && gridHasFocus) { runCatching { groupsFocus.requestFocus() } }
+    BackHandler(enabled = !entry.isActive && state.groupsPanelOpen) { closePanel() }
+    BackHandler(enabled = !entry.isActive && !state.groupsPanelOpen && gridHasFocus) { viewModel.openGroupsPanel() }
 
     Box(
         modifier = modifier
@@ -158,35 +207,35 @@ fun LiveTvScreen(
                         handle(numberEntry.commit(playableCount))
                         true
                     }
+                    code == AndroidKeyEvent.KEYCODE_LAST_CHANNEL && state.lastChannel != null -> {
+                        state.lastChannel?.let(onFullscreen)
+                        true
+                    }
                     else -> false
                 }
             },
     ) {
-        TvUiState(state = state.sections, modifier = Modifier.fillMaxSize().padding(TvDimens.ScreenPadding)) { sections ->
-            Row(
-                // The grid pads itself (overscan); the rail takes the left and vertical overscan.
-                modifier = Modifier.fillMaxSize().padding(start = UiTokens.OverscanHorizontal),
-            ) {
-                GroupRail(
-                    sections = sections,
-                    selected = group,
-                    onFocusGroup = {},
-                    onOpenGroup = { key ->
-                        viewModel.selectGroup(key)
-                        gridFocusRequest++
-                    },
-                    modifier = Modifier
-                        .width(300.dp)
-                        .fillMaxHeight()
-                        .padding(vertical = UiTokens.OverscanVertical)
-                        .focusRequester(groupsFocus)
-                        .focusRestorer()
-                        .onFocusChanged { railHasFocus = it.hasFocus },
-                )
+        TvUiState(state = state.sections, modifier = Modifier.fillMaxSize().padding(TvDensity.ScreenPadding)) { sections ->
+            Column(modifier = Modifier.fillMaxSize().padding(TvDensity.ScreenPadding), verticalArrangement = Arrangement.spacedBy(UiTokens.SpaceS)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().fillMaxHeight(TvDensity.DetailsFraction),
+                    horizontalArrangement = Arrangement.spacedBy(UiTokens.SpaceM),
+                ) {
+                    Column(modifier = Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.SpaceBetween) {
+                        DetailsPane(viewModel, guide.clock, Modifier.weight(1f, fill = false))
+                        if (grid != null) key(group) { EpgDayRow(grid) }
+                    }
+                    PreviewPane(
+                        viewModel = viewModel,
+                        preview = preview,
+                        onFullscreen = onFullscreen,
+                        modifier = Modifier.fillMaxHeight().aspectRatio(16f / 9f, matchHeightConstraintsFirst = true),
+                    )
+                }
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .fillMaxHeight()
+                        .fillMaxWidth()
                         .testTag(LiveTvTags.GRID_PANE)
                         .onFocusChanged { gridHasFocus = it.hasFocus },
                 ) {
@@ -204,12 +253,44 @@ fun LiveTvScreen(
                                 } else {
                                     null
                                 },
-                                autoFocus = !railHasFocus,
+                                autoFocus = !state.groupsPanelOpen,
                                 focusRequest = gridFocusRequest,
+                                onOpenGroups = viewModel::openGroupsPanel,
                             )
                         }
                     }
                 }
+            }
+            AnimatedVisibility(
+                visible = state.groupsPanelOpen,
+                enter = slideInHorizontally { -it },
+                exit = slideOutHorizontally { -it },
+            ) {
+                GroupRail(
+                    sections = sections,
+                    selected = group,
+                    onFocusGroup = {},
+                    onOpenGroup = { key ->
+                        viewModel.selectGroup(key)
+                        gridFocusRequest++
+                    },
+                    modifier = Modifier
+                        .width(TvDensity.GroupsPanelWidth)
+                        .fillMaxHeight()
+                        .background(PANEL_BACKGROUND)
+                        .padding(horizontal = UiTokens.SpaceS, vertical = UiTokens.SpaceM)
+                        .testTag(LiveTvTags.GROUPS_PANEL)
+                        .focusRequester(groupsFocus)
+                        .focusRestorer()
+                        .onPreviewKeyEvent { event ->
+                            if (event.type == KeyEventType.KeyDown && event.nativeKeyEvent.keyCode == AndroidKeyEvent.KEYCODE_DPAD_RIGHT) {
+                                closePanel()
+                                true
+                            } else {
+                                false
+                            }
+                        },
+                )
             }
         }
         if (state.sections is UiState.Content) {
@@ -217,3 +298,105 @@ fun LiveTvScreen(
         }
     }
 }
+
+/** The focused programme; observes only [LiveTvViewModel.focused], so focus moves recompose this alone. */
+@Composable
+private fun DetailsPane(viewModel: LiveTvViewModel, clock: () -> Long, modifier: Modifier) {
+    val focused by viewModel.focused.collectAsStateWithLifecycle()
+    val f = focused ?: return
+    val time = rememberTimeFormatter()
+    Column(modifier = modifier.testTag(LiveTvTags.DETAILS), verticalArrangement = Arrangement.spacedBy(UiTokens.SpaceXs)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(UiTokens.SpaceS)) {
+            Logo(f.channel.logoUrl, Modifier.size(TvDensity.LogoSize))
+            Text(text = f.number.toString(), style = MaterialTheme.typography.titleMedium, color = UiTokens.Accent)
+            Text(text = f.channel.name, style = MaterialTheme.typography.titleMedium, color = UiTokens.OnBackground, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+        Text(
+            text = f.title ?: stringResource(if (f.programmeId == null) R.string.epg_no_guide_data else R.string.epg_untitled),
+            style = MaterialTheme.typography.headlineSmall,
+            color = UiTokens.OnBackground,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        val start = f.startMillis
+        val stop = f.stopMillis
+        if (start != null && stop != null) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(UiTokens.SpaceS)) {
+                Text(text = "${time(start)} – ${time(stop)}", style = MaterialTheme.typography.bodySmall, color = UiTokens.OnSurfaceMuted)
+                if (f.timing == ProgrammeTiming.AIRING && stop > start) {
+                    val progress = ((clock() - start).toFloat() / (stop - start)).coerceIn(0f, 1f)
+                    ProgressBar(progress, Modifier.width(120.dp))
+                }
+                if (f.catchup) {
+                    Text(
+                        text = stringResource(R.string.livetv_catchup_badge),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = UiTokens.OnAccent,
+                        modifier = Modifier.background(UiTokens.Accent, TvDensity.CellShape).padding(horizontal = UiTokens.SpaceXs),
+                    )
+                }
+            }
+        }
+        f.subTitle?.let { Text(text = it, style = MaterialTheme.typography.bodySmall, color = UiTokens.OnBackground, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+        f.description?.let { Text(text = it, style = MaterialTheme.typography.bodySmall, color = UiTokens.OnSurfaceMuted, maxLines = 3, overflow = TextOverflow.Ellipsis) }
+    }
+}
+
+/**
+ * The live preview: the shared player's video while a channel plays (selecting it goes fullscreen),
+ * else the focused channel's logo. Reads the focused channel through `derivedStateOf`, so only a
+ * change of channel (not of programme) recomposes it.
+ */
+@Composable
+private fun PreviewPane(
+    viewModel: LiveTvViewModel,
+    preview: (@Composable (Modifier) -> Unit)?,
+    onFullscreen: (ChannelRef) -> Unit,
+    modifier: Modifier,
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val focusedState = viewModel.focused.collectAsStateWithLifecycle()
+    val focusedChannel by remember(focusedState) { derivedStateOf { focusedState.value?.channel } }
+    val playing = state.playing
+    Box(modifier = modifier.background(Color.Black, TvDensity.CellShape).testTag(LiveTvTags.PREVIEW)) {
+        if (playing != null && preview != null) {
+            val description = stringResource(R.string.livetv_preview_description, focusedChannel?.takeIf { it.ordinal == playing.ordinal }?.name.orEmpty())
+            Surface(
+                onClick = { onFullscreen(playing) },
+                modifier = Modifier.fillMaxSize().semantics { contentDescription = description },
+                shape = ClickableSurfaceDefaults.shape(TvDensity.CellShape),
+                colors = ClickableSurfaceDefaults.colors(containerColor = Color.Black, focusedContainerColor = Color.Black),
+                border = ClickableSurfaceDefaults.border(focusedBorder = TvDensity.CellFocusBorder),
+                scale = ClickableSurfaceDefaults.scale(focusedScale = 1f),
+            ) {
+                preview(Modifier.fillMaxSize())
+            }
+        } else {
+            Logo(focusedChannel?.logoUrl, Modifier.fillMaxSize(0.5f).align(Alignment.Center))
+            if (focusedChannel?.logoUrl == null) {
+                Text(
+                    text = focusedChannel?.name ?: stringResource(R.string.livetv_preview_idle),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = UiTokens.OnSurfaceMuted,
+                    modifier = Modifier.align(Alignment.Center),
+                )
+            }
+        }
+        state.lastChannel?.let { last ->
+            TvButton(
+                text = stringResource(R.string.player_last_channel),
+                onClick = { onFullscreen(last) },
+                modifier = Modifier.align(Alignment.BottomEnd).padding(UiTokens.SpaceXs).testTag(LiveTvTags.LAST_CHANNEL),
+            )
+        }
+    }
+}
+
+@Composable
+private fun Logo(url: String?, modifier: Modifier) {
+    if (url == null) return
+    AsyncImage(model = url, contentDescription = null, contentScale = ContentScale.Fit, modifier = modifier)
+}
+
+private val PANEL_BACKGROUND = Color(0xF2101820)
+private const val PANEL_FOCUS_DELAY_MS = 50L

@@ -24,14 +24,18 @@ data class EpgCell(
     val restartable: Boolean,
 )
 
-/** One channel row; an empty [cells] list is a "No guide data" row. */
+/**
+ * One channel row; an empty [cells] list of a [loaded] row is a "No guide data" row. Rows far from
+ * the visible ones are not loaded yet (guide rows load lazily on TV) and have no cells.
+ */
 data class EpgRow(
     val channel: LiveChannel,
     /** 1-based position among the group's playable entries. */
     val number: Int,
     val cells: List<EpgCell>,
+    val loaded: Boolean = true,
 ) {
-    val noGuideData: Boolean get() = cells.isEmpty()
+    val noGuideData: Boolean get() = loaded && cells.isEmpty()
 }
 
 /** A day-jump option; [offset] 0 is today, negative days are in the archive. */
@@ -42,6 +46,23 @@ data class EpgDay(val offset: Int, val date: LocalDate)
  * focused time, used to pick the nearest cell when the remembered programme is no longer shown.
  */
 data class EpgFocus(val channelOrdinal: Int, val programmeId: Long?, val timeMillis: Long)
+
+/**
+ * The focused guide cell for the details area above the guide (TV Live TV): the channel and, when
+ * known, the programme (on a channel name or "No guide data" cell, the programme airing now).
+ */
+data class FocusedProgramme(
+    val channel: LiveChannel,
+    val number: Int,
+    val programmeId: Long?,
+    val title: String?,
+    val subTitle: String?,
+    val description: String?,
+    val startMillis: Long?,
+    val stopMillis: Long?,
+    val timing: ProgrammeTiming?,
+    val catchup: Boolean,
+)
 
 /** OK on the airing programme: Watch live, or Restart when [canRestart]. */
 data class AiringChoice(val channelOrdinal: Int, val programmeId: Long, val title: String?, val canRestart: Boolean)
@@ -78,7 +99,6 @@ data class EpgGridUiState(
     val selectedDayOffset: Int = 0,
     val canPageBack: Boolean = false,
     val canPageForward: Boolean = false,
-    val focus: EpgFocus? = null,
     val airingChoice: AiringChoice? = null,
     val details: ProgrammeDetails? = null,
 ) {

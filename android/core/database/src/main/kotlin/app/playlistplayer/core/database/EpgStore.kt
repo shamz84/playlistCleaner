@@ -203,6 +203,17 @@ class EpgStore(private val db: AppDatabase) {
     suspend fun gridForGroup(playlistId: Long, groupOrdinal: Int, fromMillis: Long, toMillis: Long): List<ChannelProgramme> =
         programmeDao.forGroup(playlistId, groupOrdinal, fromMillis, toMillis, MAX_PROGRAMME_DURATION_MILLIS)
 
+    /** [gridForGroup] for the channels of the group with an ordinal in `[fromOrdinal, toOrdinal]`. */
+    suspend fun gridForGroupRange(
+        playlistId: Long,
+        groupOrdinal: Int,
+        fromOrdinal: Int,
+        toOrdinal: Int,
+        fromMillis: Long,
+        toMillis: Long,
+    ): List<ChannelProgramme> =
+        programmeDao.forGroupRange(playlistId, groupOrdinal, fromOrdinal, toOrdinal, fromMillis, toMillis, MAX_PROGRAMME_DURATION_MILLIS)
+
     /**
      * The programme airing at [nowMillis] (if any) and the following one, from Room only. Provider
      * feeds contain overlapping entries (regional variants), so "next" is the first programme that

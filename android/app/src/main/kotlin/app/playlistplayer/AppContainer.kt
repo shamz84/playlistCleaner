@@ -604,6 +604,9 @@ class AppContainer(context: Context, private val overrides: Overrides = Override
         PlaylistAccountStatusChecker(accountStatusChecker)
     }
 
+    /** Live channels tuned in this session (last-channel shortcut, U22). */
+    val channelHistory = app.playlistplayer.feature.live.ChannelHistory()
+
     /** The single app-scoped player and controller (see [PlaybackHolder] for the lifecycle). */
     val playback: PlaybackHolder = PlaybackHolder(
         createPlayer = {

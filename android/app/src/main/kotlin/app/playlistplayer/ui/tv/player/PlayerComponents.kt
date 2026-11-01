@@ -6,6 +6,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.testTag
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -37,7 +42,11 @@ import app.playlistplayer.ui.tv.components.TvButton
 import java.util.Date
 import java.util.Locale
 
-/** Video output. SurfaceView (not TextureView): correct HDR output and frame timing (U6 harness, U10). */
+/**
+ * Video output. SurfaceView (not TextureView): correct HDR output and frame timing (U6 harness, U10).
+ * There is deliberately no shutter: on a zap the surface keeps showing the previous channel's last
+ * frame until the new stream renders (U22, the `setKeepContentOnPlayerReset` behaviour).
+ */
 @Composable
 internal fun PlayerVideoSurface(exoPlayer: ExoPlayer, modifier: Modifier = Modifier) {
     val surface = remember { mutableStateOf<SurfaceView?>(null) }
@@ -71,6 +80,24 @@ internal fun StatusBanner(status: PlaybackStatus, modifier: Modifier = Modifier)
             .padding(horizontal = 16.dp, vertical = 8.dp)
             .semantics { liveRegion = LiveRegionMode.Polite },
     )
+}
+
+/** Small buffering / reconnecting indicator for a corner of the video (replaces a centre spinner, U22). */
+@Composable
+internal fun CornerIndicator(indicator: PlaybackStatus.Indicator, modifier: Modifier = Modifier) {
+    val text = indicatorText(indicator)
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        modifier = modifier
+            .background(Color(0x99000000), MaterialTheme.shapes.small)
+            .padding(horizontal = 8.dp, vertical = 4.dp)
+            .testTag(LivePlayerTags.CORNER_INDICATOR)
+            .semantics { liveRegion = LiveRegionMode.Polite },
+    ) {
+        CircularProgressIndicator(modifier = Modifier.size(12.dp), color = Color.White, strokeWidth = 2.dp)
+        Text(text = text, color = Color.White, style = MaterialTheme.typography.labelSmall)
+    }
 }
 
 /** Persistent error with Retry (connection limit, account expired, all versions failed). */

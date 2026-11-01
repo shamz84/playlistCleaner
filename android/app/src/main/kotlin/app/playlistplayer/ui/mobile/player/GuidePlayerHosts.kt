@@ -34,7 +34,7 @@ fun MobileChannelPlayerHost(
     FullscreenLandscapeEffect() // held across the deferred first frame, so orientation does not flip back
     val driver = rememberPlayerDriver(playback)
     val viewModel = viewModel(key = "mobile-channel-player") {
-        LivePlayerViewModel(playlistId, ordinal, guide.channels, guide.coordinator, guide.nowNext, driver, guide.clock)
+        LivePlayerViewModel(playlistId, ordinal, guide.channels, guide.coordinator, guide.nowNext, driver, guide.clock, history = guide.history)
     }
     MobileChannelPlayerScreen(
         viewModel = viewModel,

@@ -13,9 +13,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
@@ -24,8 +26,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -35,6 +40,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -50,6 +56,7 @@ import androidx.tv.material3.Surface
 import androidx.tv.material3.Text
 import app.playlistplayer.R
 import app.playlistplayer.feature.epg.AiringChoice
+import app.playlistplayer.feature.epg.EpgCell
 import app.playlistplayer.feature.epg.EpgDay
 import app.playlistplayer.feature.epg.EpgEvent
 import app.playlistplayer.feature.epg.EpgFocus
@@ -65,8 +72,11 @@ import app.playlistplayer.ui.tv.components.TvButton
 import app.playlistplayer.ui.tv.components.TvEmptyState
 import app.playlistplayer.ui.tv.components.TvErrorState
 import app.playlistplayer.ui.tv.components.TvLoadingState
+import app.playlistplayer.ui.tv.theme.TvDensity
 import app.playlistplayer.ui.tv.theme.TvDimens
+import coil3.compose.AsyncImage
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.isActive
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -79,17 +89,24 @@ object EpgTags {
     fun channel(ordinal: Int) = "epg.channel.$ordinal"
 }
 
+/** Rows per lazily loaded block of the TV guide (about three screens of rows). */
+const val TV_GUIDE_ROW_BLOCK = 24
+
 /**
- * Guide grid for the current group (U9). D-pad moves between programmes; Left/Right past the
- * window edge page in time; the day row jumps by day within the archive window; OK plays a
- * catch-up programme, offers Watch live / Restart on the airing one, or shows details; long-press
- * OK (or Info) shows details for any programme; OK on the channel name (or a "No guide data" row)
- * watches the channel live. Focus returns to the remembered programme when the screen is shown
- * again (e.g. back from the player).
+ * Dense TiviMate-style guide grid for the current group (U9, U21). D-pad moves between programmes;
+ * Left/Right past the window edge page in time; OK plays a catch-up programme, offers Watch live /
+ * Restart on the airing one, or shows details; long-press OK (or Info) shows details for any
+ * programme; OK on the channel (logo, number, name) or a "No guide data" row watches the channel
+ * live. Left on the channel column and Menu anywhere call [onOpenGroups]. Focus returns to the
+ * remembered programme when the screen is shown again (e.g. back from the player).
  *
- * [title] replaces the "Guide" heading. With [autoFocus] false the grid does not take focus when
- * it (re)loads, unless focus is requested by bumping [focusRequest] (it then focuses the
- * ViewModel's remembered focus, e.g. after `onFocus(channel, null)` for number entry).
+ * Performance: rows have stable keys and keep their instance while unchanged; the focus is read per
+ * row through `derivedStateOf`, so a focus move recomposes only the rows it leaves and enters (and
+ * the details area that observes `EpgGridViewModel.focusedProgramme`); the visible rows are
+ * reported to [EpgGridViewModel.onVisibleRows] so programmes load lazily around them.
+ *
+ * [title] (the group) is shown above the channel column. With [autoFocus] false the grid does not
+ * take focus when it (re)loads, unless focus is requested by bumping [focusRequest].
  */
 @Composable
 fun EpgGridScreen(
@@ -100,6 +117,7 @@ fun EpgGridScreen(
     title: String? = null,
     autoFocus: Boolean = true,
     focusRequest: Int = 0,
+    onOpenGroups: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val playCatchup by rememberUpdatedState(onPlayCatchup)
@@ -122,15 +140,16 @@ fun EpgGridScreen(
         }
     }
 
-    Column(modifier = modifier.fillMaxSize().padding(TvDimens.ScreenPadding), verticalArrangement = Arrangement.spacedBy(UiTokens.SpaceM)) {
-        Text(text = title ?: stringResource(R.string.epg_title), maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.headlineSmall, color = UiTokens.OnBackground)
-        when {
-            state.emptyGroup -> TvEmptyState(title = stringResource(R.string.epg_empty_group))
-            state.loadFailed -> TvErrorState(message = stringResource(R.string.epg_load_failed), onRetry = viewModel::refresh)
-            state.rows.isEmpty() -> TvLoadingState()
-            else -> {
-                DayRow(state.days, state.selectedDayOffset, onDay = viewModel::jumpToDay, onNow = viewModel::jumpToNow)
-                Grid(state, viewModel, autoFocus, focusRequest)
+    if (!state.emptyGroup && !state.loadFailed && state.rows.isNotEmpty()) {
+        Box(modifier = modifier.fillMaxSize()) { Grid(state, viewModel, title, autoFocus, focusRequest, onOpenGroups) }
+    } else {
+        Column(modifier = modifier.fillMaxSize()) {
+            // The grid shows the group in its ruler; the states show it above.
+            title?.let { Text(text = it, style = MaterialTheme.typography.labelSmall, color = UiTokens.Accent, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+            when {
+                state.emptyGroup -> TvEmptyState(title = stringResource(R.string.epg_empty_group))
+                state.loadFailed -> TvErrorState(message = stringResource(R.string.epg_load_failed), onRetry = viewModel::refresh)
+                else -> TvLoadingState()
             }
         }
     }
@@ -143,43 +162,59 @@ fun EpgGridScreen(
     }
 }
 
+/** "Now" and the day jumps of the group's guide (compact buttons). */
 @Composable
-private fun DayRow(days: List<EpgDay>, selected: Int, onDay: (Int) -> Unit, onNow: () -> Unit) {
+fun EpgDayRow(viewModel: EpgGridViewModel, modifier: Modifier = Modifier) {
+    val gridState = viewModel.state.collectAsStateWithLifecycle()
+    // Days and the selected day only: row reloads and ticks do not recompose the day row.
+    val days by remember(gridState) { derivedStateOf { gridState.value.days to gridState.value.selectedDayOffset } }
     val formatter = remember { DateTimeFormatter.ofPattern("EEE d MMM", Locale.getDefault()) }
-    LazyRow(horizontalArrangement = Arrangement.spacedBy(UiTokens.SpaceS), modifier = Modifier.testTag(EpgTags.DAYS)) {
-        item { TvButton(text = stringResource(R.string.epg_now), onClick = onNow) }
-        items(days, key = { it.offset }) { day ->
+    val (list, selected) = days
+    if (list.isEmpty()) return
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(UiTokens.SpaceXs), modifier = modifier.testTag(EpgTags.DAYS)) {
+        item(key = "now") { TvButton(text = stringResource(R.string.epg_now), onClick = viewModel::jumpToNow) }
+        items(list, key = { it.offset }) { day ->
             val label = when (day.offset) {
                 0 -> stringResource(R.string.epg_today)
                 -1 -> stringResource(R.string.epg_yesterday)
                 1 -> stringResource(R.string.epg_tomorrow)
                 else -> formatter.format(day.date)
             }
-            TvButton(text = if (day.offset == selected) "• $label" else label, onClick = { onDay(day.offset) })
+            TvButton(text = if (day.offset == selected) "• $label" else label, onClick = { viewModel.jumpToDay(day.offset) })
         }
     }
 }
 
 @Composable
-private fun Grid(state: EpgGridUiState, viewModel: EpgGridViewModel, autoFocus: Boolean, focusRequest: Int) {
+private fun Grid(
+    state: EpgGridUiState,
+    viewModel: EpgGridViewModel,
+    title: String?,
+    autoFocus: Boolean,
+    focusRequest: Int,
+    onOpenGroups: () -> Unit,
+) {
     val time = rememberTimeFormatter()
     val listState = rememberLazyListState()
     val focusRequester = remember { FocusRequester() }
-    val focus = state.focus
-    val windowMillis = (state.windowEndMillis - state.windowStartMillis).coerceAtLeast(1)
+    val focusState = viewModel.focusedCell.collectAsStateWithLifecycle()
+    val windowStart = state.windowStartMillis
+    val windowEnd = state.windowEndMillis
+    val windowMillis = (windowEnd - windowStart).coerceAtLeast(1)
 
     val latest by rememberUpdatedState(state)
     val auto by rememberUpdatedState(autoFocus)
+    val openGroups by rememberUpdatedState(onOpenGroups)
     var handledRequest by remember { mutableIntStateOf(0) }
 
     // Restore the remembered programme when the window changes or the screen is shown again, and
     // move focus there when requested.
-    LaunchedEffect(state.windowStartMillis, state.rows.size, focusRequest) {
+    LaunchedEffect(windowStart, state.rows.size, focusRequest) {
         val requested = focusRequest != handledRequest
         handledRequest = focusRequest
         // A requested focus was set on the ViewModel just before: let it reach this composition.
         if (requested) withFrameNanos { }
-        val f = latest.focus ?: return@LaunchedEffect
+        val f = focusState.value ?: return@LaunchedEffect
         val index = latest.rows.indexOfFirst { it.channel.ordinal == f.channelOrdinal }
         if (index >= 0) listState.scrollToItem(index)
         if (auto || requested) {
@@ -187,20 +222,39 @@ private fun Grid(state: EpgGridUiState, viewModel: EpgGridViewModel, autoFocus: 
             runCatching { focusRequester.requestFocus() }
         }
     }
+    // Programmes load lazily around the visible rows.
+    LaunchedEffect(listState, viewModel) {
+        snapshotFlow {
+            val info = listState.layoutInfo.visibleItemsInfo
+            (info.firstOrNull()?.index ?: 0) to (info.lastOrNull()?.index ?: 0)
+        }.distinctUntilChanged().collect { (first, last) -> viewModel.onVisibleRows(first, last) }
+    }
 
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-        val timelineWidth = (maxWidth - CHANNEL_COLUMN - UiTokens.SpaceS).coerceAtLeast(120.dp)
+        val channelColumn = maxWidth * TvDensity.ChannelColumnFraction
+        val timelineWidth = (maxWidth - channelColumn - TvDensity.GuideRowGap).coerceAtLeast(120.dp)
         val dpPerMs = timelineWidth.value / windowMillis
-        Column(verticalArrangement = Arrangement.spacedBy(UiTokens.SpaceXs)) {
-            // Slot header.
-            Row {
-                Box(Modifier.width(CHANNEL_COLUMN + UiTokens.SpaceS))
-                Box(Modifier.width(timelineWidth).height(28.dp)) {
+        val geometry = remember(windowStart, windowEnd, dpPerMs, channelColumn, timelineWidth, state.canPageBack, state.canPageForward) {
+            RowGeometry(windowStart, windowEnd, dpPerMs, channelColumn, timelineWidth, state.canPageBack, state.canPageForward)
+        }
+        Column {
+            // Time ruler: group name over the channel column, slot times over the timeline.
+            Row(modifier = Modifier.height(TvDensity.RulerHeight), verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = title.orEmpty(),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = UiTokens.Accent,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.width(channelColumn + TvDensity.GuideRowGap).padding(end = UiTokens.SpaceS),
+                )
+                Box(Modifier.width(timelineWidth).fillMaxHeight()) {
                     state.slots.forEach { slot ->
                         Text(
                             text = time(slot),
+                            style = MaterialTheme.typography.labelSmall,
                             color = UiTokens.OnSurfaceMuted,
-                            modifier = Modifier.offset(x = ((slot - state.windowStartMillis) * dpPerMs).dp),
+                            modifier = Modifier.offset(x = ((slot - windowStart) * dpPerMs).dp).padding(start = UiTokens.SpaceXs),
                         )
                     }
                 }
@@ -208,26 +262,25 @@ private fun Grid(state: EpgGridUiState, viewModel: EpgGridViewModel, autoFocus: 
             Box(modifier = Modifier.fillMaxSize()) {
                 LazyColumn(
                     state = listState,
-                    verticalArrangement = Arrangement.spacedBy(UiTokens.SpaceXs),
+                    verticalArrangement = Arrangement.spacedBy(TvDensity.GuideRowGap),
                     modifier = Modifier.fillMaxSize().testTag(EpgTags.GRID),
                 ) {
-                    items(state.rows, key = { it.channel.ordinal }) { row ->
-                        GridRow(
+                    items(state.rows, key = { it.channel.ordinal }, contentType = { "row" }) { row ->
+                        GuideRow(
                             row = row,
-                            state = state,
-                            focus = focus,
+                            geometry = geometry,
+                            focusState = focusState,
                             focusRequester = focusRequester,
-                            timelineWidth = timelineWidth,
-                            dpPerMs = dpPerMs,
                             time = time,
                             viewModel = viewModel,
+                            onOpenGroups = { openGroups() },
                         )
                     }
                 }
                 if (state.showNowLine) {
                     Box(
                         modifier = Modifier
-                            .offset(x = CHANNEL_COLUMN + UiTokens.SpaceS + ((state.nowMillis - state.windowStartMillis) * dpPerMs).dp)
+                            .offset(x = channelColumn + TvDensity.GuideRowGap + ((state.nowMillis - windowStart) * dpPerMs).dp)
                             .width(2.dp)
                             .fillMaxHeight()
                             .background(UiTokens.Error)
@@ -239,77 +292,82 @@ private fun Grid(state: EpgGridUiState, viewModel: EpgGridViewModel, autoFocus: 
     }
 }
 
+/** Window and column geometry shared by every row (one instance per window, so rows can skip). */
+private class RowGeometry(
+    val windowStart: Long,
+    val windowEnd: Long,
+    val dpPerMs: Float,
+    val channelColumn: Dp,
+    val timelineWidth: Dp,
+    val canPageBack: Boolean,
+    val canPageForward: Boolean,
+)
+
 @Composable
-private fun GridRow(
+private fun GuideRow(
     row: EpgRow,
-    state: EpgGridUiState,
-    focus: EpgFocus?,
+    geometry: RowGeometry,
+    focusState: State<EpgFocus?>,
     focusRequester: FocusRequester,
-    timelineWidth: Dp,
-    dpPerMs: Float,
     time: (Long) -> String,
     viewModel: EpgGridViewModel,
+    onOpenGroups: () -> Unit,
 ) {
-    val rowFocused = focus?.channelOrdinal == row.channel.ordinal
+    val ordinal = row.channel.ordinal
+    // Only this row's share of the focus: other rows do not recompose when focus moves.
+    val rowFocus by remember(ordinal) { derivedStateOf { focusState.value?.takeIf { it.channelOrdinal == ordinal } } }
+    val focus = rowFocus
     Row(
-        horizontalArrangement = Arrangement.spacedBy(UiTokens.SpaceS),
-        modifier = Modifier.semantics { contentDescription = "${row.number} ${row.channel.name}" },
+        horizontalArrangement = Arrangement.spacedBy(TvDensity.GuideRowGap),
+        modifier = Modifier.height(TvDensity.GuideRowHeight).semantics { contentDescription = "${row.number} ${row.channel.name}" },
     ) {
-        // Channel name: OK watches the channel live.
-        GuideCell(
-            title = "${row.number}  ${row.channel.name}",
-            subtitle = null,
-            timing = null,
-            catchup = false,
+        // Channel: logo, number and name; OK watches the channel live, Left opens the groups.
+        ChannelCell(
+            row = row,
             modifier = Modifier
-                .width(CHANNEL_COLUMN)
-                .height(ROW_HEIGHT)
-                .then(if (rowFocused && focus.programmeId == null && !row.noGuideData) Modifier.focusRequester(focusRequester) else Modifier)
-                .onFocusChanged { if (it.isFocused) viewModel.onFocus(row.channel.ordinal, null) }
-                .testTag(EpgTags.channel(row.channel.ordinal)),
-            onClick = { viewModel.selectChannel(row.channel.ordinal) },
-            onLongClick = null,
+                .width(geometry.channelColumn)
+                .fillMaxHeight()
+                .then(if (focus != null && focus.programmeId == null && !row.noGuideData && row.loaded) Modifier.focusRequester(focusRequester) else Modifier)
+                .onFocusChanged { if (it.isFocused) viewModel.onFocus(ordinal, null) }
+                .onPreviewKeyEvent { event ->
+                    if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                    when (event.nativeKeyEvent.keyCode) {
+                        AndroidKeyEvent.KEYCODE_DPAD_LEFT, AndroidKeyEvent.KEYCODE_MENU -> {
+                            onOpenGroups()
+                            true
+                        }
+                        else -> false
+                    }
+                }
+                .testTag(EpgTags.channel(ordinal)),
+            onClick = { viewModel.selectChannel(ordinal) },
         )
-        Box(modifier = Modifier.width(timelineWidth).height(ROW_HEIGHT)) {
-            if (row.noGuideData) {
+        Box(modifier = Modifier.width(geometry.timelineWidth).fillMaxHeight()) {
+            if (row.noGuideData || !row.loaded) {
                 GuideCell(
-                    title = stringResource(R.string.epg_no_guide_data),
+                    title = stringResource(if (row.loaded) R.string.epg_no_guide_data else R.string.livetv_row_loading),
                     subtitle = null,
                     timing = null,
                     catchup = false,
                     modifier = Modifier
                         .fillMaxSize()
-                        .then(if (rowFocused) Modifier.focusRequester(focusRequester) else Modifier)
-                        .onFocusChanged { if (it.isFocused) viewModel.onFocus(row.channel.ordinal, null) }
-                        .pagingKeys(atStart = true, atEnd = true, state = state, viewModel = viewModel),
-                    onClick = { viewModel.selectChannel(row.channel.ordinal) },
+                        .then(if (focus != null) Modifier.focusRequester(focusRequester) else Modifier)
+                        .onFocusChanged { if (it.isFocused) viewModel.onFocus(ordinal, null) }
+                        .pagingKeys(atStart = true, atEnd = true, geometry = geometry, viewModel = viewModel, onMenu = onOpenGroups),
+                    onClick = { viewModel.selectChannel(ordinal) },
                     onLongClick = null,
                 )
             } else {
                 row.cells.forEach { cell ->
-                    val start = maxOf(cell.startMillis, state.windowStartMillis)
-                    val end = minOf(cell.stopMillis, state.windowEndMillis)
-                    val focused = rowFocused && focus.programmeId == cell.programmeId
-                    GuideCell(
-                        title = cell.title ?: stringResource(R.string.epg_untitled),
-                        subtitle = "${time(cell.startMillis)} – ${time(cell.stopMillis)}",
-                        timing = cell.timing,
-                        catchup = cell.catchup,
-                        modifier = Modifier
-                            .offset(x = ((start - state.windowStartMillis) * dpPerMs).dp)
-                            .width((((end - start) * dpPerMs).dp - 2.dp).coerceAtLeast(8.dp))
-                            .fillMaxHeight()
-                            .then(if (focused) Modifier.focusRequester(focusRequester) else Modifier)
-                            .onFocusChanged { if (it.isFocused) viewModel.onFocus(row.channel.ordinal, cell.programmeId) }
-                            .pagingKeys(
-                                atStart = cell.startMillis <= state.windowStartMillis,
-                                atEnd = cell.stopMillis >= state.windowEndMillis,
-                                state = state,
-                                viewModel = viewModel,
-                                onInfo = { viewModel.showDetails(row.channel.ordinal, cell.programmeId) },
-                            ),
-                        onClick = { viewModel.select(row.channel.ordinal, cell.programmeId) },
-                        onLongClick = { viewModel.showDetails(row.channel.ordinal, cell.programmeId) },
+                    ProgrammeCell(
+                        cell = cell,
+                        ordinal = ordinal,
+                        geometry = geometry,
+                        focused = focus != null && focus.programmeId == cell.programmeId,
+                        focusRequester = focusRequester,
+                        time = time,
+                        viewModel = viewModel,
+                        onOpenGroups = onOpenGroups,
                     )
                 }
             }
@@ -317,33 +375,104 @@ private fun GridRow(
     }
 }
 
-/** Left on the first cell / Right on the last cell pages in time; Info opens details. */
+@Composable
+private fun ProgrammeCell(
+    cell: EpgCell,
+    ordinal: Int,
+    geometry: RowGeometry,
+    focused: Boolean,
+    focusRequester: FocusRequester,
+    time: (Long) -> String,
+    viewModel: EpgGridViewModel,
+    onOpenGroups: () -> Unit,
+) {
+    val start = maxOf(cell.startMillis, geometry.windowStart)
+    val end = minOf(cell.stopMillis, geometry.windowEnd)
+    GuideCell(
+        title = cell.title ?: stringResource(R.string.epg_untitled),
+        subtitle = "${time(cell.startMillis)} – ${time(cell.stopMillis)}",
+        timing = cell.timing,
+        catchup = cell.catchup,
+        modifier = Modifier
+            .offset(x = ((start - geometry.windowStart) * geometry.dpPerMs).dp)
+            .width((((end - start) * geometry.dpPerMs).dp - TvDensity.GuideRowGap).coerceAtLeast(6.dp))
+            .fillMaxHeight()
+            .then(if (focused) Modifier.focusRequester(focusRequester) else Modifier)
+            .onFocusChanged { if (it.isFocused) viewModel.onFocus(ordinal, cell.programmeId) }
+            .pagingKeys(
+                atStart = cell.startMillis <= geometry.windowStart,
+                atEnd = cell.stopMillis >= geometry.windowEnd,
+                geometry = geometry,
+                viewModel = viewModel,
+                onInfo = { viewModel.showDetails(ordinal, cell.programmeId) },
+                onMenu = onOpenGroups,
+            ),
+        onClick = { viewModel.select(ordinal, cell.programmeId) },
+        onLongClick = { viewModel.showDetails(ordinal, cell.programmeId) },
+    )
+}
+
+/** Left on the first cell / Right on the last cell pages in time; Info opens details; Menu the groups. */
 private fun Modifier.pagingKeys(
     atStart: Boolean,
     atEnd: Boolean,
-    state: EpgGridUiState,
+    geometry: RowGeometry,
     viewModel: EpgGridViewModel,
     onInfo: (() -> Unit)? = null,
+    onMenu: () -> Unit,
 ): Modifier = onPreviewKeyEvent { event ->
     if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
     when (event.nativeKeyEvent.keyCode) {
-        AndroidKeyEvent.KEYCODE_DPAD_LEFT -> if (atStart && state.canPageBack) {
+        AndroidKeyEvent.KEYCODE_DPAD_LEFT -> if (atStart && geometry.canPageBack) {
             viewModel.pageBack()
             true
         } else {
             false
         }
-        AndroidKeyEvent.KEYCODE_DPAD_RIGHT -> if (atEnd && state.canPageForward) {
+        AndroidKeyEvent.KEYCODE_DPAD_RIGHT -> if (atEnd && geometry.canPageForward) {
             viewModel.pageForward()
             true
         } else {
             false
         }
-        AndroidKeyEvent.KEYCODE_INFO, AndroidKeyEvent.KEYCODE_MENU -> {
+        AndroidKeyEvent.KEYCODE_INFO -> {
             onInfo?.invoke()
             onInfo != null
         }
+        AndroidKeyEvent.KEYCODE_MENU -> {
+            onMenu()
+            true
+        }
         else -> false
+    }
+}
+
+@Composable
+private fun ChannelCell(row: EpgRow, modifier: Modifier, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        modifier = modifier,
+        shape = ClickableSurfaceDefaults.shape(TvDensity.CellShape),
+        colors = ClickableSurfaceDefaults.colors(
+            containerColor = UiTokens.Surface,
+            focusedContainerColor = UiTokens.SurfaceFocused,
+            contentColor = UiTokens.OnBackground,
+            focusedContentColor = UiTokens.OnBackground,
+        ),
+        border = ClickableSurfaceDefaults.border(focusedBorder = TvDensity.CellFocusBorder),
+        scale = ClickableSurfaceDefaults.scale(focusedScale = 1f),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(TvDensity.CellPadding),
+            modifier = Modifier.fillMaxSize().padding(horizontal = TvDensity.CellPadding),
+        ) {
+            Box(modifier = Modifier.size(TvDensity.LogoSize), contentAlignment = Alignment.Center) {
+                row.channel.logoUrl?.let { AsyncImage(model = it, contentDescription = null, contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize()) }
+            }
+            Text(text = row.number.toString(), style = MaterialTheme.typography.labelMedium, color = UiTokens.OnSurfaceMuted)
+            Text(text = row.channel.name, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
     }
 }
 
@@ -359,7 +488,7 @@ private fun GuideCell(
 ) {
     val container = when (timing) {
         ProgrammeTiming.AIRING -> UiTokens.SurfaceVariant
-        ProgrammeTiming.PAST -> Color(0xFF141D26)
+        ProgrammeTiming.PAST -> PAST_CELL
         else -> UiTokens.Surface
     }
     val catchupDescription = stringResource(R.string.epg_catchup_icon_description)
@@ -369,22 +498,25 @@ private fun GuideCell(
         modifier = modifier.semantics {
             contentDescription = listOfNotNull(title, subtitle, if (catchup) catchupDescription else null).joinToString(", ")
         },
-        shape = ClickableSurfaceDefaults.shape(TvDimens.Shape),
+        shape = ClickableSurfaceDefaults.shape(TvDensity.CellShape),
         colors = ClickableSurfaceDefaults.colors(
             containerColor = container,
             focusedContainerColor = UiTokens.SurfaceFocused,
             contentColor = UiTokens.OnBackground,
             focusedContentColor = UiTokens.OnBackground,
         ),
-        border = ClickableSurfaceDefaults.border(focusedBorder = TvDimens.FocusBorder),
+        border = ClickableSurfaceDefaults.border(focusedBorder = TvDensity.CellFocusBorder),
         scale = ClickableSurfaceDefaults.scale(focusedScale = 1f),
     ) {
-        Column(modifier = Modifier.padding(horizontal = UiTokens.SpaceS, vertical = UiTokens.SpaceXs)) {
+        Column(
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.fillMaxSize().padding(horizontal = TvDensity.CellPadding),
+        ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(UiTokens.SpaceXs)) {
-                if (catchup) Text(text = CATCHUP_ICON, color = UiTokens.Accent)
-                Text(text = title, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyLarge)
+                if (catchup) Text(text = CATCHUP_ICON, color = UiTokens.Accent, style = MaterialTheme.typography.bodyMedium)
+                Text(text = title, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyMedium)
             }
-            subtitle?.let { Text(text = it, maxLines = 1, color = UiTokens.OnSurfaceMuted, style = MaterialTheme.typography.bodySmall) }
+            subtitle?.let { Text(text = it, maxLines = 1, color = UiTokens.OnSurfaceMuted, style = MaterialTheme.typography.labelSmall) }
         }
     }
 }
@@ -446,7 +578,6 @@ private fun DetailsDialog(details: ProgrammeDetails, onPlay: () -> Unit, onDismi
     LaunchedEffect(details) { runCatching { focus.requestFocus() } }
 }
 
-private val CHANNEL_COLUMN = 240.dp
-private val ROW_HEIGHT = 64.dp
+private val PAST_CELL = Color(0xFF141D26)
 private const val CATCHUP_ICON = "↺" // ↺
 private const val TICK_MS = 60_000L

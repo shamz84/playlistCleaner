@@ -64,6 +64,10 @@ import app.playlistplayer.ui.tv.navigation.TvScreen
 import app.playlistplayer.ui.tv.onboarding.OnboardingScreen
 import app.playlistplayer.ui.tv.player.CatchupPlayerScreen
 import app.playlistplayer.ui.tv.player.LivePlayerScreen
+import app.playlistplayer.ui.tv.player.PlayerVideoSurface
+import app.playlistplayer.feature.live.isStreamActive
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import app.playlistplayer.ui.tv.search.SearchScreen
 import app.playlistplayer.ui.tv.settings.TvConfirmDialog
 import app.playlistplayer.ui.tv.settings.TvPinPromptDialog
@@ -214,7 +218,15 @@ private fun TvApp(dependencies: TvRootDependencies?, onAddPlaylist: () -> Unit) 
         key(top.id) {
             EntryScope(top, stores, saveable) {
                 Box(modifier = Modifier.fillMaxSize().background(UiTokens.Background)) {
-                    TvEntryContent(top, dependencies, push = ::push, replaceTop = { navigate(stack.replaceTop(it)) }, onClose = { close(top) })
+                    TvEntryContent(
+                        top,
+                        dependencies,
+                        push = ::push,
+                        replaceTop = { navigate(stack.replaceTop(it)) },
+                        onClose = { close(top) },
+                        // Back from the live player to Live TV: the stream keeps playing in the preview.
+                        keepLivePlaying = { stack.top == null && shell.state.value.current == Destination.LiveTv },
+                    )
                 }
             }
         }
@@ -223,6 +235,11 @@ private fun TvApp(dependencies: TvRootDependencies?, onAddPlaylist: () -> Unit) 
     // PIN prompts raised outside Settings (Settings shows its own while it is on screen).
     val shellState by shell.state.collectAsStateWithLifecycle()
     val settingsVisible = top == null && shellState.current == Destination.Settings && dependencies?.screens != null
+    // The Live TV preview keeps a stream playing; any other destination stops it.
+    val showsOtherDestination = top == null && shellState.current != Destination.LiveTv
+    LaunchedEffect(showsOtherDestination) {
+        if (showsOtherDestination) dependencies?.playback?.controller?.stop()
+    }
     dependencies?.app?.let { app -> if (!settingsVisible) TvGlobalPinPrompt(app.pinPrompts) }
 }
 
@@ -274,7 +291,13 @@ private fun TvDestination(
             val guide = dependencies?.guide
             if (guide != null && dependencies.playback != null) {
                 val liveTv = viewModel(key = "tv-livetv") {
-                    LiveTvViewModel(dependencies.liveBrowseSource, { playlistId -> guide.coordinator.lastChannel(playlistId) }, liveText)
+                    LiveTvViewModel(
+                        dependencies.liveBrowseSource,
+                        { playlistId -> guide.coordinator.lastChannel(playlistId) },
+                        liveText,
+                        history = guide.history.state,
+                        streamActive = dependencies.playback.controller.state.map { it.isStreamActive() }.distinctUntilChanged(),
+                    )
                 }
                 LaunchedEffect(pendingGroup) {
                     pendingGroup?.let {
@@ -287,6 +310,9 @@ private fun TvDestination(
                     guide = guide,
                     onPlayChannel = { channel -> playChannel(channel.playlistId, channel.ordinal) },
                     onPlayCatchup = { request -> push(TvScreen.CatchupPlayer(request)) },
+                    // The app's single player: the preview is the stream already playing.
+                    preview = { modifier -> PlayerVideoSurface(dependencies.playback.player.exoPlayer, modifier) },
+                    onFullscreen = { ref -> playChannel(ref.playlistId, ref.ordinal) },
                 )
             }
             // Without the guide wiring: the plain channel list.
@@ -338,6 +364,7 @@ private fun TvEntryContent(
     push: (TvScreen) -> Unit,
     replaceTop: (TvScreen) -> Unit,
     onClose: () -> Unit,
+    keepLivePlaying: () -> Boolean = { false },
 ) {
     val vod = dependencies?.vod
     val playback = dependencies?.playback
@@ -347,13 +374,14 @@ private fun TvEntryContent(
             if (playback == null || guide == null) return Unavailable(onClose)
             val driver = remember(playback) { ExoPlayerDriver(playback.controller, playback.player) }
             val viewModel = viewModel(key = "tv-live-player") {
-                LivePlayerViewModel(screen.playlistId, screen.ordinal, guide.channels, guide.coordinator, guide.nowNext, driver, guide.clock)
+                LivePlayerViewModel(screen.playlistId, screen.ordinal, guide.channels, guide.coordinator, guide.nowNext, driver, guide.clock, history = guide.history)
             }
             LivePlayerScreen(
                 viewModel = viewModel,
                 player = playback.player,
                 onStartCatchup = { request -> push(TvScreen.CatchupPlayer(request)) },
                 onExit = onClose,
+                keepPlayingOnExit = keepLivePlaying,
             )
         }
         is TvScreen.CatchupPlayer -> {

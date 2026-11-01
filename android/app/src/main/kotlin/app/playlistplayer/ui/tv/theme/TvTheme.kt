@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Border
 import androidx.tv.material3.MaterialTheme
@@ -29,23 +30,26 @@ private val TvColors = darkColorScheme(
 )
 
 /**
- * 10-foot type scale: tv-material defaults with body and label sizes raised so running text is at
- * least 18 sp (readable from about 3 m on a 1080p panel at 960x540 dp).
+ * Compact 10-foot type scale (U21, R37), TiviMate density: Fire TV reports 960x540 dp at 1080p and
+ * at 4K, so the old 18-22 sp body text looked oversized. Running text is 13-14 sp, labels and the
+ * guide ruler 11-12 sp; titles step up by about 2 sp. Every TV screen (shell rail, Live TV, VOD
+ * cards, settings) takes it through [TvTheme].
  */
 private val TvTypography: Typography = Typography().run {
     copy(
-        headlineLarge = headlineLarge.copy(fontSize = 40.sp, lineHeight = 48.sp),
-        headlineMedium = headlineMedium.copy(fontSize = 34.sp, lineHeight = 42.sp),
-        headlineSmall = headlineSmall.copy(fontSize = 28.sp, lineHeight = 36.sp),
-        titleLarge = titleLarge.copy(fontSize = 26.sp, lineHeight = 34.sp),
-        titleMedium = titleMedium.copy(fontSize = 22.sp, lineHeight = 30.sp, fontWeight = FontWeight.Medium),
-        titleSmall = titleSmall.copy(fontSize = 20.sp, lineHeight = 28.sp),
-        bodyLarge = bodyLarge.copy(fontSize = 22.sp, lineHeight = 30.sp),
-        bodyMedium = bodyMedium.copy(fontSize = 20.sp, lineHeight = 28.sp),
-        bodySmall = bodySmall.copy(fontSize = 18.sp, lineHeight = 26.sp),
-        labelLarge = labelLarge.copy(fontSize = 20.sp, lineHeight = 26.sp),
-        labelMedium = labelMedium.copy(fontSize = 18.sp, lineHeight = 24.sp),
-        labelSmall = labelSmall.copy(fontSize = 16.sp, lineHeight = 22.sp),
+        displaySmall = displaySmall.copy(fontSize = 30.sp, lineHeight = 36.sp),
+        headlineLarge = headlineLarge.copy(fontSize = 26.sp, lineHeight = 32.sp),
+        headlineMedium = headlineMedium.copy(fontSize = 22.sp, lineHeight = 28.sp),
+        headlineSmall = headlineSmall.copy(fontSize = 19.sp, lineHeight = 24.sp),
+        titleLarge = titleLarge.copy(fontSize = 17.sp, lineHeight = 22.sp),
+        titleMedium = titleMedium.copy(fontSize = 15.sp, lineHeight = 20.sp, fontWeight = FontWeight.Medium),
+        titleSmall = titleSmall.copy(fontSize = 14.sp, lineHeight = 18.sp),
+        bodyLarge = bodyLarge.copy(fontSize = 14.sp, lineHeight = 19.sp),
+        bodyMedium = bodyMedium.copy(fontSize = 13.sp, lineHeight = 17.sp),
+        bodySmall = bodySmall.copy(fontSize = 12.sp, lineHeight = 16.sp),
+        labelLarge = labelLarge.copy(fontSize = 13.sp, lineHeight = 17.sp),
+        labelMedium = labelMedium.copy(fontSize = 12.sp, lineHeight = 16.sp),
+        labelSmall = labelSmall.copy(fontSize = 11.sp, lineHeight = 14.sp),
     )
 }
 
@@ -67,4 +71,32 @@ object TvDimens {
         border = BorderStroke(UiTokens.FocusBorderWidth, UiTokens.FocusBorder),
         shape = RoundedCornerShape(UiTokens.CornerRadius),
     )
+}
+
+/** Compact spacing tokens of the Live TV guide (U21, R37); tune on the device at 1080p and 4K. */
+object TvDensity {
+    /** Share of the screen height taken by the details + preview area above the guide. */
+    const val DetailsFraction = 0.35f
+
+    /** Share of the guide width taken by the logo / number / name column. */
+    const val ChannelColumnFraction = 0.22f
+
+    val GuideRowHeight = 48.dp
+    val GuideRowGap = 2.dp
+    val RulerHeight = 20.dp
+    val CellPadding = 6.dp
+    val LogoSize = 32.dp
+    val GroupsPanelWidth = 260.dp
+    val FocusBorderWidth = 2.dp
+
+    /** Tighter than [TvDimens.ScreenPadding] (still overscan-safe on Fire TV, which reports no overscan). */
+    val ScreenPadding = PaddingValues(horizontal = 32.dp, vertical = 18.dp)
+
+    /** Thinner focus border for dense guide cells (the cell colour changes too). */
+    val CellFocusBorder = Border(
+        border = BorderStroke(FocusBorderWidth, UiTokens.FocusBorder),
+        shape = RoundedCornerShape(4.dp),
+    )
+
+    val CellShape = RoundedCornerShape(4.dp)
 }

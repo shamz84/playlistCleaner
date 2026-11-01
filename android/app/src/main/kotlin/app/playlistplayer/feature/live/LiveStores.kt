@@ -76,6 +76,20 @@ fun interface NowNextSource {
 /** Guide rows for one group: `EpgStore::gridForGroup` in the app. */
 fun interface EpgGridSource {
     suspend fun gridForGroup(playlistId: Long, groupOrdinal: Int, fromMillis: Long, toMillis: Long): List<ChannelProgramme>
+
+    /**
+     * Guide rows of the group's channels with an ordinal in `[fromOrdinal, toOrdinal]` (rows loaded
+     * lazily around the visible channels). The default filters [gridForGroup].
+     */
+    suspend fun gridForChannels(
+        playlistId: Long,
+        groupOrdinal: Int,
+        fromOrdinal: Int,
+        toOrdinal: Int,
+        fromMillis: Long,
+        toMillis: Long,
+    ): List<ChannelProgramme> =
+        gridForGroup(playlistId, groupOrdinal, fromMillis, toMillis).filter { it.channelOrdinal in fromOrdinal..toOrdinal }
 }
 
 /** One programme by Room id: `EpgStore::programme` in the app. */

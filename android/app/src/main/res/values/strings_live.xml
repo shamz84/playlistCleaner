@@ -59,4 +59,10 @@
     <string name="epg_details_not_available">Not available on catch-up.</string>
     <string name="epg_details_upcoming">Upcoming</string>
     <string name="epg_details_airing">On now</string>
+    <!-- U21 / U22: Live TV preview and the last-channel shortcut. -->
+    <string name="player_last_channel">Last channel</string>
+    <string name="livetv_catchup_badge">Catch-up</string>
+    <string name="livetv_preview_description">Now playing: %1$s. Select for full screen.</string>
+    <string name="livetv_preview_idle">Nothing playing</string>
+    <string name="livetv_row_loading">…</string>
 </resources>

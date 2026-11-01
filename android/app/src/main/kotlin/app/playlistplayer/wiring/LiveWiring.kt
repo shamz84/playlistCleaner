@@ -174,5 +174,13 @@ class PlaylistAccountStatusChecker(
 }
 
 /** `EpgStore::gridForGroup` for the guide. */
-fun EpgStore.gridSource(): app.playlistplayer.feature.live.EpgGridSource =
-    app.playlistplayer.feature.live.EpgGridSource { playlistId, groupOrdinal, from, to -> gridForGroup(playlistId, groupOrdinal, from, to) }
+fun EpgStore.gridSource(): app.playlistplayer.feature.live.EpgGridSource {
+    val store = this
+    return object : app.playlistplayer.feature.live.EpgGridSource {
+        override suspend fun gridForGroup(playlistId: Long, groupOrdinal: Int, fromMillis: Long, toMillis: Long) =
+            store.gridForGroup(playlistId, groupOrdinal, fromMillis, toMillis)
+
+        override suspend fun gridForChannels(playlistId: Long, groupOrdinal: Int, fromOrdinal: Int, toOrdinal: Int, fromMillis: Long, toMillis: Long) =
+            store.gridForGroupRange(playlistId, groupOrdinal, fromOrdinal, toOrdinal, fromMillis, toMillis)
+    }
+}

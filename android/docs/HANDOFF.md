@@ -30,7 +30,12 @@ Both agents were stopped by the spend limit before running tests.
 1. U16 + U17 are done and committed (`da44887`): 398 app tests pass apart from the known flaky settings test, which passed on rerun; lint 0 errors. Needs a Fire TV check: screensaver stays off during playback; app opens on Live TV.
 2. U18 is done and committed: TMDB weekly Trending (only catalog matches, refreshed at most daily, hidden without a key), Continue watching, full list with Recently added / A–Z / Release year sort, "Series" → "TV Shows". DB is v5. Tests and lint (0 errors) pass. Needs a device check: Trending fills from the real catalog, D-pad focus on TV sort chips (experimental tv-material chips), grid paging and column count, TV Shows "Next" episode for shows without cached episode lists (may trigger network calls).
 
-## Phase 5 (planned 2026-11-01, not started)
+## Phase 5 progress
+
+- U21 + U22 done and committed (no device check yet): TiviMate-style Live TV (details + live preview on top, dense guide, slide-in groups panel), smaller TV type scale and `TvDensity` tokens app-wide, guide rows loaded lazily in blocks of 24, zap shows info overlay immediately with a corner buffering indicator, last-channel shortcut (KEYCODE_LAST_CHANNEL + overlay button; phone button). Behaviour change: Back in the guide opens the groups panel; Menu opens groups. Check on device: guide scroll speed, text size at 1080p/4K, preview continues after Back from fullscreen, last frame kept while zapping.
+- U19 (measure), U20 (cheap VOD path), U23 (audio/subtitles) still to do.
+
+## Phase 5 (planned 2026-11-01)
 
 Second device test: the U18 build made the whole Fire TV sluggish. User feedback is captured in the plan as R34–R40 and units U19–U23: measure first on the Fire TV (U19), then a cheap VOD data path (U20), TiviMate-style guide layout with smaller 4K-correct text (U21, reference image tivimatenederland.com hidegroup1), no spinner on zap plus a last-channel shortcut (U22, reference tivimate.com screen_01), audio/subtitle selection on all on-demand playback (U23). Open decision: return to a cleaned category list for Movies/TV Shows, or keep one list computed in the background — decide after U19 measurements.
 

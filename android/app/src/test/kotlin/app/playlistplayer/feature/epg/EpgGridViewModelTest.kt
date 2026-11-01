@@ -94,7 +94,7 @@ class EpgGridViewModelTest {
         assertThat(s.cell(14, 6).catchup).isTrue()
 
         // Focus starts on the airing programme of the first row.
-        assertThat(s.focus).isEqualTo(EpgFocus(10, 2, now))
+        assertThat(vm.focusedCell.value).isEqualTo(EpgFocus(10, 2, now))
     }
 
     @Test
@@ -261,17 +261,59 @@ class EpgGridViewModelTest {
         now += 10 * 60_000
         vm.onReturn()
         advanceUntilIdle()
-        assertThat(vm.state.value.focus?.channelOrdinal).isEqualTo(11)
-        assertThat(vm.state.value.focus?.programmeId).isEqualTo(5)
+        assertThat(vm.focusedCell.value?.channelOrdinal).isEqualTo(11)
+        assertThat(vm.focusedCell.value?.programmeId).isEqualTo(5)
         assertThat(vm.state.value.windowStartMillis).isEqualTo(utc("2026-10-29T19:30:00Z"))
 
         // Paging away and back keeps the row, then the programme.
         vm.pageForward()
         advanceUntilIdle()
-        assertThat(vm.state.value.focus?.channelOrdinal).isEqualTo(11)
+        assertThat(vm.focusedCell.value?.channelOrdinal).isEqualTo(11)
         vm.pageBack()
         advanceUntilIdle()
-        assertThat(vm.state.value.focus?.channelOrdinal).isEqualTo(11)
-        assertThat(vm.state.value.focus?.programmeId).isEqualTo(5)
+        assertThat(vm.focusedCell.value?.channelOrdinal).isEqualTo(11)
+        assertThat(vm.focusedCell.value?.programmeId).isEqualTo(5)
+    }
+
+    @Test
+    fun `the focused cell drives the details and a channel name shows the airing programme`() = runTest(main.dispatcher) {
+        val vm = viewModel()
+        advanceUntilIdle()
+        assertThat(vm.focusedProgramme.value?.title).isEqualTo("The Celebrity Traitors")
+
+        vm.onFocus(11, 5)
+        val focused = vm.focusedProgramme.value!!
+        assertThat(focused.channel).isEqualTo(two)
+        assertThat(focused.number).isEqualTo(2)
+        assertThat(focused.title).isEqualTo("University Challenge")
+        assertThat(focused.timing).isEqualTo(ProgrammeTiming.AIRING)
+
+        vm.onFocus(14, 6)
+        assertThat(vm.focusedProgramme.value?.catchup).isTrue()
+
+        vm.onFocus(10, null)
+        assertThat(vm.focusedProgramme.value?.title).isEqualTo("The Celebrity Traitors")
+        // Focus moves never re-emit the rows.
+        val rows = vm.state.value.rows
+        vm.onFocus(11, 4)
+        assertThat(vm.state.value.rows).isSameInstanceAs(rows)
+    }
+
+    @Test
+    fun `with row blocks only the rows near the visible ones are loaded`() = runTest(main.dispatcher) {
+        val vm = EpgGridViewModel(GroupKey(1, 2), channels, grid, resolver, clock = { now }, zone = zone, rowBlock = 2)
+        advanceUntilIdle()
+        assertThat(vm.state.value.rows.map { it.loaded }).containsExactly(true, true, false, false).inOrder()
+        // Not loaded yet is not "No guide data".
+        assertThat(vm.state.value.row(14).noGuideData).isFalse()
+        val first = vm.state.value.row(10)
+
+        vm.onVisibleRows(2, 3)
+        advanceUntilIdle()
+        assertThat(vm.state.value.rows.map { it.loaded }).containsExactly(true, true, true, true).inOrder()
+        assertThat(vm.state.value.cell(14, 6).catchup).isTrue()
+        assertThat(vm.state.value.row(13).noGuideData).isTrue()
+        // Unchanged rows keep their instance.
+        assertThat(vm.state.value.row(10)).isSameInstanceAs(first)
     }
 }

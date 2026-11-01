@@ -71,8 +71,27 @@ data class LivePlayerUiState(
     val startError: LiveStartError? = null,
     /** Audio and subtitle tracks of the playing stream (fed by the screen from the player). */
     val tracks: TrackSelectionModel = TrackSelectionModel(),
+    /**
+     * Zapped and the new channel has not rendered its first frame yet: the overlay shows the new
+     * channel while the surface keeps the last frame of the previous one (R38).
+     */
+    val awaitingFirstFrame: Boolean = false,
+    /** A previous channel exists: the "Last channel" shortcut is offered (R39). */
+    val hasLastChannel: Boolean = false,
 ) {
     val hasOtherVersions: Boolean get() = versions.size > 1
+
+    /**
+     * The small corner indicator that replaces the centre spinner (R38): buffering while tuning or
+     * before the first frame, otherwise the player's own indicator; nothing behind an error panel.
+     */
+    val cornerIndicator: PlaybackStatus.Indicator?
+        get() = when {
+            startError != null || status.error != null -> null
+            status.indicator != null -> status.indicator
+            loading || awaitingFirstFrame -> PlaybackStatus.Indicator.BUFFERING
+            else -> null
+        }
 }
 
 sealed interface LivePlayerEvent {
@@ -89,6 +108,12 @@ sealed interface LivePlayerEvent {
  * dispose stops the shared driver, and must run first). Shown again after a catch-up session used
  * the same driver, [start] resumes live ([resumeLive]). The UI calls [tick] about every 30 s to
  * refresh now/next and the restart offer.
+ *
+ * Zapping (U22): the overlay shows the new channel and its now/next at once (looked up while the
+ * plan is built), [LivePlayerUiState.cornerIndicator] replaces a spinner. Every tune is recorded in
+ * the session's [history]; [lastChannel] toggles between the two most recent channels. Started on
+ * the channel the shared player is already playing (fullscreen from the Live TV preview), the
+ * stream is adopted instead of re-opened, so there is never a second provider connection.
  */
 class LivePlayerViewModel(
     private val playlistId: Long,
@@ -99,6 +124,7 @@ class LivePlayerViewModel(
     private val driver: PlayerDriver,
     private val clock: () -> Long = System::currentTimeMillis,
     private val overlayTimeoutMs: Long = DEFAULT_OVERLAY_TIMEOUT_MS,
+    private val history: ChannelHistory = ChannelHistory(),
 ) : ViewModel() {
 
     private val mutableState = MutableStateFlow(LivePlayerUiState())
@@ -121,6 +147,9 @@ class LivePlayerViewModel(
 
     init {
         viewModelScope.launch { driver.state.collect(::onPlaybackState) }
+        viewModelScope.launch {
+            history.state.collect { h -> mutableState.update { it.copy(hasLastChannel = h.previous != null) } }
+        }
     }
 
     /**
@@ -148,7 +177,7 @@ class LivePlayerViewModel(
             current != null -> {
                 val playingId = mutableState.value.currentVersionId
                 val ordered = current.sources.sortedBy { if (it.id == playingId) 0 else 1 }
-                mutableState.update { it.copy(versionsOpen = false) }
+                mutableState.update { it.copy(versionsOpen = false, awaitingFirstFrame = true) }
                 showOverlay()
                 driver.play(ordered)
                 viewModelScope.launch { refreshNowNext() }
@@ -165,7 +194,7 @@ class LivePlayerViewModel(
             return
         }
         loadGroup(channel)
-        tune(channel)
+        tune(channel, adopt = true)
     }
 
     private suspend fun loadGroup(channel: LiveChannel) {
@@ -175,12 +204,15 @@ class LivePlayerViewModel(
 
     // ---- tuning ----
 
-    private fun tune(channel: LiveChannel) {
+    private fun tune(channel: LiveChannel, adopt: Boolean = false) {
         tuneJob?.cancel()
+        plan = null
+        history.record(ChannelRef(channel.playlistId, channel.ordinal))
         tuneJob = viewModelScope.launch {
             mutableState.update {
                 it.copy(
                     loading = true,
+                    awaitingFirstFrame = true,
                     channel = channel,
                     number = numberOf(channel),
                     playableCount = group.count { c -> c.isPlayable },
@@ -191,28 +223,52 @@ class LivePlayerViewModel(
                 )
             }
             showOverlay()
+            // Now/next fills the overlay while the plan is built (no wait for the stream).
+            launch { refreshNowNext() }
             when (val result = coordinator.tune(channel)) {
-                is LivePlanResult.Ready -> play(result.plan)
+                is LivePlanResult.Ready -> play(result.plan, adopt)
                 LivePlanResult.NoAccount -> fail(LiveStartError.NO_ACCOUNT)
                 LivePlanResult.NotPlayable -> fail(LiveStartError.NOT_PLAYABLE)
             }
-            refreshNowNext()
         }
     }
 
-    private fun play(newPlan: LivePlan) {
+    /**
+     * Plays [newPlan]; with [adopt], a stream of the plan the shared player is already playing
+     * (opened from the Live TV preview) is kept instead of re-opened.
+     */
+    private fun play(newPlan: LivePlan, adopt: Boolean = false) {
         plan = newPlan
-        val primary = newPlan.sources.first()
+        val playing = driver.state.value
+        val adopted = playing.source?.takeIf { source -> adopt && playing.isStreamActive() && newPlan.sources.any { it.id == source.id } }
+        val current = adopted ?: newPlan.sources.first()
         mutableState.update {
             it.copy(
                 loading = false,
-                currentVersionId = primary.id,
-                currentVersionLabel = primary.label,
-                qualityBadge = primary.versionTier.badge(),
-                versions = items(newPlan, primary.id),
+                awaitingFirstFrame = if (adopted != null) playing !is PlaybackState.Playing else it.awaitingFirstFrame,
+                currentVersionId = current.id,
+                currentVersionLabel = current.label,
+                qualityBadge = current.versionTier.badge(),
+                versions = items(newPlan, current.id),
             )
         }
-        driver.play(newPlan.sources)
+        if (adopted == null) driver.play(newPlan.sources)
+    }
+
+    /** "Last channel" (R39): tunes the previous channel of the session (any group or playlist). */
+    fun lastChannel() {
+        val target = history.lastChannel ?: return
+        if (!started) return
+        group.firstOrNull { it.playlistId == target.playlistId && it.ordinal == target.ordinal }?.let {
+            tune(it)
+            return
+        }
+        tuneJob?.cancel()
+        tuneJob = viewModelScope.launch {
+            val channel = channels.channel(target.playlistId, target.ordinal) ?: return@launch
+            loadGroup(channel)
+            tune(channel)
+        }
     }
 
     private fun fail(error: LiveStartError) {
@@ -332,18 +388,21 @@ class LivePlayerViewModel(
         val status = PlaybackStatus.from(state)
         val source = state.source
         val current = plan
+        val firstFrame = state is PlaybackState.Playing && source != null && current != null && current.sources.any { it.id == source.id }
         mutableState.update { s ->
+            val awaiting = s.awaitingFirstFrame && !firstFrame
             if (source != null && current != null && current.sources.any { it.id == source.id } && source.id != s.currentVersionId) {
                 // Failover moved to another version.
                 s.copy(
                     status = status,
+                    awaitingFirstFrame = awaiting,
                     currentVersionId = source.id,
                     currentVersionLabel = source.label,
                     qualityBadge = source.versionTier.badge(),
                     versions = items(current, source.id),
                 )
             } else {
-                s.copy(status = status)
+                s.copy(status = status, awaitingFirstFrame = awaiting)
             }
         }
     }

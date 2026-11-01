@@ -13,6 +13,12 @@ import androidx.compose.ui.test.printToString
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
+import app.playlistplayer.ui.common.live.LiveTvViewModel
 import androidx.compose.ui.test.onAllNodesWithText
 import app.playlistplayer.core.consolidation.VodKind
 import app.playlistplayer.feature.live.LastChannel
@@ -161,10 +167,15 @@ class AppWiringTest {
         assertThat(container.contentVisibility.isVodCategoryHidden(id, VodKind.MOVIE, "12")).isTrue()
         assertThat(container.contentVisibility.isVodCategoryHidden(id, VodKind.MOVIE, "1")).isFalse()
 
-        // Live TV (TV): the group rail beside the guide offers only visible groups.
+        // Live TV (TV): the groups panel offers only visible groups.
         val dependencies = container.uiDependencies()
-        compose.setContent { TvRoot(dependencies.tv) }
+        val owner = object : ViewModelStoreOwner {
+            override val viewModelStore = ViewModelStore()
+        }
+        compose.setContent { CompositionLocalProvider(LocalViewModelStoreOwner provides owner) { TvRoot(dependencies.tv) } }
         waitForTag(LiveTvTags.ROOT)
+        val noFactory = object : ViewModelProvider.Factory {}
+        compose.runOnIdle { ViewModelProvider(owner, noFactory)["tv-livetv", LiveTvViewModel::class.java].openGroupsPanel() }
         waitForText("🇬🇧 UK")
         compose.onAllNodesWithText("⚽ Sports", substring = true).assertCountEquals(0)
         assertThat(compose.onAllNodesWithText("🎬 Movies", substring = true).fetchSemanticsNodes()).isNotEmpty()

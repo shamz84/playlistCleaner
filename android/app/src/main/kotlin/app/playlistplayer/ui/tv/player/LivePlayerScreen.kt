@@ -65,6 +65,8 @@ object LivePlayerTags {
     const val OVERLAY = "livePlayer.overlay"
     const val VERSIONS = "livePlayer.versions"
     const val NUMBER_ENTRY = "livePlayer.numberEntry"
+    const val LAST_CHANNEL = "livePlayer.lastChannel"
+    const val CORNER_INDICATOR = "livePlayer.cornerIndicator"
 }
 
 /**
@@ -73,7 +75,13 @@ object LivePlayerTags {
  * - Up / Channel+ and Down / Channel−: channel up/down within the current group;
  * - digits: number entry (position within the group);
  * - Menu / Info: "Other versions";
+ * - Last channel (KEYCODE_LAST_CHANNEL, or "Last channel" on the overlay): the previous channel;
  * - Back: closes the panel, then the overlay, then leaves the player.
+ *
+ * Zapping (U22): the overlay shows the new channel at once while the SurfaceView keeps the last
+ * frame until the new stream renders; buffering is a small corner indicator, never a centre
+ * spinner. With [keepPlayingOnExit] true when leaving (back to Live TV), the stream keeps playing
+ * for the Live TV preview.
  *
  * [player] is the controller's [ConfiguredPlayer] (video surface only); the ViewModel drives
  * playback through its `PlayerDriver`.
@@ -85,8 +93,10 @@ fun LivePlayerScreen(
     onStartCatchup: (CatchupRequest) -> Unit,
     onExit: () -> Unit,
     modifier: Modifier = Modifier,
+    keepPlayingOnExit: () -> Boolean = { false },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val keepPlaying by rememberUpdatedState(keepPlayingOnExit)
     val startCatchup by rememberUpdatedState(onStartCatchup)
     val rootFocus = remember { FocusRequester() }
     val buttonsFocus = remember { FocusRequester() }
@@ -107,7 +117,7 @@ fun LivePlayerScreen(
             viewModel.tick()
         }
     }
-    DisposableEffect(viewModel) { onDispose { viewModel.stop() } }
+    DisposableEffect(viewModel) { onDispose { if (!keepPlaying()) viewModel.stop() } }
 
     val panelOpen = state.versionsOpen
     val blockingPanel = state.status.error != null || state.startError != null
@@ -153,6 +163,10 @@ fun LivePlayerScreen(
                         if (down) viewModel.channelDown()
                         true
                     }
+                    AndroidKeyEvent.KEYCODE_LAST_CHANNEL -> {
+                        if (down) viewModel.lastChannel()
+                        true
+                    }
                     AndroidKeyEvent.KEYCODE_MENU, AndroidKeyEvent.KEYCODE_INFO -> {
                         if (up) viewModel.openVersions()
                         true
@@ -186,7 +200,9 @@ fun LivePlayerScreen(
     ) {
         PlayerVideoSurface(player.exoPlayer, Modifier.fillMaxSize())
 
-        StatusBanner(state.status, Modifier.align(Alignment.TopCenter).padding(top = 32.dp))
+        // Only the transient "Switched to" notice; buffering is the corner indicator.
+        StatusBanner(state.status.copy(indicator = null), Modifier.align(Alignment.TopCenter).padding(top = 32.dp))
+        state.cornerIndicator?.let { CornerIndicator(it, Modifier.align(Alignment.TopEnd).padding(top = 24.dp, end = 32.dp)) }
 
         if (state.numberDigits.isNotEmpty() || state.numberNotFound != null) {
             NumberEntryBadge(state.numberDigits, state.numberNotFound, Modifier.align(Alignment.TopEnd).padding(48.dp))
@@ -198,6 +214,7 @@ fun LivePlayerScreen(
                 buttonsFocus = buttonsFocus,
                 onOtherVersions = viewModel::openVersions,
                 onRestart = viewModel::restart,
+                onLastChannel = viewModel::lastChannel,
                 modifier = Modifier.align(Alignment.BottomCenter),
             )
         }
@@ -239,6 +256,7 @@ private fun ChannelOverlay(
     buttonsFocus: FocusRequester,
     onOtherVersions: () -> Unit,
     onRestart: () -> Unit,
+    onLastChannel: () -> Unit,
     modifier: Modifier,
 ) {
     val time = rememberTimeFormatter()
@@ -292,7 +310,7 @@ private fun ChannelOverlay(
                 overflow = TextOverflow.Ellipsis,
             )
         }
-        val hasButtons = state.hasOtherVersions || state.canRestart
+        val hasButtons = state.hasOtherVersions || state.canRestart || state.hasLastChannel
         if (hasButtons) {
             Row(horizontalArrangement = Arrangement.spacedBy(UiTokens.SpaceM), modifier = Modifier.padding(top = UiTokens.SpaceS)) {
                 if (state.hasOtherVersions) {
@@ -307,6 +325,17 @@ private fun ChannelOverlay(
                         text = stringResource(R.string.player_restart_programme),
                         onClick = onRestart,
                         modifier = if (state.hasOtherVersions) Modifier else Modifier.focusRequester(buttonsFocus),
+                    )
+                }
+                if (state.hasLastChannel) {
+                    TvButton(
+                        text = stringResource(R.string.player_last_channel),
+                        onClick = onLastChannel,
+                        modifier = if (state.hasOtherVersions || state.canRestart) {
+                            Modifier.testTag(LivePlayerTags.LAST_CHANNEL)
+                        } else {
+                            Modifier.focusRequester(buttonsFocus).testTag(LivePlayerTags.LAST_CHANNEL)
+                        },
                     )
                 }
             }

@@ -49,6 +49,7 @@ fun AppContainer.uiDependencies(): UiDependencies {
         coordinator = liveCoordinator,
         catchup = catchupController,
         nowNext = nowNextSource,
+        history = channelHistory,
     )
     val screens = ScreenDependencies(
         home = { homeViewModel() },

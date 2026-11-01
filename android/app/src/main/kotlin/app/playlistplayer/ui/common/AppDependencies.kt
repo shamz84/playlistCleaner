@@ -95,6 +95,7 @@ class PlaybackDependencies(
  * @property nowNext now/next for the live player overlay (`NowNextRepository::nowNext`).
  * @property clock wall clock shared by the grid and the players (tests inject a fixed one).
  * @property zone time zone of the grid's slots and day boundaries (the device's).
+ * @property history live channels tuned this session (last-channel shortcut, Live TV preview).
  */
 class GuideDependencies(
     val channels: LiveChannelSource,
@@ -104,6 +105,7 @@ class GuideDependencies(
     val nowNext: NowNextSource,
     val clock: () -> Long = System::currentTimeMillis,
     val zone: ZoneId = ZoneId.systemDefault(),
+    val history: app.playlistplayer.feature.live.ChannelHistory = app.playlistplayer.feature.live.ChannelHistory(),
 )
 
 /** Factories of the Home, Search and Settings ViewModels (each screen gets its own instance). */

@@ -471,7 +471,7 @@ private fun DetailsSheet(details: ProgrammeDetails, onPlay: () -> Unit, onDismis
 }
 
 private val CHANNEL_COLUMN = 112.dp
-private val ROW_HEIGHT = 64.dp
+private val ROW_HEIGHT = 56.dp // denser (U21, R37), still above the 48 dp touch target
 private val HEADER_HEIGHT = 28.dp
 private val PastCell = Color(0xFF141D26)
 private const val CATCHUP_ICON = "↺" // same glyph as the TV guide

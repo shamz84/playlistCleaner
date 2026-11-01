@@ -24,7 +24,13 @@ import app.playlistplayer.ui.mobile.epg.GuideFixture
 import app.playlistplayer.ui.tv.epg.EpgTags
 import app.playlistplayer.ui.tv.theme.TvTheme
 import com.google.common.truth.Truth.assertThat
+import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import app.playlistplayer.feature.live.ChannelHistoryState
+import app.playlistplayer.feature.live.ChannelRef
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import org.junit.Rule
 import org.junit.Test
@@ -53,10 +59,24 @@ class LiveTvScreenTest {
         override fun channels(group: GroupKey): Flow<List<ChannelRow>> = flowOf(emptyList())
     }
 
+    private val history = MutableStateFlow(ChannelHistoryState())
+    private val streamActive = MutableStateFlow(false)
+    private val fullscreen = mutableListOf<ChannelRef>()
+
     private fun show(): LiveTvViewModel {
-        val vm = LiveTvViewModel(Sections(f.sections), { null }, text)
+        val vm = LiveTvViewModel(Sections(f.sections), { null }, text, history = history, streamActive = streamActive)
         compose.setContent {
-            TvTheme { LiveTvScreen(vm, f.dependencies, onPlayChannel = { watched += it }, onPlayCatchup = { played += it }) }
+            TvTheme {
+                LiveTvScreen(
+                    vm,
+                    f.dependencies,
+                    onPlayChannel = { watched += it },
+                    onPlayCatchup = { played += it },
+                    // Stands in for the shared player's video surface.
+                    preview = { modifier -> Box(modifier.testTag(FAKE_VIDEO)) },
+                    onFullscreen = { fullscreen += it },
+                )
+            }
         }
         compose.waitForIdle()
         return vm
@@ -84,9 +104,14 @@ class LiveTvScreenTest {
     }
 
     @Test
-    fun `selecting a group shows its grid`() {
+    fun `selecting a group in the side panel shows its grid and hides the panel`() {
         val vm = show()
+        assertThat(exists(hasTestTag(LiveTvTags.GROUPS_PANEL))).isFalse()
+        vm.openGroupsPanel()
+        compose.waitForIdle()
+        assertThat(exists(hasTestTag(LiveTvTags.GROUPS_PANEL))).isTrue()
         clickText("Kids")
+        assertThat(vm.state.value.groupsPanelOpen).isFalse()
         assertThat(vm.state.value.selectedGroup).isEqualTo(GroupKey(2, 0))
         assertThat(exists(hasText("Family · Kids"))).isTrue()
         assertThat(exists(hasText("This group has no channels."))).isTrue()
@@ -127,5 +152,38 @@ class LiveTvScreenTest {
         assertThat(compose.onAllNodesWithText("Question Time").fetchSemanticsNodes().size).isAtLeast(2)
         assertThat(played).hasSize(1)
         assertThat(watched).hasSize(1)
+    }
+
+    @Test
+    fun `the details area shows the focused programme`() {
+        val vm = show()
+        val inDetails = hasAnyAncestor(hasTestTag(LiveTvTags.DETAILS))
+        // Opens on the airing programme of the first channel.
+        assertThat(exists(hasText("The Celebrity Traitors") and inDetails)).isTrue()
+        assertThat(exists(hasText(f.bbcOne.name) and inDetails)).isTrue()
+        assertThat(vm.focused.value?.channel).isEqualTo(f.bbcOne)
+    }
+
+    @Test
+    fun `the preview renders the shared player only while a channel plays and goes fullscreen`() {
+        val vm = show()
+        assertThat(exists(hasTestTag(FAKE_VIDEO))).isFalse()
+        assertThat(exists(hasTestTag(LiveTvTags.LAST_CHANNEL))).isFalse()
+
+        history.value = ChannelHistoryState(ChannelRef(f.bbcTwo.playlistId, f.bbcTwo.ordinal), ChannelRef(f.bbcOne.playlistId, f.bbcOne.ordinal))
+        streamActive.value = true
+        compose.waitForIdle()
+        assertThat(vm.state.value.playing).isEqualTo(ChannelRef(f.bbcTwo.playlistId, f.bbcTwo.ordinal))
+        assertThat(exists(hasTestTag(FAKE_VIDEO))).isTrue()
+
+        click(hasTestTag(LiveTvTags.PREVIEW) or hasAnyAncestor(hasTestTag(LiveTvTags.PREVIEW)) and hasAnyDescendant(hasTestTag(FAKE_VIDEO)))
+        assertThat(fullscreen).containsExactly(ChannelRef(f.bbcTwo.playlistId, f.bbcTwo.ordinal))
+        clickTag(LiveTvTags.LAST_CHANNEL)
+        assertThat(fullscreen.last()).isEqualTo(ChannelRef(f.bbcOne.playlistId, f.bbcOne.ordinal))
+        assertThat(watched).isEmpty()
+    }
+
+    private companion object {
+        const val FAKE_VIDEO = "test.video"
     }
 }
