@@ -1,5 +1,7 @@
 package app.playlistplayer.ui.tv.vod
 
+import app.playlistplayer.ui.common.ScreenWakePolicy
+import app.playlistplayer.ui.common.KeepScreenOn
 import android.os.SystemClock
 import android.view.KeyEvent as AndroidKeyEvent
 import android.view.SurfaceView
@@ -95,6 +97,9 @@ fun VodPlayerScreen(
         progress.tracker(current.progressKey, current.playlistId, current.kind, current.label, current.sources.first().id)
     }
     val playbackState by controller.state.collectAsStateWithLifecycle()
+    /** `playWhenReady`: false while the user has paused (the controller's state stays Playing). */
+    var playRequested by remember { mutableStateOf(exo.playWhenReady) }
+    KeepScreenOn(ScreenWakePolicy.isActive(playbackState, paused = !playRequested))
     val uiState by controller.uiState.collectAsStateWithLifecycle()
     val rootFocus = remember { FocusRequester() }
 
@@ -157,6 +162,10 @@ fun VodPlayerScreen(
     val latestSave by rememberUpdatedState<() -> Unit> { saveNow() }
     DisposableEffect(exo) {
         val listener = object : Player.Listener {
+            override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
+                playRequested = playWhenReady
+            }
+
             override fun onTracksChanged(tracks: Tracks) {
                 latestDispatch(OverlayEvent.TracksChanged(Media3Tracks.options(tracks)))
             }

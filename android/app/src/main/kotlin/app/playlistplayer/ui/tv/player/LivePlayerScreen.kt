@@ -1,5 +1,7 @@
 package app.playlistplayer.ui.tv.player
 
+import app.playlistplayer.ui.common.ScreenWakePolicy
+import app.playlistplayer.ui.common.KeepScreenOn
 import android.view.KeyEvent as AndroidKeyEvent
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -109,6 +111,7 @@ fun LivePlayerScreen(
 
     val panelOpen = state.versionsOpen
     val blockingPanel = state.status.error != null || state.startError != null
+    KeepScreenOn(ScreenWakePolicy.isActive(state.status, starting = state.loading, blocked = state.startError != null))
     LaunchedEffect(state.overlayVisible, panelOpen, blockingPanel) {
         if (!panelOpen && !blockingPanel) {
             runCatching { if (state.overlayVisible) buttonsFocus.requestFocus() else rootFocus.requestFocus() }

@@ -1,5 +1,7 @@
 package app.playlistplayer.ui.mobile.player
 
+import app.playlistplayer.ui.common.ScreenWakePolicy
+import app.playlistplayer.ui.common.KeepScreenOn
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -120,6 +122,7 @@ fun MobileChannelPlayerScreen(
     }
 
     val blocking = state.status.error != null || state.startError != null
+    KeepScreenOn(ScreenWakePolicy.isActive(state.status, starting = state.loading, blocked = state.startError != null))
     Box(modifier = modifier.fillMaxSize().background(Color.Black).testTag(MobileChannelPlayerTags.ROOT)) {
         VideoSurface(exo, Modifier.fillMaxSize())
         Box(

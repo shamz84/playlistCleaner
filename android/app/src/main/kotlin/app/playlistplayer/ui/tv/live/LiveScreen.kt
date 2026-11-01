@@ -221,7 +221,7 @@ fun LiveContent(
 }
 
 @Composable
-private fun GroupRail(
+internal fun GroupRail(
     sections: List<PlaylistSection>,
     selected: GroupKey?,
     onFocusGroup: (GroupKey) -> Unit,
@@ -349,7 +349,7 @@ private fun ChannelItem(row: ChannelRow, onPlay: (ChannelRow) -> Unit, modifier:
 }
 
 @Composable
-private fun NumberEntryOverlay(digits: String, notFound: String?, modifier: Modifier = Modifier) {
+internal fun NumberEntryOverlay(digits: String, notFound: String?, modifier: Modifier = Modifier) {
     val text = when {
         digits.isNotEmpty() -> digits
         notFound != null -> stringResource(R.string.live_number_entry_not_found, notFound)
@@ -375,7 +375,7 @@ private fun NumberEntryOverlay(digits: String, notFound: String?, modifier: Modi
     }
 }
 
-private fun digitFor(keyCode: Int): Int? = when (keyCode) {
+internal fun digitFor(keyCode: Int): Int? = when (keyCode) {
     in AndroidKeyEvent.KEYCODE_0..AndroidKeyEvent.KEYCODE_9 -> keyCode - AndroidKeyEvent.KEYCODE_0
     in AndroidKeyEvent.KEYCODE_NUMPAD_0..AndroidKeyEvent.KEYCODE_NUMPAD_9 -> keyCode - AndroidKeyEvent.KEYCODE_NUMPAD_0
     else -> null

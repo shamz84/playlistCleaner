@@ -27,7 +27,7 @@ import app.playlistplayer.feature.vod.ProgressKey
 import app.playlistplayer.ui.common.GroupKey
 import app.playlistplayer.ui.mobile.MobileRoot
 import app.playlistplayer.ui.tv.TvRoot
-import app.playlistplayer.ui.tv.TvRootTags
+import app.playlistplayer.ui.tv.livetv.LiveTvTags
 import app.playlistplayer.ui.tv.shell.ShellTags
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.Dispatchers
@@ -109,7 +109,7 @@ class AppWiringTest {
     }
 
     @Test
-    fun `onboarding a Drive playlist lands on Home with its channels listed`() {
+    fun `onboarding a Drive playlist lands on Live TV with its channels listed`() {
         val dependencies = container.uiDependencies()
         compose.setContent { TvRoot(dependencies.tv) }
         compose.waitForIdle()
@@ -119,10 +119,12 @@ class AppWiringTest {
 
         val id = runBlocking { env.onboard(name = "Home playlist") }
 
-        // The shell replaces onboarding and Home lists the playlist's live groups.
+        // The shell replaces onboarding and lands on Live TV: the group rail beside the first group's guide.
         waitForTag(ShellTags.RAIL)
+        waitForTag(LiveTvTags.ROOT)
         waitForText("Home playlist")
         waitForText("🇬🇧 UK")
+        waitForText("Channel 0")
         val sections = runBlocking { container.liveBrowseSource.sections().first() }
         assertThat(sections.map { it.name }).containsExactly("Home playlist")
         assertThat(sections.single().groups.map { it.name }).containsExactly("🇬🇧 UK", "⚽ Sports", "🎬 Movies").inOrder()
@@ -159,14 +161,11 @@ class AppWiringTest {
         assertThat(container.contentVisibility.isVodCategoryHidden(id, VodKind.MOVIE, "12")).isTrue()
         assertThat(container.contentVisibility.isVodCategoryHidden(id, VodKind.MOVIE, "1")).isFalse()
 
-        // Guide (TV): the group picker offers only visible groups.
+        // Live TV (TV): the group rail beside the guide offers only visible groups.
         val dependencies = container.uiDependencies()
         compose.setContent { TvRoot(dependencies.tv) }
-        waitForTag(ShellTags.railItem(Destination.Guide))
-        clickTag(ShellTags.railItem(Destination.Guide))
-        waitForTag(TvRootTags.GUIDE_GROUP)
-        clickText("Change group")
-        waitForText("Choose a group")
+        waitForTag(LiveTvTags.ROOT)
+        waitForText("🇬🇧 UK")
         compose.onAllNodesWithText("⚽ Sports", substring = true).assertCountEquals(0)
         assertThat(compose.onAllNodesWithText("🎬 Movies", substring = true).fetchSemanticsNodes()).isNotEmpty()
 

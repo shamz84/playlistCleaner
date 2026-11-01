@@ -9,17 +9,18 @@ class ShellViewModelTest {
     private val state get() = vm.state.value
 
     @Test
-    fun `cold start lands on Home with focus in its content`() {
-        assertThat(state.current).isEqualTo(Destination.Home)
+    fun `cold start lands on Live TV with focus in its content`() {
+        assertThat(state.current).isEqualTo(Destination.LiveTv)
+        assertThat(state.lastRailFocus).isEqualTo(Destination.LiveTv)
         assertThat(state.focus).isEqualTo(ShellFocus.Content)
         assertThat(state.showExitConfirmation).isFalse()
         assertThat(state.exitRequested).isFalse()
     }
 
     @Test
-    fun `rail order is Home Live Guide Movies Series Search Settings`() {
+    fun `rail order is Live TV Home Movies Series Search Settings`() {
         assertThat(Destination.entries).containsExactly(
-            Destination.Home, Destination.Live, Destination.Guide, Destination.Movies,
+            Destination.LiveTv, Destination.Home, Destination.Movies,
             Destination.Series, Destination.Search, Destination.Settings,
         ).inOrder()
     }
@@ -63,25 +64,25 @@ class ShellViewModelTest {
 
     @Test
     fun `back from a destination restores focus to the rail item focused last`() {
-        vm.onRailItemFocused(Destination.Live)
-        vm.select(Destination.Live)
-        assertThat(state.current).isEqualTo(Destination.Live)
+        vm.onRailItemFocused(Destination.Home)
+        vm.select(Destination.Home)
+        assertThat(state.current).isEqualTo(Destination.Home)
         assertThat(state.focus).isEqualTo(ShellFocus.Content)
 
         vm.onBack()
         assertThat(state.focus).isEqualTo(ShellFocus.Rail)
-        assertThat(state.lastRailFocus).isEqualTo(Destination.Live)
-        assertThat(state.current).isEqualTo(Destination.Live)
+        assertThat(state.lastRailFocus).isEqualTo(Destination.Home)
+        assertThat(state.current).isEqualTo(Destination.Home)
     }
 
     @Test
     fun `moving through the rail then into content restores the last focused item`() {
-        vm.select(Destination.Live)
+        vm.select(Destination.Home)
         vm.onRailItemFocused(Destination.Movies) // browsed the rail without selecting
-        vm.onContentFocused() // moved right into Live content
+        vm.onContentFocused() // moved right into Home content
         vm.onBack()
         assertThat(state.lastRailFocus).isEqualTo(Destination.Movies)
-        assertThat(state.current).isEqualTo(Destination.Live)
+        assertThat(state.current).isEqualTo(Destination.Home)
     }
 
     @Test

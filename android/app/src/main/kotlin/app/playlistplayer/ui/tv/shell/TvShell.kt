@@ -55,9 +55,8 @@ object ShellTags {
 
 @StringRes
 fun Destination.labelRes(): Int = when (this) {
+    Destination.LiveTv -> R.string.nav_live
     Destination.Home -> R.string.nav_home
-    Destination.Live -> R.string.nav_live
-    Destination.Guide -> R.string.nav_guide
     Destination.Movies -> R.string.nav_movies
     Destination.Series -> R.string.nav_series
     Destination.Search -> R.string.nav_search
@@ -66,9 +65,8 @@ fun Destination.labelRes(): Int = when (this) {
 
 /** Rail glyphs (no icon library dependency; plain Unicode symbols render on Fire OS). */
 private fun Destination.glyph(): String = when (this) {
+    Destination.LiveTv -> "▶"
     Destination.Home -> "⌂"
-    Destination.Live -> "▶"
-    Destination.Guide -> "☰"
     Destination.Movies -> "🎬"
     Destination.Series -> "🎞"
     Destination.Search -> "🔍"
@@ -97,7 +95,7 @@ fun TvShell(
 
     BackHandler(enabled = !state.showExitConfirmation) { viewModel.onBack() }
 
-    // Cold start: focus enters Home's content; if it has nothing focusable, fall back to the rail.
+    // Cold start: focus enters Live TV's content; if it has nothing focusable, fall back to the rail.
     LaunchedEffect(Unit) {
         val entered = runCatching { contentRequester.requestFocus(FocusDirection.Enter) }.getOrDefault(false)
         if (!entered) runCatching { railRequesters.getValue(state.lastRailFocus).requestFocus() }

@@ -109,7 +109,7 @@ fun MobileLiveScreen(
 }
 
 @Composable
-private fun GroupList(
+internal fun GroupList(
     sections: List<PlaylistSection>,
     selected: GroupKey?,
     collapsed: Set<Long>,

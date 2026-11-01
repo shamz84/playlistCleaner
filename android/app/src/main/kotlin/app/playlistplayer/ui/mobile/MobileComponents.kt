@@ -25,9 +25,8 @@ import app.playlistplayer.ui.common.UiTokens
 
 @StringRes
 internal fun Destination.mobileLabelRes(): Int = when (this) {
+    Destination.LiveTv -> R.string.nav_live
     Destination.Home -> R.string.nav_home
-    Destination.Live -> R.string.nav_live
-    Destination.Guide -> R.string.nav_guide
     Destination.Movies -> R.string.nav_movies
     Destination.Series -> R.string.nav_series
     Destination.Search -> R.string.nav_search
@@ -36,9 +35,8 @@ internal fun Destination.mobileLabelRes(): Int = when (this) {
 
 /** Navigation glyphs (plain Unicode, no icon library dependency; same set as the TV rail). */
 internal fun Destination.glyph(): String = when (this) {
+    Destination.LiveTv -> "▶"
     Destination.Home -> "⌂"
-    Destination.Live -> "▶"
-    Destination.Guide -> "☰"
     Destination.Movies -> "🎬"
     Destination.Series -> "🎞"
     Destination.Search -> "🔍"
@@ -117,9 +115,8 @@ internal fun <T> MobileUiState(state: UiState<T>, modifier: Modifier = Modifier,
 @Composable
 internal fun MobilePlaceholder(destination: Destination, modifier: Modifier = Modifier) {
     val (title, message) = when (destination) {
+        Destination.LiveTv -> R.string.nav_live to R.string.live_no_playlists
         Destination.Home -> R.string.placeholder_home_title to R.string.placeholder_home_message
-        Destination.Live -> R.string.nav_live to R.string.live_no_playlists
-        Destination.Guide -> R.string.placeholder_guide_title to R.string.placeholder_guide_message
         Destination.Movies -> R.string.placeholder_movies_title to R.string.placeholder_movies_message
         Destination.Series -> R.string.placeholder_series_title to R.string.placeholder_series_message
         Destination.Search -> R.string.placeholder_search_title to R.string.placeholder_search_message

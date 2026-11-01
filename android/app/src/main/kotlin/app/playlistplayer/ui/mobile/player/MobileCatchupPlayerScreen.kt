@@ -1,5 +1,7 @@
 package app.playlistplayer.ui.mobile.player
 
+import app.playlistplayer.ui.common.ScreenWakePolicy
+import app.playlistplayer.ui.common.KeepScreenOn
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
@@ -98,6 +100,7 @@ fun MobileCatchupPlayerScreen(
 
     val started = !state.loading && state.error == null
     val blocking = state.error != null || state.status.error != null
+    KeepScreenOn(ScreenWakePolicy.isActive(state.status, starting = state.loading, paused = state.isPaused, ended = state.ended, blocked = state.error != null))
 
     fun onGesture(command: GestureCommand) {
         when (command) {

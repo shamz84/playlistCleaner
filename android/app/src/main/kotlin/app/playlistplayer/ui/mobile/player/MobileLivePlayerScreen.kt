@@ -1,5 +1,7 @@
 package app.playlistplayer.ui.mobile.player
 
+import app.playlistplayer.ui.common.ScreenWakePolicy
+import app.playlistplayer.ui.common.KeepScreenOn
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -96,6 +98,7 @@ fun MobileLivePlayerScreen(
     var versionsOpen by remember { mutableStateOf(false) }
     var tracksOpen by remember { mutableStateOf(false) }
     var tracks by remember { mutableStateOf(TrackSelectionModel()) }
+    KeepScreenOn(!unavailable && ScreenWakePolicy.isActive(playbackState))
 
     LaunchedEffect(row?.playlistId, row?.ordinal) {
         sources = null

@@ -67,10 +67,8 @@ internal fun FullscreenLandscapeEffect() {
         val insets = activity?.window?.let { WindowCompat.getInsetsController(it, it.decorView) }
         insets?.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         insets?.hide(WindowInsetsCompat.Type.systemBars())
-        val keptOn = view.keepScreenOn
-        view.keepScreenOn = true
+        // Screen-on is per playback state (KeepScreenOn in each player), not for the whole screen.
         onDispose {
-            view.keepScreenOn = keptOn
             insets?.show(WindowInsetsCompat.Type.systemBars())
             if (activity != null && previousOrientation != null) activity.requestedOrientation = previousOrientation
         }

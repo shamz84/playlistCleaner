@@ -6,17 +6,21 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
-/** Top-level destinations of the side navigation rail, in rail order (U9). */
-enum class Destination { Home, Live, Guide, Movies, Series, Search, Settings }
+/**
+ * Top-level destinations of the side navigation rail, in rail order (U9). [LiveTv] is the group
+ * rail beside the guide grid of the selected group (the former Live and Guide destinations) and
+ * the landing destination.
+ */
+enum class Destination { LiveTv, Home, Movies, Series, Search, Settings }
 
 /** Which part of the shell holds focus. */
 enum class ShellFocus { Rail, Content }
 
 data class ShellState(
-    val current: Destination = Destination.Home,
+    val current: Destination = Destination.LiveTv,
     val focus: ShellFocus = ShellFocus.Content,
     /** Rail item focused last; focus returns here when Back leaves a destination. */
-    val lastRailFocus: Destination = Destination.Home,
+    val lastRailFocus: Destination = Destination.LiveTv,
     val showExitConfirmation: Boolean = false,
     val exitRequested: Boolean = false,
     /** Bumped on every Back that returns to the rail, so the UI re-requests focus even when [focus] was already Rail. */
@@ -26,7 +30,7 @@ data class ShellState(
 /**
  * Shell navigation state (U9). Pure state machine; no coroutines.
  *
- * - Cold start lands on Home with focus in its content.
+ * - Cold start lands on Live TV with focus in its content.
  * - Selecting a rail item opens that destination and moves focus into it.
  * - Back from a destination's content returns to the rail, focus restored to the rail item
  *   focused last (destinations handle their own inner Back first, e.g. channel list → groups).

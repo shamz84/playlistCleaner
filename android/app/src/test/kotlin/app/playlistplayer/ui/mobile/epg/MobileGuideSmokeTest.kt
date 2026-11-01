@@ -1,5 +1,7 @@
 package app.playlistplayer.ui.mobile.epg
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.playlistplayer.feature.epg.EpgGridViewModel
 import app.playlistplayer.feature.live.CatchupRequest
@@ -12,6 +14,14 @@ import app.playlistplayer.ui.common.GroupKey
 import app.playlistplayer.ui.common.PlaylistSection
 import app.playlistplayer.ui.common.live.ChannelRow
 import app.playlistplayer.ui.common.live.LiveBrowseSource
+import app.playlistplayer.ui.common.live.LiveBrowseText
+import app.playlistplayer.ui.common.live.LiveTvViewModel
+import app.playlistplayer.ui.mobile.livetv.MobileLiveTvScreen
+import app.playlistplayer.ui.mobile.livetv.MobileLiveTvTags
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
 import app.playlistplayer.ui.mobile.MobileRoot
 import app.playlistplayer.ui.mobile.MobileRootDependencies
 import app.playlistplayer.ui.mobile.MobileTheme
@@ -22,11 +32,9 @@ import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
 import org.junit.Rule
@@ -35,8 +43,8 @@ import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 
 /**
- * Composition smoke tests for the phone Guide (Robolectric + Compose test rule): the screen
- * composes over fake sources, the shared ViewModel loads the group's rows,
+ * Composition smoke tests for the phone Live TV guide (Robolectric + Compose test rule): the screen
+ * composes over fake sources, a channel name tap plays live, the group list switches the grid, the shared ViewModel loads the group's rows,
  * its events reach the host callbacks, and the airing / details bottom sheets compose.
  */
 @RunWith(AndroidJUnit4::class)
@@ -74,23 +82,53 @@ class MobileGuideSmokeTest {
         f.group, f.channels, f.grid, f.coordinator, clock = f.clock, zone = f.zone, windowSlots = GuideGeometry.PHONE_WINDOW_SLOTS,
     )
 
+    private val text = LiveBrowseText(noPlaylists = "No playlists", emptyGroup = "Empty group", loadFailed = "Failed")
+
+    private fun liveTv(sections: Flow<List<PlaylistSection>> = flowOf(f.sections)) =
+        LiveTvViewModel(SectionsOf(sections), { null }, text)
+
     @Test
-    fun `guide screen composes with a group picker and the selected group's grid`() {
+    fun `live tv lands on the first group's grid and a channel name tap plays it live`() {
+        val vm = liveTv()
         show {
             MobileTheme {
-                MobileGuideScreen(flowOf(f.sections), f.dependencies, onPlayCatchup = { played += it }, onWatchLive = { watched += it })
+                MobileLiveTvScreen(vm, f.dependencies, wide = false, onPlayChannel = { watched += it }, onPlayCatchup = { played += it })
             }
         }
         idle()
-        assertComposed()
-        // The first group of the first section was loaded through the shared ViewModel.
+        assertThat(vm.state.value.selectedGroup).isEqualTo(f.group)
+        // The group's grid was loaded through the shared ViewModel.
         assertThat(f.grid.calls).isNotEmpty()
+        compose.onAllNodesWithText("UK: BBC Two HD", useUnmergedTree = true).onFirst().performClick()
+        idle()
+        assertThat(watched).containsExactly(f.bbcTwo)
+        assertThat(played).isEmpty()
     }
 
     @Test
-    fun `guide screen composes while sections load, fail or are empty`() {
-        listOf<Flow<List<PlaylistSection>>>(emptyFlow(), flow { throw IllegalStateException("boom") }, flowOf(emptyList())).forEach { sections ->
-            show { MobileTheme { MobileGuideScreen(sections, f.dependencies, onPlayCatchup = {}, onWatchLive = {}) } }
+    fun `live tv group list switches the grid to the tapped group`() {
+        val vm = liveTv()
+        show {
+            MobileTheme {
+                MobileLiveTvScreen(vm, f.dependencies, wide = false, onPlayChannel = { watched += it }, onPlayCatchup = { played += it })
+            }
+        }
+        idle()
+        compose.onNodeWithTag(MobileGuideTags.GROUP_BUTTON).performClick()
+        idle()
+        compose.onAllNodesWithText("Kids", useUnmergedTree = true).onFirst().performClick()
+        idle()
+        assertThat(vm.state.value.selectedGroup).isEqualTo(GroupKey(2, 0))
+        compose.onAllNodesWithText("Family", useUnmergedTree = true).onFirst().assertExists()
+        compose.onAllNodesWithText("This group has no channels.", useUnmergedTree = true).onFirst().assertExists()
+    }
+
+    @Test
+    @Config(qualifiers = "w840dp-h480dp-land")
+    fun `live tv composes side by side and while sections load, fail or are empty`() {
+        listOf<Flow<List<PlaylistSection>>>(flowOf(f.sections), emptyFlow(), flow { throw IllegalStateException("boom") }, flowOf(emptyList())).forEach { sections ->
+            val vm = liveTv(sections)
+            show { MobileTheme { MobileLiveTvScreen(vm, f.dependencies, wide = true, onPlayChannel = {}, onPlayCatchup = {}) } }
             idle()
             assertComposed()
         }
@@ -137,18 +175,21 @@ class MobileGuideSmokeTest {
             OnboardingResult.Success(1, xtreamEnabled = false)
     }
 
-    private inner class Sections : LiveBrowseSource {
-        override fun sections(): Flow<List<PlaylistSection>> = flowOf(f.sections)
+    private class SectionsOf(private val sections: Flow<List<PlaylistSection>>) : LiveBrowseSource {
+        override fun sections(): Flow<List<PlaylistSection>> = sections
         override fun channels(group: GroupKey): Flow<List<ChannelRow>> = flowOf(emptyList())
     }
 
     @Test
     @Config(qualifiers = "w840dp-h480dp-land")
     fun `phone root composes with guide dependencies`() {
-        val shared = TvRootDependencies(onboarder = NoOnboarder, isXtreamShaped = { false }, liveBrowseSource = Sections(), hasPlaylists = flowOf(true))
+        val shared = TvRootDependencies(onboarder = NoOnboarder, isXtreamShaped = { false }, liveBrowseSource = SectionsOf(flowOf(f.sections)), hasPlaylists = flowOf(true))
         show { MobileRoot(MobileRootDependencies(shared, guide = f.dependencies)) }
         idle()
         assertComposed()
+        // Lands on Live TV: group list beside the first group's grid.
+        compose.onNodeWithTag(MobileLiveTvTags.GRID_PANE, useUnmergedTree = true).assertExists()
+        assertThat(f.grid.calls).isNotEmpty()
     }
 
 }

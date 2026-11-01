@@ -1,5 +1,9 @@
 package app.playlistplayer.ui.tv.epg
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
+import androidx.compose.runtime.mutableIntStateOf
 import android.view.KeyEvent as AndroidKeyEvent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -9,7 +13,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -21,7 +24,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
@@ -48,7 +50,6 @@ import androidx.tv.material3.Surface
 import androidx.tv.material3.Text
 import app.playlistplayer.R
 import app.playlistplayer.feature.epg.AiringChoice
-import app.playlistplayer.feature.epg.EpgCell
 import app.playlistplayer.feature.epg.EpgDay
 import app.playlistplayer.feature.epg.EpgEvent
 import app.playlistplayer.feature.epg.EpgFocus
@@ -75,14 +76,20 @@ object EpgTags {
     const val GRID = "epg.grid"
     const val DAYS = "epg.days"
     const val NOW_LINE = "epg.nowLine"
+    fun channel(ordinal: Int) = "epg.channel.$ordinal"
 }
 
 /**
  * Guide grid for the current group (U9). D-pad moves between programmes; Left/Right past the
  * window edge page in time; the day row jumps by day within the archive window; OK plays a
  * catch-up programme, offers Watch live / Restart on the airing one, or shows details; long-press
- * OK (or Info) shows details for any programme. Focus returns to the remembered programme when the
- * screen is shown again (e.g. back from the player).
+ * OK (or Info) shows details for any programme; OK on the channel name (or a "No guide data" row)
+ * watches the channel live. Focus returns to the remembered programme when the screen is shown
+ * again (e.g. back from the player).
+ *
+ * [title] replaces the "Guide" heading. With [autoFocus] false the grid does not take focus when
+ * it (re)loads, unless focus is requested by bumping [focusRequest] (it then focuses the
+ * ViewModel's remembered focus, e.g. after `onFocus(channel, null)` for number entry).
  */
 @Composable
 fun EpgGridScreen(
@@ -90,6 +97,9 @@ fun EpgGridScreen(
     onPlayCatchup: (CatchupRequest) -> Unit,
     onWatchLive: (LiveChannel) -> Unit,
     modifier: Modifier = Modifier,
+    title: String? = null,
+    autoFocus: Boolean = true,
+    focusRequest: Int = 0,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val playCatchup by rememberUpdatedState(onPlayCatchup)
@@ -113,14 +123,14 @@ fun EpgGridScreen(
     }
 
     Column(modifier = modifier.fillMaxSize().padding(TvDimens.ScreenPadding), verticalArrangement = Arrangement.spacedBy(UiTokens.SpaceM)) {
-        Text(text = stringResource(R.string.epg_title), style = MaterialTheme.typography.headlineSmall, color = UiTokens.OnBackground)
+        Text(text = title ?: stringResource(R.string.epg_title), maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.headlineSmall, color = UiTokens.OnBackground)
         when {
             state.emptyGroup -> TvEmptyState(title = stringResource(R.string.epg_empty_group))
             state.loadFailed -> TvErrorState(message = stringResource(R.string.epg_load_failed), onRetry = viewModel::refresh)
             state.rows.isEmpty() -> TvLoadingState()
             else -> {
                 DayRow(state.days, state.selectedDayOffset, onDay = viewModel::jumpToDay, onNow = viewModel::jumpToNow)
-                Grid(state, viewModel)
+                Grid(state, viewModel, autoFocus, focusRequest)
             }
         }
     }
@@ -151,19 +161,31 @@ private fun DayRow(days: List<EpgDay>, selected: Int, onDay: (Int) -> Unit, onNo
 }
 
 @Composable
-private fun Grid(state: EpgGridUiState, viewModel: EpgGridViewModel) {
+private fun Grid(state: EpgGridUiState, viewModel: EpgGridViewModel, autoFocus: Boolean, focusRequest: Int) {
     val time = rememberTimeFormatter()
     val listState = rememberLazyListState()
     val focusRequester = remember { FocusRequester() }
     val focus = state.focus
     val windowMillis = (state.windowEndMillis - state.windowStartMillis).coerceAtLeast(1)
 
-    // Restore the remembered programme when the window changes or the screen is shown again.
-    LaunchedEffect(state.windowStartMillis, state.rows.size) {
-        val f = state.focus ?: return@LaunchedEffect
-        val index = state.rows.indexOfFirst { it.channel.ordinal == f.channelOrdinal }
+    val latest by rememberUpdatedState(state)
+    val auto by rememberUpdatedState(autoFocus)
+    var handledRequest by remember { mutableIntStateOf(0) }
+
+    // Restore the remembered programme when the window changes or the screen is shown again, and
+    // move focus there when requested.
+    LaunchedEffect(state.windowStartMillis, state.rows.size, focusRequest) {
+        val requested = focusRequest != handledRequest
+        handledRequest = focusRequest
+        // A requested focus was set on the ViewModel just before: let it reach this composition.
+        if (requested) withFrameNanos { }
+        val f = latest.focus ?: return@LaunchedEffect
+        val index = latest.rows.indexOfFirst { it.channel.ordinal == f.channelOrdinal }
         if (index >= 0) listState.scrollToItem(index)
-        runCatching { focusRequester.requestFocus() }
+        if (auto || requested) {
+            if (requested) withFrameNanos { }
+            runCatching { focusRequester.requestFocus() }
+        }
     }
 
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
@@ -233,12 +255,21 @@ private fun GridRow(
         horizontalArrangement = Arrangement.spacedBy(UiTokens.SpaceS),
         modifier = Modifier.semantics { contentDescription = "${row.number} ${row.channel.name}" },
     ) {
-        Box(
-            modifier = Modifier.width(CHANNEL_COLUMN).height(ROW_HEIGHT).background(UiTokens.Surface, TvDimens.Shape).padding(horizontal = UiTokens.SpaceS),
-            contentAlignment = Alignment.CenterStart,
-        ) {
-            Text(text = "${row.number}  ${row.channel.name}", color = UiTokens.OnBackground, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        }
+        // Channel name: OK watches the channel live.
+        GuideCell(
+            title = "${row.number}  ${row.channel.name}",
+            subtitle = null,
+            timing = null,
+            catchup = false,
+            modifier = Modifier
+                .width(CHANNEL_COLUMN)
+                .height(ROW_HEIGHT)
+                .then(if (rowFocused && focus.programmeId == null && !row.noGuideData) Modifier.focusRequester(focusRequester) else Modifier)
+                .onFocusChanged { if (it.isFocused) viewModel.onFocus(row.channel.ordinal, null) }
+                .testTag(EpgTags.channel(row.channel.ordinal)),
+            onClick = { viewModel.selectChannel(row.channel.ordinal) },
+            onLongClick = null,
+        )
         Box(modifier = Modifier.width(timelineWidth).height(ROW_HEIGHT)) {
             if (row.noGuideData) {
                 GuideCell(

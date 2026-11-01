@@ -1,5 +1,7 @@
 package app.playlistplayer.ui.tv.player
 
+import app.playlistplayer.ui.common.ScreenWakePolicy
+import app.playlistplayer.ui.common.KeepScreenOn
 import android.view.KeyEvent as AndroidKeyEvent
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -74,6 +76,7 @@ fun CatchupPlayerScreen(
     }
     DisposableEffect(viewModel) { onDispose { viewModel.stop() } }
     val blocking = state.error != null || state.status.error != null
+    KeepScreenOn(ScreenWakePolicy.isActive(state.status, starting = state.loading, paused = state.isPaused, ended = state.ended, blocked = state.error != null))
     LaunchedEffect(blocking) { if (!blocking) runCatching { rootFocus.requestFocus() } }
 
     BackHandler(onBack = onExit)

@@ -1,50 +1,35 @@
 package app.playlistplayer.ui.tv
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.SaveableStateHolder
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.tv.material3.MaterialTheme
-import androidx.tv.material3.Text
 import app.playlistplayer.R
 import app.playlistplayer.core.consolidation.VodKind
-import app.playlistplayer.feature.epg.EpgGridViewModel
 import app.playlistplayer.feature.live.CatchupPlayerViewModel
-import app.playlistplayer.feature.live.CatchupRequest
 import app.playlistplayer.feature.live.ExoPlayerDriver
-import app.playlistplayer.feature.live.LiveChannel
 import app.playlistplayer.feature.live.LivePlayerViewModel
 import app.playlistplayer.feature.onboarding.OnboardingViewModel
 import app.playlistplayer.feature.onboarding.PlaylistOnboarder
@@ -67,11 +52,11 @@ import app.playlistplayer.ui.common.live.ChannelRow
 import app.playlistplayer.ui.common.live.LiveBrowseSource
 import app.playlistplayer.ui.common.live.LiveBrowseText
 import app.playlistplayer.ui.common.live.LiveBrowseViewModel
+import app.playlistplayer.ui.common.live.LiveTvViewModel
+import app.playlistplayer.ui.tv.livetv.LiveTvScreen
 import app.playlistplayer.ui.common.navigation.EntryViewModelStores
-import app.playlistplayer.ui.tv.components.TvButton
 import app.playlistplayer.ui.tv.components.TvEmptyState
 import app.playlistplayer.ui.tv.components.TvLoadingState
-import app.playlistplayer.ui.tv.epg.EpgGridScreen
 import app.playlistplayer.ui.tv.home.HomeScreen
 import app.playlistplayer.ui.tv.live.LiveScreen
 import app.playlistplayer.ui.tv.navigation.TvBackStack
@@ -83,7 +68,6 @@ import app.playlistplayer.ui.tv.player.LivePlayerScreen
 import app.playlistplayer.ui.tv.search.SearchScreen
 import app.playlistplayer.ui.tv.settings.TvConfirmDialog
 import app.playlistplayer.ui.tv.settings.TvPinPromptDialog
-import app.playlistplayer.ui.tv.settings.TvSettingsDialog
 import app.playlistplayer.ui.tv.settings.TvSettingsScreen
 import app.playlistplayer.ui.tv.shell.PlaceholderDestination
 import app.playlistplayer.ui.tv.shell.TvShell
@@ -123,12 +107,11 @@ class TvRootDependencies(
 
 object TvRootTags {
     const val RESET_REQUIRED = "tv.resetRequired"
-    const val GUIDE_GROUP = "tv.guide.group"
 }
 
 /**
  * Root of the TV UI tree (tv-material). First run (no playlists) shows onboarding; otherwise the
- * shell (side rail: Home, Live, Guide, Movies, Series, Search, Settings) with full-screen screens
+ * shell (side rail: Live TV, Home, Movies, Series, Search, Settings; lands on Live TV) with full-screen screens
  * (players, title details) pushed above it. Without [dependencies] it shows the shell with
  * placeholder destinations and an empty Live screen.
  *
@@ -189,7 +172,7 @@ private fun TvApp(dependencies: TvRootDependencies?, onAddPlaylist: () -> Unit) 
     val saveable = rememberSaveableStateHolder()
     DisposableEffect(Unit) { onDispose { stores.clearAll() } }
     val shell = viewModel { ShellViewModel() }
-    /** Group to open when Live shows next (Home → live group). */
+    /** Group to open when Live TV shows next (Home → live group). */
     var pendingGroup by remember { mutableStateOf<GroupKey?>(null) }
 
     fun navigate(next: TvBackStack) {
@@ -223,7 +206,7 @@ private fun TvApp(dependencies: TvRootDependencies?, onAddPlaylist: () -> Unit) 
                     onPendingGroupConsumed = { pendingGroup = null },
                     openGroup = { group ->
                         pendingGroup = group
-                        shell.select(Destination.Live)
+                        shell.select(Destination.LiveTv)
                     },
                 )
             }
@@ -283,12 +266,31 @@ private fun TvDestination(
                 onOpenGroup = { group -> openGroup(group.key) },
             )
         }
-        Destination.Live -> {
+        Destination.LiveTv -> {
             val liveText = LiveBrowseText(
                 noPlaylists = stringResource(R.string.live_no_playlists),
                 emptyGroup = stringResource(R.string.live_empty_group),
                 loadFailed = stringResource(R.string.live_load_failed),
             )
+            val guide = dependencies?.guide
+            if (guide != null && dependencies.playback != null) {
+                val liveTv = viewModel(key = "tv-livetv") {
+                    LiveTvViewModel(dependencies.liveBrowseSource, { playlistId -> guide.coordinator.lastChannel(playlistId) }, liveText)
+                }
+                LaunchedEffect(pendingGroup) {
+                    pendingGroup?.let {
+                        liveTv.selectGroup(it)
+                        onPendingGroupConsumed()
+                    }
+                }
+                return LiveTvScreen(
+                    viewModel = liveTv,
+                    guide = guide,
+                    onPlayChannel = { channel -> playChannel(channel.playlistId, channel.ordinal) },
+                    onPlayCatchup = { request -> push(TvScreen.CatchupPlayer(request)) },
+                )
+            }
+            // Without the guide wiring: the plain channel list.
             val live = viewModel(key = "live") {
                 LiveBrowseViewModel(dependencies?.liveBrowseSource ?: EmptyLiveBrowseSource, liveText)
             }
@@ -301,16 +303,6 @@ private fun TvDestination(
             LiveScreen(
                 viewModel = live,
                 onPlay = { row -> if (players) playChannel(row.playlistId, row.ordinal) else dependencies?.onPlayChannel?.invoke(row) },
-            )
-        }
-        Destination.Guide -> {
-            val guide = dependencies?.guide
-            if (guide == null || dependencies.playback == null) return PlaceholderDestination(destination)
-            TvGuideDestination(
-                sections = dependencies.liveBrowseSource,
-                guide = guide,
-                onPlayCatchup = { request -> push(TvScreen.CatchupPlayer(request)) },
-                onWatchLive = { channel -> playChannel(channel.playlistId, channel.ordinal) },
             )
         }
         Destination.Movies, Destination.Series -> {
@@ -427,88 +419,6 @@ private fun Unavailable(onClose: () -> Unit) {
         onAction = onClose,
         modifier = Modifier.fillMaxSize().padding(TvDimens.ScreenPadding),
     )
-}
-
-/**
- * Guide destination: the grid of one live group (U9), with a group picker over the same
- * [LiveBrowseSource] sections as Live (PIN-hidden groups never appear). The grid's ViewModel is
- * kept per group in the activity store, so coming back from a player restores its focus.
- */
-@Composable
-private fun TvGuideDestination(
-    sections: LiveBrowseSource,
-    guide: GuideDependencies,
-    onPlayCatchup: (CatchupRequest) -> Unit,
-    onWatchLive: (LiveChannel) -> Unit,
-) {
-    val all by remember(sections) { sections.sections() }.collectAsStateWithLifecycle(initialValue = null)
-    var selectedPlaylist by rememberSaveable { mutableLongStateOf(-1L) }
-    var selectedGroup by rememberSaveable { mutableIntStateOf(-1) }
-    var picking by remember { mutableStateOf(false) }
-    val groups = all.orEmpty().flatMap { section -> section.groups.map { section to it } }
-    val current = groups.firstOrNull { (_, g) -> g.playlistId == selectedPlaylist && g.ordinal == selectedGroup }
-        ?: groups.firstOrNull()
-
-    when {
-        all == null -> TvLoadingState()
-        current == null -> TvEmptyState(title = stringResource(R.string.tv_guide_no_groups), modifier = Modifier.fillMaxSize().padding(TvDimens.ScreenPadding))
-        else -> {
-            val (section, group) = current
-            Column(modifier = Modifier.fillMaxSize()) {
-                Row(
-                    modifier = Modifier
-                        .padding(start = UiTokens.OverscanHorizontal, end = UiTokens.OverscanHorizontal, top = UiTokens.SpaceM)
-                        .testTag(TvRootTags.GUIDE_GROUP),
-                    horizontalArrangement = Arrangement.spacedBy(UiTokens.SpaceM),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = stringResource(R.string.tv_guide_group_label, section.name, group.name),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = UiTokens.OnBackground,
-                    )
-                    TvButton(text = stringResource(R.string.tv_guide_change_group), onClick = { picking = true })
-                }
-                val key = group.key
-                val grid = viewModel(key = "tv-guide-${key.playlistId}-${key.groupOrdinal}") {
-                    EpgGridViewModel(key, guide.channels, guide.grid, guide.coordinator, guide.clock, guide.zone)
-                }
-                EpgGridScreen(viewModel = grid, onPlayCatchup = onPlayCatchup, onWatchLive = onWatchLive, modifier = Modifier.weight(1f))
-            }
-            if (picking) {
-                GroupPicker(
-                    sections = all.orEmpty(),
-                    onPick = { g ->
-                        selectedPlaylist = g.playlistId
-                        selectedGroup = g.groupOrdinal
-                        picking = false
-                    },
-                    onDismiss = { picking = false },
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun GroupPicker(sections: List<PlaylistSection>, onPick: (GroupKey) -> Unit, onDismiss: () -> Unit) {
-    TvSettingsDialog(title = stringResource(R.string.mobile_guide_choose_group), onDismiss = onDismiss) { focus ->
-        LazyColumn(modifier = Modifier.heightIn(max = 480.dp), verticalArrangement = Arrangement.spacedBy(UiTokens.SpaceXs)) {
-            sections.filter { it.groups.isNotEmpty() }.forEachIndexed { sectionIndex, section ->
-                item(key = "s-${section.playlistId}") {
-                    Text(section.name, style = MaterialTheme.typography.titleSmall, color = UiTokens.OnSurfaceMuted)
-                }
-                items(section.groups, key = { "g-${it.playlistId}-${it.ordinal}" }) { group ->
-                    val first = sectionIndex == 0 && group === section.groups.first()
-                    TvButton(
-                        text = group.name,
-                        onClick = { onPick(group.key) },
-                        modifier = if (first) Modifier.focusRequester(focus) else Modifier,
-                    )
-                }
-            }
-        }
-    }
 }
 
 @Composable

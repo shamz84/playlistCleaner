@@ -18,34 +18,35 @@ class MobileNavigationTest {
     }
 
     @Test
-    fun `bottom destinations are the six top-level screens, settings is not among them`() {
+    fun `bottom destinations are the five top-level screens, Live TV first, settings is not among them`() {
         assertThat(BottomDestinations).containsExactly(
-            Destination.Home, Destination.Live, Destination.Guide, Destination.Movies, Destination.Series, Destination.Search,
+            Destination.LiveTv, Destination.Home, Destination.Movies, Destination.Series, Destination.Search,
         ).inOrder()
         assertThat(BottomDestinations).doesNotContain(Destination.Settings)
     }
 
     @Test
-    fun `cold start lands on Home with an empty stack and back leaves the app`() {
+    fun `cold start lands on Live TV with an empty stack and back leaves the app`() {
         val nav = MobileNavState()
-        assertThat(nav.destination).isEqualTo(Destination.Home)
+        assertThat(nav.destination).isEqualTo(Destination.LiveTv)
         assertThat(nav.top).isNull()
         assertThat(nav.canGoBack).isFalse()
         assertThat(nav.back()).isNull()
     }
 
     @Test
-    fun `back at another destination root goes Home`() {
-        val nav = MobileNavState().select(Destination.Movies)
+    fun `back at another destination root goes to Live TV`() {
+        val nav = MobileNavState().select(Destination.Home)
         assertThat(nav.canGoBack).isTrue()
-        assertThat(nav.back()).isEqualTo(MobileNavState(destination = Destination.Home))
+        assertThat(nav.back()).isEqualTo(MobileNavState(destination = Destination.LiveTv))
+        assertThat(MobileNavState().select(Destination.Movies).back()?.destination).isEqualTo(Destination.LiveTv)
     }
 
     @Test
-    fun `settings is reachable as a destination and back returns Home`() {
+    fun `settings is reachable as a destination and back returns to Live TV`() {
         val nav = MobileNavState().select(Destination.Settings)
         assertThat(nav.destination).isEqualTo(Destination.Settings)
-        assertThat(nav.back()?.destination).isEqualTo(Destination.Home)
+        assertThat(nav.back()?.destination).isEqualTo(Destination.LiveTv)
     }
 
     @Test
@@ -67,9 +68,9 @@ class MobileNavigationTest {
     @Test
     fun `selecting a destination clears the stack and reports removed entries`() {
         val nav = MobileNavState().select(Destination.Series).push(MobileScreen.SeriesDetail(2, "5")).push(MobileScreen.AddPlaylist)
-        val next = nav.select(Destination.Live)
+        val next = nav.select(Destination.LiveTv)
         assertThat(next.stack).isEmpty()
-        assertThat(next.destination).isEqualTo(Destination.Live)
+        assertThat(next.destination).isEqualTo(Destination.LiveTv)
         assertThat(nav.removedIn(next)).containsExactly(1L, 2L)
         // Ids keep increasing so a cleared ViewModel store is never reused.
         assertThat(next.push(MobileScreen.AddPlaylist).top?.id).isEqualTo(3L)
@@ -88,7 +89,7 @@ class MobileNavigationTest {
     @Test
     fun `replaceTop switches the channel in place keeping the entry id`() {
         val channels = listOf(ChannelRow(1, 0, 1, "One"), ChannelRow(1, 1, 2, "Two"))
-        val nav = MobileNavState().select(Destination.Live).push(MobileScreen.LivePlayer(channels, 0))
+        val nav = MobileNavState().select(Destination.LiveTv).push(MobileScreen.LivePlayer(channels, 0))
         val next = nav.replaceTop(MobileScreen.LivePlayer(channels, 1))
         assertThat(next.stack).hasSize(1)
         assertThat(next.top?.id).isEqualTo(nav.top?.id)
@@ -104,7 +105,7 @@ class MobileNavigationTest {
 
     @Test
     fun `pop on an empty stack is a no-op`() {
-        val nav = MobileNavState().select(Destination.Guide)
+        val nav = MobileNavState().select(Destination.LiveTv)
         assertThat(nav.pop()).isEqualTo(nav)
     }
 }

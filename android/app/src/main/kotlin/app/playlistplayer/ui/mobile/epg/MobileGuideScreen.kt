@@ -1,5 +1,7 @@
 package app.playlistplayer.ui.mobile.epg
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
@@ -30,8 +32,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
@@ -40,15 +40,11 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -59,7 +55,6 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -76,18 +71,13 @@ import app.playlistplayer.feature.epg.ProgrammeDetails
 import app.playlistplayer.feature.epg.ProgrammeTiming
 import app.playlistplayer.feature.live.CatchupRequest
 import app.playlistplayer.feature.live.LiveChannel
-import app.playlistplayer.ui.common.GroupKey
-import app.playlistplayer.ui.common.PlaylistSection
 import app.playlistplayer.ui.common.UiTokens
 import app.playlistplayer.ui.mobile.MobileDimens
 import app.playlistplayer.ui.mobile.MobileEmpty
 import app.playlistplayer.ui.mobile.MobileError
 import app.playlistplayer.ui.mobile.MobileLoading
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.isActive
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -103,88 +93,9 @@ object MobileGuideTags {
     const val LATER = "mobile.guide.later"
 }
 
-private sealed interface SectionsLoad {
-    data object Loading : SectionsLoad
-    data object Failed : SectionsLoad
-    data class Loaded(val sections: List<PlaylistSection>) : SectionsLoad
-}
-
-private val GroupKeySaver = listSaver<GroupKey?, Long>(
-    save = { key -> if (key == null) emptyList() else listOf(key.playlistId, key.groupOrdinal.toLong()) },
-    restore = { values -> if (values.size == 2) GroupKey(values[0], values[1].toInt()) else null },
-)
-
-/**
- * Phone Guide (U13 over the shared U9 [EpgGridViewModel]): a group picker (playlist-name sections →
- * groups, in a bottom sheet), then the touch grid of that group. One ViewModel per selected group,
- * kept while the app runs so returning from a player restores the window and the focused programme.
- *
- * [sections] is the live browse source's group list (PIN-hidden groups already filtered out).
- */
+/** Playlist and group of the shown grid; tapping it opens the group list (phone Live TV). */
 @Composable
-fun MobileGuideScreen(
-    sections: Flow<List<PlaylistSection>>,
-    guide: MobileGuideDependencies,
-    onPlayCatchup: (CatchupRequest) -> Unit,
-    onWatchLive: (LiveChannel) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    var attempt by remember { mutableIntStateOf(0) }
-    val load by remember(sections, attempt) {
-        sections
-            .map<List<PlaylistSection>, SectionsLoad> { list -> SectionsLoad.Loaded(list.filter { it.groups.isNotEmpty() }) }
-            .catch { e ->
-                if (e is CancellationException) throw e
-                emit(SectionsLoad.Failed)
-            }
-    }.collectAsStateWithLifecycle(initialValue = SectionsLoad.Loading)
-    var selected by rememberSaveable(stateSaver = GroupKeySaver) { mutableStateOf<GroupKey?>(null) }
-    var pickerOpen by rememberSaveable { mutableStateOf(false) }
-
-    Column(modifier = modifier.fillMaxSize().testTag(MobileGuideTags.ROOT)) {
-        when (val l = load) {
-            SectionsLoad.Loading -> MobileLoading()
-            SectionsLoad.Failed -> MobileError(stringResource(R.string.epg_load_failed), onRetry = { attempt++ })
-            is SectionsLoad.Loaded -> {
-                val group = resolveGuideGroup(l.sections, selected)
-                if (group == null) {
-                    MobileEmpty(title = stringResource(R.string.live_no_playlists))
-                } else {
-                    GroupButton(guideGroupLabel(l.sections, group), onClick = { pickerOpen = true })
-                    val viewModel = viewModel(key = "mobile-guide-${group.playlistId}-${group.groupOrdinal}") {
-                        EpgGridViewModel(
-                            group = group,
-                            channels = guide.channels,
-                            grid = guide.grid,
-                            otherVersions = guide.coordinator,
-                            clock = guide.clock,
-                            zone = guide.zone,
-                            windowSlots = GuideGeometry.PHONE_WINDOW_SLOTS,
-                        )
-                    }
-                    // Scroll positions belong to the group: a new group opens at its top and at now.
-                    key(group) {
-                        MobileGuideGrid(viewModel, onPlayCatchup = onPlayCatchup, onWatchLive = onWatchLive, modifier = Modifier.weight(1f))
-                    }
-                }
-                if (pickerOpen) {
-                    GroupPickerSheet(
-                        sections = l.sections,
-                        selected = group,
-                        onPick = { key ->
-                            selected = key
-                            pickerOpen = false
-                        },
-                        onDismiss = { pickerOpen = false },
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun GroupButton(label: Pair<String, String>?, onClick: () -> Unit) {
+internal fun GroupButton(label: Pair<String, String>?, onClick: () -> Unit) {
     val (section, group) = label ?: ("" to "")
     val description = stringResource(R.string.mobile_guide_group_button_description, section, group)
     Row(
@@ -202,58 +113,6 @@ private fun GroupButton(label: Pair<String, String>?, onClick: () -> Unit) {
             Text(group, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
         Text("▾", style = MaterialTheme.typography.titleMedium, color = UiTokens.OnSurfaceMuted)
-    }
-}
-
-/** Playlist-name sections → groups (R25); groups keep the playlist's own order. */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun GroupPickerSheet(
-    sections: List<PlaylistSection>,
-    selected: GroupKey?,
-    onPick: (GroupKey) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val selectedText = stringResource(R.string.mobile_guide_selected)
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
-        LazyColumn(modifier = Modifier.fillMaxWidth().navigationBarsPadding()) {
-            item {
-                Text(
-                    text = stringResource(R.string.mobile_guide_choose_group),
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.padding(horizontal = MobileDimens.ScreenPadding, vertical = UiTokens.SpaceS).semantics { heading() },
-                )
-            }
-            sections.forEach { section ->
-                item(key = "section-${section.playlistId}") {
-                    Text(
-                        text = section.name,
-                        style = MaterialTheme.typography.titleSmall,
-                        color = UiTokens.Accent,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(UiTokens.Surface)
-                            .padding(horizontal = MobileDimens.ScreenPadding, vertical = UiTokens.SpaceS)
-                            .semantics { heading() },
-                    )
-                }
-                items(section.groups, key = { "group-${it.playlistId}-${it.ordinal}" }) { group ->
-                    val isSelected = group.key == selected
-                    ListItem(
-                        headlineContent = { Text(group.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                        trailingContent = { Text(group.channelCount.toString(), style = MaterialTheme.typography.labelMedium) },
-                        colors = ListItemDefaults.colors(containerColor = if (isSelected) UiTokens.SurfaceFocused else Color.Transparent),
-                        modifier = Modifier
-                            .clickable(role = Role.Button) { onPick(group.key) }
-                            .semantics(mergeDescendants = true) {
-                                this.selected = isSelected
-                                if (isSelected) stateDescription = selectedText
-                            },
-                    )
-                }
-            }
-        }
     }
 }
 

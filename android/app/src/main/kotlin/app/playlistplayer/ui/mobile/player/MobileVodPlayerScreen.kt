@@ -1,5 +1,7 @@
 package app.playlistplayer.ui.mobile.player
 
+import app.playlistplayer.ui.common.ScreenWakePolicy
+import app.playlistplayer.ui.common.KeepScreenOn
 import android.os.SystemClock
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -109,6 +111,9 @@ fun MobileVodPlayerScreen(
         progress.tracker(current.progressKey, current.playlistId, current.kind, current.label, current.sources.first().id)
     }
     val playbackState by controller.state.collectAsStateWithLifecycle()
+    /** `playWhenReady`: false while the user has paused (the controller's state stays Playing). */
+    var playRequested by remember { mutableStateOf(exo.playWhenReady) }
+    KeepScreenOn(ScreenWakePolicy.isActive(playbackState, paused = !playRequested))
     val uiState by controller.uiState.collectAsStateWithLifecycle()
     var versionsOpen by remember { mutableStateOf(false) }
     /** Scrub target while a horizontal drag or the slider is held; committed on release. */
@@ -210,6 +215,10 @@ fun MobileVodPlayerScreen(
 
     DisposableEffect(exo) {
         val listener = object : Player.Listener {
+            override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
+                playRequested = playWhenReady
+            }
+
             override fun onTracksChanged(tracks: Tracks) {
                 dispatch(OverlayEvent.TracksChanged(Media3Tracks.options(tracks)))
             }

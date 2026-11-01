@@ -18,12 +18,12 @@ class MobileGuideNavigationTest {
     }
 
     @Test
-    fun `catch-up from the guide returns to the guide, from the live player to the live player`() {
-        val guide = MobileNavState().select(Destination.Guide)
+    fun `catch-up from Live TV's guide returns to Live TV, from the live player to the live player`() {
+        val guide = MobileNavState().select(Destination.LiveTv)
         val catchup = guide.push(MobileScreen.CatchupPlayer(request))
         assertThat(catchup.isFullscreen).isTrue()
         val back = catchup.back()!!
-        assertThat(back.destination).isEqualTo(Destination.Guide)
+        assertThat(back.destination).isEqualTo(Destination.LiveTv)
         assertThat(back.stack).isEmpty()
 
         val live = guide.push(MobileScreen.ChannelPlayer(1, 10))
@@ -33,7 +33,7 @@ class MobileGuideNavigationTest {
 
     @Test
     fun `channel changes in the live player keep the entry`() {
-        val live = MobileNavState().select(Destination.Guide).push(MobileScreen.ChannelPlayer(1, 10))
+        val live = MobileNavState().select(Destination.LiveTv).push(MobileScreen.ChannelPlayer(1, 10))
         val zapped = live.replaceTop(MobileScreen.ChannelPlayer(1, 11))
         assertThat(zapped.top!!.id).isEqualTo(live.top!!.id)
         assertThat(live.removedIn(zapped)).isEmpty()

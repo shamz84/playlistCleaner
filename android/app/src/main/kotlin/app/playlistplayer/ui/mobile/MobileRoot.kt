@@ -1,5 +1,7 @@
 package app.playlistplayer.ui.mobile
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
@@ -7,7 +9,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -15,7 +16,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.SaveableStateHolder
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
@@ -50,8 +50,9 @@ import app.playlistplayer.ui.common.live.ChannelRow
 import app.playlistplayer.ui.common.live.LiveBrowseSource
 import app.playlistplayer.ui.common.live.LiveBrowseText
 import app.playlistplayer.ui.common.live.LiveBrowseViewModel
+import app.playlistplayer.ui.common.live.LiveTvViewModel
+import app.playlistplayer.ui.mobile.livetv.MobileLiveTvScreen
 import app.playlistplayer.ui.mobile.epg.MobileGuideDependencies
-import app.playlistplayer.ui.mobile.epg.MobileGuideScreen
 import app.playlistplayer.ui.mobile.live.MobileLiveScreen
 import app.playlistplayer.ui.mobile.navigation.MobileEntry
 import app.playlistplayer.ui.mobile.navigation.MobileNavState
@@ -82,7 +83,7 @@ typealias MobilePlaybackDependencies = PlaybackDependencies
  * What the phone tree needs from the app container. [shared] is the same object the TV tree takes
  * (onboarder, Xtream-shape check, live browse source, hasPlaylists, onPlayChannel), so the wiring
  * unit builds it once. [vod] enables Movies / Series; [playback] enables the in-app players (without
- * it a channel tap falls back to `shared.onPlayChannel`). [guide] enables the Guide and catch-up;
+ * it a channel tap falls back to `shared.onPlayChannel`). [guide] enables Live TV's guide grid and catch-up;
  * with [playback] too, live channels play through the shared `LivePlayerViewModel` (now/next,
  * other versions, "Restart programme") instead of `playback.liveSources`.
  */
@@ -95,7 +96,7 @@ class MobileRootDependencies(
 
 /**
  * Root of the phone UI tree (material3). First run shows onboarding while `hasPlaylists` is false;
- * otherwise the shell with bottom navigation (Home, Live, Guide, Movies, Series, Search), Settings in
+ * otherwise the shell with bottom navigation (Live TV, Home, Movies, Series, Search; lands on Live TV), Settings in
  * the top app bar, and a navigation rail at ≥ 600 dp width. Without [dependencies] it renders the
  * shell with placeholder destinations and an empty Live screen.
  */
@@ -142,7 +143,7 @@ fun MobileRoot(dependencies: MobileRootDependencies? = null) {
 @Composable
 private fun MobileApp(dependencies: MobileRootDependencies?) {
     var nav by remember { mutableStateOf(MobileNavState()) }
-    /** Group to open when Live shows next (Home → live group). */
+    /** Group to open when Live TV shows next (Home → live group). */
     var pendingGroup by remember { mutableStateOf<GroupKey?>(null) }
     val stores = remember { EntryViewModelStores() }
     val saveable = rememberSaveableStateHolder()
@@ -211,7 +212,7 @@ private fun MobileApp(dependencies: MobileRootDependencies?) {
                     onPendingGroupConsumed = { pendingGroup = null },
                     openGroup = { group ->
                         pendingGroup = group
-                        navigate(nav.select(Destination.Live))
+                        navigate(nav.select(Destination.LiveTv))
                     },
                 )
             }
@@ -253,12 +254,39 @@ private fun TopLevel(
     }
     val playChannel: (Long, Int) -> Unit = { playlistId, ordinal -> if (players) push(MobileScreen.ChannelPlayer(playlistId, ordinal)) }
     when (destination) {
-        Destination.Live -> {
+        Destination.LiveTv -> {
             val liveText = LiveBrowseText(
                 noPlaylists = stringResource(R.string.live_no_playlists),
                 emptyGroup = stringResource(R.string.live_empty_group),
                 loadFailed = stringResource(R.string.live_load_failed),
             )
+            val guide = dependencies?.guide
+            if (guide != null) {
+                val liveTv = viewModel(key = "mobile-livetv") {
+                    LiveTvViewModel(dependencies.shared.liveBrowseSource, { playlistId -> guide.coordinator.lastChannel(playlistId) }, liveText)
+                }
+                LaunchedEffect(pendingGroup) {
+                    pendingGroup?.let {
+                        liveTv.selectGroup(it)
+                        onPendingGroupConsumed()
+                    }
+                }
+                MobileLiveTvScreen(
+                    viewModel = liveTv,
+                    guide = guide,
+                    wide = wide,
+                    onPlayChannel = { channel ->
+                        if (dependencies.playback != null) {
+                            push(MobileScreen.ChannelPlayer(channel.playlistId, channel.ordinal))
+                        } else {
+                            dependencies.shared.onPlayChannel(channel.toRow())
+                        }
+                    },
+                    onPlayCatchup = { request -> if (dependencies.playback != null) push(MobileScreen.CatchupPlayer(request)) },
+                )
+                return
+            }
+            // Without the guide wiring: the plain channel list.
             val live = viewModel(key = "mobile-live") {
                 LiveBrowseViewModel(dependencies?.shared?.liveBrowseSource ?: EmptyLiveBrowseSource, liveText)
             }
@@ -272,10 +300,7 @@ private fun TopLevel(
                 viewModel = live,
                 wide = wide,
                 onPlay = { channels, index ->
-                    val row = channels.getOrNull(index)
-                    if (dependencies?.playback != null && dependencies.guide != null && row != null) {
-                        push(MobileScreen.ChannelPlayer(row.playlistId, row.ordinal))
-                    } else if (dependencies?.playback != null) {
+                    if (dependencies?.playback != null) {
                         push(MobileScreen.LivePlayer(channels, index))
                     } else {
                         channels.getOrNull(index)?.let { dependencies?.shared?.onPlayChannel?.invoke(it) }
@@ -300,25 +325,6 @@ private fun TopLevel(
             MobileSettingsScreen(
                 onAddPlaylist = if (dependencies != null) ({ push(MobileScreen.AddPlaylist) }) else null,
             )
-        }
-        Destination.Guide -> {
-            val guide = dependencies?.guide
-            if (guide == null) {
-                MobilePlaceholder(destination)
-            } else {
-                MobileGuideScreen(
-                    sections = dependencies.shared.liveBrowseSource.sections(),
-                    guide = guide,
-                    onPlayCatchup = { request -> if (dependencies.playback != null) push(MobileScreen.CatchupPlayer(request)) },
-                    onWatchLive = { channel ->
-                        if (dependencies.playback != null) {
-                            push(MobileScreen.ChannelPlayer(channel.playlistId, channel.ordinal))
-                        } else {
-                            dependencies.shared.onPlayChannel(channel.toRow())
-                        }
-                    },
-                )
-            }
         }
         Destination.Home -> if (screens != null) {
             val home = viewModel(key = "mobile-home") { screens.home() }

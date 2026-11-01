@@ -23,9 +23,8 @@ fun isWideLayout(widthDp: Int): Boolean = widthDp >= RAIL_MIN_WIDTH_DP
  * the top app bar action on every top-level screen (a phone bottom bar fits six items at most).
  */
 val BottomDestinations: List<Destination> = listOf(
+    Destination.LiveTv,
     Destination.Home,
-    Destination.Live,
-    Destination.Guide,
     Destination.Movies,
     Destination.Series,
     Destination.Search,
@@ -79,14 +78,14 @@ data class MobileEntry(val id: Long, val screen: MobileScreen)
  * Phone navigation state: the selected top-level destination plus a stack of pushed screens.
  * Pure and immutable; the UI holds the current value.
  *
- * - Cold start lands on Home (as on TV).
+ * - Cold start lands on Live TV (as on TV).
  * - Selecting a destination (bottom bar, rail or the Settings action) clears the stack; selecting
  *   the current one again returns to its root.
- * - Back pops the stack; at a destination root other than Home it goes to Home; at Home's root
+ * - Back pops the stack; at a destination root other than Live TV it goes to Live TV; at its root
  *   [back] returns null and the system handles Back (the app closes, the phone convention).
  */
 data class MobileNavState(
-    val destination: Destination = Destination.Home,
+    val destination: Destination = Destination.LiveTv,
     val stack: List<MobileEntry> = emptyList(),
     val nextId: Long = 1,
 ) {
@@ -94,7 +93,7 @@ data class MobileNavState(
 
     val isFullscreen: Boolean get() = top?.screen?.isFullscreen == true
 
-    val canGoBack: Boolean get() = stack.isNotEmpty() || destination != Destination.Home
+    val canGoBack: Boolean get() = stack.isNotEmpty() || destination != Destination.LiveTv
 
     fun select(target: Destination): MobileNavState = copy(destination = target, stack = emptyList())
 
@@ -113,7 +112,7 @@ data class MobileNavState(
     /** The state after Back, or null when Back should leave the app. */
     fun back(): MobileNavState? = when {
         stack.isNotEmpty() -> pop()
-        destination != Destination.Home -> select(Destination.Home)
+        destination != Destination.LiveTv -> select(Destination.LiveTv)
         else -> null
     }
 
