@@ -1,5 +1,6 @@
 package app.playlistplayer.core.sync.catalog
 
+import app.playlistplayer.core.sync.BackgroundWorkGate
 import app.playlistplayer.core.database.CatalogStore
 import app.playlistplayer.core.database.CatalogWriter
 import app.playlistplayer.core.database.PlaylistStore
@@ -84,10 +85,13 @@ class CatalogSyncer(
     private val logger: RedactingLogger = RedactingLogger.NONE,
     private val batchSize: Int = XtreamClient.DEFAULT_BATCH_SIZE,
     private val refreshIntervalMillis: Long = DEFAULT_REFRESH_INTERVAL_MILLIS,
+    /** Shared with the EPG import and index builds so they never overlap (U20); own gate by default. */
+    private val gate: BackgroundWorkGate = BackgroundWorkGate(),
 ) {
     private val mutex = Mutex()
 
-    suspend fun sync(playlistId: Long, force: Boolean = false): CatalogSyncOutcome = mutex.withLock { syncLocked(playlistId, force) }
+    suspend fun sync(playlistId: Long, force: Boolean = false): CatalogSyncOutcome =
+        gate.run("catalog-sync") { mutex.withLock { syncLocked(playlistId, force) } }
 
     private suspend fun syncLocked(playlistId: Long, force: Boolean): CatalogSyncOutcome {
         val playlist = playlistStore.playlist(playlistId)

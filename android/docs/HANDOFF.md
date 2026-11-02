@@ -33,7 +33,8 @@ Both agents were stopped by the spend limit before running tests.
 ## Phase 5 progress
 
 - U21 + U22 done and committed (no device check yet): TiviMate-style Live TV (details + live preview on top, dense guide, slide-in groups panel), smaller TV type scale and `TvDensity` tokens app-wide, guide rows loaded lazily in blocks of 24, zap shows info overlay immediately with a corner buffering indicator, last-channel shortcut (KEYCODE_LAST_CHANNEL + overlay button; phone button). Behaviour change: Back in the guide opens the groups panel; Menu opens groups. Check on device: guide scroll speed, text size at 1080p/4K, preview continues after Back from fullscreen, last frame kept while zapping.
-- U19 (measure), U20 (cheap VOD path), U23 (audio/subtitles) still to do.
+- U20 done (no device check yet; U19 measurements still missing): merged titles are grouped once per catalog sync/override change in the background into Room (DB v6: `vod_title`, `vod_title_item`, `vod_title_state`, generation swap) with precomputed sort ranks; browse pages, Trending (tmdb id / title+year), Continue watching, detail screens and the search index read them with indexed queries and never group. Catalog sync, EPG import, title index and search index share one FIFO `BackgroundWorkGate` on a background-priority thread. Browse no longer calls `get_series_info` (Continue watching uses cached episode lists only). Check on device: Fire TV responsiveness during first sync and while scrolling; Movies/TV Shows show "loading" until the first index build after upgrade.
+- U19 (measure), U23 (audio/subtitles) still to do.
 
 ## Phase 5 (planned 2026-11-01)
 

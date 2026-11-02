@@ -6,6 +6,12 @@ import app.playlistplayer.core.network.tmdb.TmdbConfig
 import app.playlistplayer.feature.vod.RoomTrendingCache
 import app.playlistplayer.feature.vod.SharedPreferencesVodSortStore
 import app.playlistplayer.feature.vod.TrendingRepository
+import app.playlistplayer.feature.vod.RoomVodTitleIndex
+import app.playlistplayer.feature.vod.VodCatalogSource
+import app.playlistplayer.feature.vod.VodTitleIndex
+import app.playlistplayer.feature.vod.VodTitleIndexer
+import app.playlistplayer.core.database.VodTitleStore
+import app.playlistplayer.core.sync.BackgroundWorkGate
 import android.content.Context
 import androidx.work.DelegatingWorkerFactory
 import androidx.work.WorkManager
@@ -256,8 +262,14 @@ class AppContainer(context: Context, private val overrides: Overrides = Override
 
     private val xtreamAccounts: suspend (Long) -> XtreamAccount? = { id -> secureStore.account(id) }
 
+    /**
+     * Serialises the heavy background jobs (catalog sync, EPG import, title and search index
+     * builds) on one background-priority thread, so they never overlap (U20, R34).
+     */
+    val backgroundWorkGate: BackgroundWorkGate by lazy { BackgroundWorkGate(BackgroundWorkGate.lowPriorityDispatcher()) }
+
     val catalogSyncer: CatalogSyncer by lazy {
-        CatalogSyncer(playlistStore, catalogStore, xtreamAccounts, xtreamClient, logger = logger.withTag("CatalogSync"))
+        CatalogSyncer(playlistStore, catalogStore, xtreamAccounts, xtreamClient, logger = logger.withTag("CatalogSync"), gate = backgroundWorkGate)
     }
 
     /** On-demand get_series_info (cached in Room) for the series screen (U10). */
@@ -300,6 +312,7 @@ class AppContainer(context: Context, private val overrides: Overrides = Override
             xtreamClient = xtreamClient,
             pullFactory = AndroidXmlPullSource,
             logger = logger.withTag("EpgSync"),
+            gate = backgroundWorkGate,
         )
     }
 
@@ -496,30 +509,46 @@ class AppContainer(context: Context, private val overrides: Overrides = Override
     /** Setting the last channel (on every tune) also records it as a recent channel. */
     val lastChannelStore: LastChannelStore by lazy { RoomLastChannelStore(userDataStore, recentChannelsStore) }
 
-    /** U5 split/merge overrides; an edit drops the playlist's cached groupings. */
-    val titleOverrideStore: TitleOverrideStore by lazy {
-        RoomTitleOverrideStore(userDataStore, onChanged = { id -> vodCatalogRepository.invalidate(id) })
+    /** U5 split/merge overrides; an edit changes the stamp, so index maintenance regroups the playlist. */
+    val titleOverrideStore: TitleOverrideStore by lazy { RoomTitleOverrideStore(userDataStore) }
+
+    private val vodCatalogSource: VodCatalogSource by lazy {
+        CatalogStoreVodSource(catalogStore) {
+            playlistStore.playlists().filter { it.xtreamEnabled }.map { VodPlaylist(it.id, it.name) }
+        }
     }
 
-    /** Merged VOD titles (U10) of Xtream-enabled playlists, persisted overrides, parental category filtering. */
+    /** Precomputed merged titles (U20), rebuilt in the background after each catalog sync. */
+    val vodTitleIndex: VodTitleIndex by lazy { RoomVodTitleIndex(VodTitleStore(database)) }
+
+    val vodTitleIndexer: VodTitleIndexer by lazy {
+        VodTitleIndexer(
+            source = vodCatalogSource,
+            index = vodTitleIndex,
+            overrides = { id -> titleOverrideStore.overrides(id) },
+            overrideStamp = { id -> titleOverrideStore.stamp(id) },
+            gate = backgroundWorkGate,
+            logger = logger.withTag("TitleIndex"),
+        )
+    }
+
+    /** Merged VOD titles (U10) of Xtream-enabled playlists from [vodTitleIndex], parental category filtering. */
     val vodCatalogRepository: VodCatalogRepository by lazy {
         VodCatalogRepository(
-            source = CatalogStoreVodSource(catalogStore) {
-                playlistStore.playlists().filter { it.xtreamEnabled }.map { VodPlaylist(it.id, it.name) }
-            },
-            overrides = { id -> titleOverrideStore.overrides(id) },
+            source = vodCatalogSource,
+            index = vodTitleIndex,
             isCategoryHidden = { id, kind, category -> contentVisibility.isVodCategoryHidden(id, kind, category) },
         )
     }
 
-    /** Rebuilds the search index after generation flips; [startSearchIndexing] runs it. */
+    /** Rebuilds the title and search indexes after generation flips; [startSearchIndexing] runs it. */
     val searchIndexer: SearchIndexer by lazy {
         SearchIndexer(
             playlistStore = playlistStore,
-            catalogStore = catalogStore,
             searchStore = searchStore,
-            vodRepository = vodCatalogRepository,
-            overrideStamp = { id -> titleOverrideStore.stamp(id) },
+            titles = vodTitleIndex,
+            titleIndexer = vodTitleIndexer,
+            gate = backgroundWorkGate,
             logger = logger.withTag("Search"),
         )
     }
@@ -720,7 +749,6 @@ class AppContainer(context: Context, private val overrides: Overrides = Override
     private suspend fun onPlaylistRemoved(playlistId: Long) {
         userDataStore.clearPlaylist(playlistId)
         searchStore.clearPlaylist(playlistId)
-        vodCatalogRepository.invalidate(playlistId)
         liveCoordinator.invalidate(playlistId)
         vodSortStore.forgetPlaylist(playlistId)
         playlistRemovedHook(playlistId)
@@ -738,7 +766,6 @@ class AppContainer(context: Context, private val overrides: Overrides = Override
             playlistRepository.remove(playlist.id, authorizer = { true })
         }
         (overrides.cancelAllWork ?: { workManager.cancelAllWork() }).invoke()
-        vodCatalogRepository.invalidate(null)
         liveCoordinator.invalidate()
         vodSortStore.clear()
         secureStore.clear()

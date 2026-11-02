@@ -4,6 +4,7 @@ import app.playlistplayer.core.consolidation.TitleTokenizer
 import app.playlistplayer.core.consolidation.VodKind
 import app.playlistplayer.core.database.TrendingStore
 import app.playlistplayer.core.database.entity.TrendingTitleEntity
+import app.playlistplayer.core.database.entity.VodTitleEntity
 import app.playlistplayer.core.network.Redactor
 import app.playlistplayer.core.network.RedactingLogger
 import app.playlistplayer.core.network.tmdb.TmdbMediaType
@@ -111,34 +112,33 @@ class TrendingRepository(
 /**
  * Matches trending entries to a playlist's merged titles (R32): by the provider `tmdb` id, else
  * (for titles with no tmdb id) by normalized title + year. TMDB never adds titles: the result is
- * a subset of [titles], in TMDB rank order.
+ * a subset of the candidates, in TMDB rank order.
+ *
+ * The candidates come from indexed lookups ([VodCatalogRepository.trending]): [byTmdb] maps a
+ * numeric tmdb id to the titles with a version carrying it; [byName] maps a normalized title to
+ * the titles **without any** tmdb id that have that title.
  */
 object TrendingMatcher {
 
-    fun match(entries: List<TrendingEntry>, titles: List<CatalogTitle>, kind: VodKind, limit: Int = Int.MAX_VALUE): List<CatalogTitle> {
-        val byTmdb = HashMap<String, MutableList<CatalogTitle>>()
-        val byName = HashMap<String, MutableList<CatalogTitle>>()
-        for (t in titles) {
-            val ids = t.title.versions.mapNotNullTo(HashSet()) { normalizeTmdb(it.item.tmdb) }
-            if (ids.isEmpty()) {
-                val name = TitleTokenizer.normalize(t.title.title)
-                if (name.isNotEmpty()) byName.getOrPut(name) { ArrayList() } += t
-            } else {
-                ids.forEach { byTmdb.getOrPut(it) { ArrayList() } += t }
-            }
-        }
-        val out = LinkedHashMap<String, CatalogTitle>()
+    fun match(
+        entries: List<TrendingEntry>,
+        byTmdb: Map<String, List<VodTitleEntity>>,
+        byName: Map<String, List<VodTitleEntity>>,
+        kind: VodKind,
+        limit: Int = Int.MAX_VALUE,
+    ): List<VodTitleEntity> {
+        val out = LinkedHashMap<String, VodTitleEntity>()
         for (e in entries) {
             if (out.size >= limit) break
             val names = listOfNotNull(e.title, e.originalTitle).map(TitleTokenizer::normalize).filter { it.isNotEmpty() }.distinct()
             // A provider tmdb id can be reused by unrelated items (sports reuse a film's id): reject
             // differing years, and without a year on either side require the same title.
             byTmdb[e.tmdbId.toString()]?.filter { t ->
-                val year = t.releaseYear
-                if (year != null && e.year != null) abs(year - e.year) <= 1 else TitleTokenizer.normalize(t.title.title) in names
-            }?.forEach { out.putIfAbsent(it.key, it) }
+                val year = t.year
+                if (year != null && e.year != null) abs(year - e.year) <= 1 else t.normalizedTitle in names
+            }?.forEach { out.putIfAbsent(it.titleKey, it) }
             for (name in names) {
-                byName[name]?.filter { titleYearMatches(it.releaseYear, e.year, kind) }?.forEach { out.putIfAbsent(it.key, it) }
+                byName[name]?.filter { titleYearMatches(it.year, e.year, kind) }?.forEach { out.putIfAbsent(it.titleKey, it) }
             }
         }
         return out.values.take(limit)
@@ -149,10 +149,5 @@ object TrendingMatcher {
         catalogYear != null && tmdbYear != null -> catalogYear == tmdbYear
         catalogYear == null -> kind == VodKind.SERIES
         else -> false
-    }
-
-    private fun normalizeTmdb(raw: String?): String? {
-        val trimmed = raw?.trim()?.takeIf { it.isNotEmpty() && it.all(Char::isDigit) } ?: return null
-        return trimmed.trimStart('0').ifEmpty { null }
     }
 }

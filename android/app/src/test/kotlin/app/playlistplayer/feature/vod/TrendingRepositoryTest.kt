@@ -1,7 +1,5 @@
 package app.playlistplayer.feature.vod
 
-import app.playlistplayer.core.consolidation.TitleGrouper
-import app.playlistplayer.core.consolidation.VodItem
 import app.playlistplayer.core.consolidation.VodKind
 import app.playlistplayer.core.network.LogSink
 import app.playlistplayer.core.network.RedactingLogger
@@ -94,14 +92,13 @@ class TrendingRepositoryTest {
     }
 
     @Test
-    fun `tmdb matches with conflicting years are rejected`() {
-        val items = listOf(
-            VodItem("1", "1", VodKind.MOVIE, "EN - Arsenal (2017)", tmdb = "470044", providerOrder = 0),
-            VodItem("2", "1", VodKind.MOVIE, "SOC - Arsenal - Liverpool 04.02.2024", tmdb = "470044", providerOrder = 1),
-        )
-        val titles = TitleGrouper.group(items, emptyList()).map { CatalogTitle(it, emptyMap()) }
-        val matched = TrendingMatcher.match(listOf(TrendingEntry(470044, "Arsenal", null, 2017)), titles, VodKind.MOVIE)
-        assertThat(matched.map { it.title.title }).containsExactly("Arsenal")
-        assertThat(matched.single().title.versions.map { it.item.id }).containsExactly("1")
+    fun `tmdb matches with conflicting years are rejected`() = runBlocking<Unit> {
+        val source = FakeVodCatalogSource().playlist(1, "Main").vodCategory(1, "10", "EN Movies")
+            .movie(1, 1, "EN - Arsenal (2017)", "10", tmdb = "470044")
+            .movie(1, 2, "SOC - Arsenal - Liverpool 04.02.2024", "10", tmdb = "470044")
+        val repository = indexedRepository(source)
+        val matched = repository.trending(1, VodKind.MOVIE, listOf(TrendingEntry(470044, "Arsenal", null, 2017)), emptySet(), 10)
+        assertThat(matched.map { it.title }).containsExactly("Arsenal")
+        assertThat(matched.single().anchorId).isEqualTo("1")
     }
 }

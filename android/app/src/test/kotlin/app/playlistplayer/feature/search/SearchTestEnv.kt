@@ -15,10 +15,14 @@ import app.playlistplayer.core.database.entity.VodStreamEntity
 import app.playlistplayer.core.database.search.SearchStore
 import app.playlistplayer.core.model.PlaylistSourceType
 import app.playlistplayer.feature.library.RoomTitleOverrideStore
+import app.playlistplayer.core.database.VodTitleStore
+import app.playlistplayer.core.sync.BackgroundWorkGate
 import app.playlistplayer.feature.vod.CatalogStoreVodSource
+import app.playlistplayer.feature.vod.CountingGrouper
+import app.playlistplayer.feature.vod.RoomVodTitleIndex
 import app.playlistplayer.feature.vod.VodCatalogRepository
 import app.playlistplayer.feature.vod.VodPlaylist
-import kotlinx.coroutines.Dispatchers
+import app.playlistplayer.feature.vod.VodTitleIndexer
 
 /** A live entry for [SearchTestEnv.syncLive]: group is by name (groups keep first-seen order). */
 data class TestChannel(val name: String, val group: String, val streamId: Long? = null, val isHeader: Boolean = false)
@@ -37,7 +41,7 @@ class TestVisibility : ContentVisibility {
 }
 
 /**
- * In-memory Room with the real stores, VOD grouping and search index; synthetic names only.
+ * In-memory Room with the real stores, title index (U20) and search index; synthetic names only.
  * Build in a Robolectric test; [close] in @After.
  */
 class SearchTestEnv {
@@ -49,18 +53,23 @@ class SearchTestEnv {
     val visibility = TestVisibility()
     var now: Long = 1_000
 
-    lateinit var vod: VodCatalogRepository
-    val overrides = RoomTitleOverrideStore(userData, clock = { now }, onChanged = { vod.invalidate(it) })
+    val overrides = RoomTitleOverrideStore(userData, clock = { now })
+    val gate = BackgroundWorkGate()
+    private val vodSource = CatalogStoreVodSource(catalog) { playlists.playlists().filter { it.xtreamEnabled }.map { VodPlaylist(it.id, it.name) } }
+    val titleIndex = RoomVodTitleIndex(VodTitleStore(db))
+    val grouper = CountingGrouper()
+    val titleIndexer = VodTitleIndexer(
+        vodSource,
+        titleIndex,
+        overrides = { overrides.overrides(it) },
+        overrideStamp = { overrides.stamp(it) },
+        gate = gate,
+        group = grouper,
+        clock = { now },
+    )
+    val vod = VodCatalogRepository(vodSource, titleIndex)
 
-    init {
-        vod = VodCatalogRepository(
-            source = CatalogStoreVodSource(catalog) { playlists.playlists().filter { it.xtreamEnabled }.map { VodPlaylist(it.id, it.name) } },
-            groupingDispatcher = Dispatchers.Unconfined,
-            overrides = { overrides.overrides(it) },
-        )
-    }
-
-    val indexer = SearchIndexer(playlists, catalog, searchStore, vod, overrideStamp = { overrides.stamp(it) }, clock = { now }, dispatcher = Dispatchers.Unconfined)
+    val indexer = SearchIndexer(playlists, searchStore, titleIndex, titleIndexer, gate = gate, clock = { now })
 
     val repository = SearchRepository(
         searchStore,

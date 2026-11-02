@@ -1,70 +1,38 @@
 package app.playlistplayer.feature.vod
 
 import app.playlistplayer.core.consolidation.TitleGrouper
-import app.playlistplayer.core.consolidation.TitleOverride
-import app.playlistplayer.core.consolidation.VodItem
+import app.playlistplayer.core.consolidation.TitleTokenizer
 import app.playlistplayer.core.consolidation.VodKind
-import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
-import java.util.concurrent.atomic.AtomicInteger
-import kotlin.coroutines.CoroutineContext
-import kotlin.coroutines.cancellation.CancellationException
+import app.playlistplayer.core.consolidation.VodTitle
+import app.playlistplayer.core.consolidation.VodVersion
+import app.playlistplayer.core.database.entity.VodTitleEntity
+import kotlinx.coroutines.flow.Flow
 
-/** A browse rail = one provider category. */
+/** A provider category of one playlist and kind. */
 data class VodCategory(val playlistId: Long, val kind: VodKind, val id: String, val name: String)
 
-/** Every merged title of one playlist and kind, indexed by item id (for detail screens). */
-class PlaylistIndex internal constructor(
-    val playlistId: Long,
-    val kind: VodKind,
-    val generation: Long?,
-    val titles: List<CatalogTitle>,
-) {
-    private val byItem: Map<String, CatalogTitle> = buildMap {
-        for (t in titles) for (v in t.title.versions) put(v.item.id, t)
-    }
-    private val byKey: Map<String, CatalogTitle> = titles.associateBy { it.key }
-
-    fun titleForItem(itemId: String): CatalogTitle? = byItem[itemId]
-    fun titleForKey(key: String): CatalogTitle? = byKey[key]
-}
-
 /**
- * Builds merged titles (U5 [TitleGrouper]) over the catalog, per playlist (never across
- * playlists, R26).
+ * Merged VOD titles for the screens, per playlist (never across playlists, R26), read from the
+ * precomputed [VodTitleIndex] (U20, R35): every method is a handful of indexed queries; nothing
+ * here groups or sorts the catalog. [VodTitleIndexer] builds the index in the background after
+ * each catalog sync.
  *
- * - Browse rails group lazily, one category at a time ([categoryTitles]).
- * - Detail screens use the playlist-wide index ([index]), so a title merges versions from every
- *   category of its playlist.
- *
- * Grouping always runs on [groupingDispatcher] (Default in the app), never on the caller's
- * thread, and results are cached per playlist + catalog generation: a new generation evicts the
- * playlist's older entries. Concurrent requests for the same key share one computation.
+ * Parental hiding: [hiddenCategories] lists a section's hidden category ids (a few hundred
+ * categories at most); a title is left out only when every version sits in one of them.
  */
 class VodCatalogRepository(
     private val source: VodCatalogSource,
-    private val groupingDispatcher: CoroutineDispatcher = Dispatchers.Default,
-    private val overrides: suspend (playlistId: Long) -> List<TitleOverride> = { emptyList() },
+    private val index: VodTitleIndex,
     private val isCategoryHidden: suspend (playlistId: Long, kind: VodKind, categoryId: String) -> Boolean = { _, _, _ -> false },
-    private val pageSize: Int = DEFAULT_PAGE_SIZE,
 ) {
-    private data class CacheKey(val playlistId: Long, val generation: Long?, val kind: VodKind, val categoryId: String?)
-
-    private val mutex = Mutex()
-    private val cache = HashMap<CacheKey, CompletableDeferred<Any>>()
-
-    /** Number of grouping passes run (diagnostics and cache tests). */
-    private val runs = AtomicInteger()
-    val groupingRuns: Int get() = runs.get()
-
-    /** Observes the context each grouping pass runs in (tests assert the dispatcher). */
-    internal var onGrouping: ((CoroutineContext) -> Unit)? = null
-
     suspend fun playlists(): List<VodPlaylist> = source.playlists()
+
+    /** Emits after a playlist's title index is rebuilt or cleared. */
+    fun changes(): Flow<Unit> = index.changes()
+
+    /** True while the playlist has a catalog but its title index is not built yet (first sync, upgrade). */
+    suspend fun isIndexPending(playlistId: Long): Boolean =
+        source.catalogGeneration(playlistId) != null && index.state(playlistId)?.activeGeneration == null
 
     suspend fun categories(playlistId: Long, kind: VodKind): List<VodCategory> {
         val rows = when (kind) {
@@ -75,140 +43,76 @@ class VodCatalogRepository(
             .map { (id, name) -> VodCategory(playlistId, kind, id, name) }
     }
 
-    /** Merged titles of one category, in provider order. */
-    suspend fun categoryTitles(category: VodCategory): List<CatalogTitle> {
-        val generation = source.catalogGeneration(category.playlistId)
-        val key = CacheKey(category.playlistId, generation, category.kind, category.id)
-        @Suppress("UNCHECKED_CAST")
-        return cached(key) {
-            val categoryName = categoryNames(category.playlistId, category.kind)[category.id]
-            val (items, meta) = when (category.kind) {
-                VodKind.MOVIE -> loadAll { offset ->
-                    source.vodStreamsInCategory(category.playlistId, category.id, pageSize, offset)
-                }.let { rows ->
-                    rows.map { VodMappers.movieItem(it, categoryName) } to rows.map(VodMappers::movieMeta)
-                }
-                VodKind.SERIES -> loadAll { offset ->
-                    source.seriesInCategory(category.playlistId, category.id, pageSize, offset)
-                }.let { rows ->
-                    rows.map { VodMappers.seriesItem(it, categoryName) } to rows.map(VodMappers::seriesMeta)
-                }
-            }
-            group(category.playlistId, items, meta)
-        } as List<CatalogTitle>
+    /** The section's parental-hidden category ids. */
+    suspend fun hiddenCategories(playlistId: Long, kind: VodKind): Set<String> {
+        val ids = when (kind) {
+            VodKind.MOVIE -> source.vodCategories(playlistId).map { it.categoryId }
+            VodKind.SERIES -> source.seriesCategories(playlistId).map { it.categoryId }
+        }
+        return ids.filterTo(HashSet()) { isCategoryHidden(playlistId, kind, it) }
     }
 
-    /** Playlist-wide index of merged titles for [kind]. */
-    suspend fun index(playlistId: Long, kind: VodKind): PlaylistIndex {
-        val generation = source.catalogGeneration(playlistId)
-        val key = CacheKey(playlistId, generation, kind, null)
-        return cached(key) {
-            val names = categoryNames(playlistId, kind)
-            val items = ArrayList<VodItem>()
-            val meta = ArrayList<ItemMeta>()
-            var after = -1
-            while (true) {
-                val count: Int
-                when (kind) {
-                    VodKind.MOVIE -> {
-                        val page = source.vodStreamsPage(playlistId, after, pageSize)
-                        page.forEach {
-                            items += VodMappers.movieItem(it, it.categoryId?.let(names::get))
-                            meta += VodMappers.movieMeta(it)
-                        }
-                        count = page.size
-                        if (page.isNotEmpty()) after = page.last().providerOrder
-                    }
-                    VodKind.SERIES -> {
-                        val page = source.seriesPage(playlistId, after, pageSize)
-                        page.forEach {
-                            items += VodMappers.seriesItem(it, it.categoryId?.let(names::get))
-                            meta += VodMappers.seriesMeta(it)
-                        }
-                        count = page.size
-                        if (page.isNotEmpty()) after = page.last().providerOrder
-                    }
-                }
-                if (count < pageSize) break
-            }
-            PlaylistIndex(playlistId, kind, generation, group(playlistId, items, meta))
-        } as PlaylistIndex
+    /** Number of visible titles in the section. */
+    suspend fun count(playlistId: Long, kind: VodKind, hidden: Set<String>): Int = index.count(playlistId, kind, hidden)
+
+    /** One page of the section's visible titles in [sort] order. */
+    suspend fun page(playlistId: Long, kind: VodKind, sort: VodSort, hidden: Set<String>, offset: Int, limit: Int): List<VodCard> =
+        index.page(playlistId, kind, sort.order, hidden, offset, limit).map(VodTitleEntity::card)
+
+    /** Visible titles among [keys], by key. */
+    suspend fun cards(playlistId: Long, kind: VodKind, keys: Collection<String>, hidden: Set<String>): Map<String, VodCard> =
+        if (keys.isEmpty()) emptyMap() else index.titles(playlistId, kind, keys, hidden).associate { it.titleKey to it.card() }
+
+    /** Item ids of a title's versions, in provider order. */
+    suspend fun versionIds(playlistId: Long, titleKey: String): List<String> = index.items(playlistId, titleKey).map { it.itemId }
+
+    /**
+     * Trending entries (R32) matched to the section's visible titles: by the provider tmdb id, else
+     * (for titles with no tmdb id at all) by normalised title + year. Two indexed lookups, then
+     * [TrendingMatcher] applies the rules; the result keeps TMDB rank order.
+     */
+    suspend fun trending(playlistId: Long, kind: VodKind, entries: List<TrendingEntry>, hidden: Set<String>, limit: Int): List<VodCard> {
+        if (entries.isEmpty() || limit <= 0) return emptyList()
+        val items = index.itemsByTmdb(playlistId, kind, entries.map { it.tmdbId.toString() }.distinct())
+        val tmdbTitles = index.titles(playlistId, kind, items.map { it.titleKey }.distinct(), hidden).associateBy { it.titleKey }
+        val byTmdb = items.groupBy { it.tmdb.orEmpty() }.mapValues { (_, rows) ->
+            rows.map { it.titleKey }.distinct().mapNotNull(tmdbTitles::get).sortedBy { it.ordinal }
+        }
+        val names = entries.flatMap { listOfNotNull(it.title, it.originalTitle) }.map(TitleTokenizer::normalize).filter { it.isNotEmpty() }.distinct()
+        val byName = index.titlesByName(playlistId, kind, names, hidden).sortedBy { it.ordinal }.groupBy { it.normalizedTitle }
+        return TrendingMatcher.match(entries, byTmdb, byName, kind, limit).map(VodTitleEntity::card)
     }
 
     /**
-     * Every merged title of a playlist and kind that parental controls let through, in provider
-     * order. A title is hidden when all of its versions sit in hidden categories (the rule Search
-     * and Home use); versions without a category never hide it.
+     * The merged title holding [itemId] (a card's anchor) with every version, for the detail
+     * screens: the index names the title and its versions; only those few catalog rows are read
+     * and parsed. Null when the title or all of its versions are gone.
      */
-    suspend fun visibleTitles(playlistId: Long, kind: VodKind): List<CatalogTitle> {
-        val titles = index(playlistId, kind).titles
-        val categoryIds = HashSet<String>()
-        titles.forEach { t -> t.meta.values.forEach { m -> m.categoryId?.let(categoryIds::add) } }
-        val hidden = categoryIds.filterTo(HashSet()) { isCategoryHidden(playlistId, kind, it) }
-        if (hidden.isEmpty()) return titles
-        return titles.filterNot { t ->
-            val categories = t.title.versions.map { v -> t.meta[v.item.id]?.categoryId }
-            categories.isNotEmpty() && categories.all { it != null && it in hidden }
+    suspend fun title(playlistId: Long, kind: VodKind, itemId: String): CatalogTitle? {
+        val row = index.titleForItem(playlistId, kind, itemId) ?: return null
+        val ids = index.items(playlistId, row.titleKey).mapNotNull { it.itemId.toLongOrNull() }
+        if (ids.isEmpty()) return null
+        val names = when (kind) {
+            VodKind.MOVIE -> source.vodCategories(playlistId).associate { it.categoryId to it.name }
+            VodKind.SERIES -> source.seriesCategories(playlistId).associate { it.categoryId to it.name }
         }
-    }
-
-    /** The merged title holding [itemId] (a browse card's anchor), across all categories. */
-    suspend fun title(playlistId: Long, kind: VodKind, itemId: String): CatalogTitle? =
-        index(playlistId, kind).titleForItem(itemId)
-
-    /** Drops every cached grouping (e.g. after an override edit). */
-    suspend fun invalidate(playlistId: Long? = null) = mutex.withLock {
-        if (playlistId == null) cache.clear() else cache.keys.removeAll { it.playlistId == playlistId }
-    }
-
-    private suspend fun categoryNames(playlistId: Long, kind: VodKind): Map<String, String> = when (kind) {
-        VodKind.MOVIE -> source.vodCategories(playlistId).associate { it.categoryId to it.name }
-        VodKind.SERIES -> source.seriesCategories(playlistId).associate { it.categoryId to it.name }
-    }
-
-    private suspend fun <T> loadAll(page: suspend (offset: Int) -> List<T>): List<T> {
-        val out = ArrayList<T>()
-        while (true) {
-            val rows = page(out.size)
-            out += rows
-            if (rows.size < pageSize) return out
-        }
-    }
-
-    private suspend fun group(playlistId: Long, items: List<VodItem>, meta: List<ItemMeta>): List<CatalogTitle> {
-        val titleOverrides = overrides(playlistId)
-        return withContext(groupingDispatcher) {
-            onGrouping?.invoke(coroutineContext)
-            runs.incrementAndGet()
-            // Defensive: the grouper scopes by playlist id already; never let foreign rows in.
-            val own = items.filter { it.playlistId == playlistId.toString() }
-            val metaById = meta.associateBy { it.itemId }
-            TitleGrouper.group(own, titleOverrides).map { title ->
-                CatalogTitle(title, title.versions.mapNotNull { v -> metaById[v.item.id] }.associateBy { it.itemId })
+        val versions = ArrayList<VodVersion>()
+        val meta = ArrayList<ItemMeta>()
+        for (id in ids) {
+            when (kind) {
+                VodKind.MOVIE -> source.vodStream(playlistId, id)?.let {
+                    versions += TitleGrouper.versionOf(VodMappers.movieItem(it, it.categoryId?.let(names::get)))
+                    meta += VodMappers.movieMeta(it)
+                }
+                VodKind.SERIES -> source.series(playlistId, id)?.let {
+                    versions += TitleGrouper.versionOf(VodMappers.seriesItem(it, it.categoryId?.let(names::get)))
+                    meta += VodMappers.seriesMeta(it)
+                }
             }
         }
-    }
-
-    private suspend fun cached(key: CacheKey, compute: suspend () -> Any): Any {
-        var owner = false
-        val deferred = mutex.withLock {
-            // A newer generation for this playlist makes every older entry unreachable.
-            cache.keys.removeAll { it.playlistId == key.playlistId && it.generation != key.generation }
-            cache.getOrPut(key) { owner = true; CompletableDeferred() }
-        }
-        if (owner) {
-            try {
-                deferred.complete(compute())
-            } catch (e: Throwable) {
-                mutex.withLock { if (cache[key] === deferred) cache.remove(key) }
-                if (e is CancellationException) deferred.cancel(e) else deferred.completeExceptionally(e)
-                throw e
-            }
-        }
-        return deferred.await()
-    }
-
-    companion object {
-        const val DEFAULT_PAGE_SIZE: Int = 1000
+        if (versions.isEmpty()) return null
+        val ordered = versions.sortedWith(compareBy({ it.item.providerOrder }, { it.item.id }))
+        val title = VodTitle(row.titleKey, playlistId.toString(), kind, row.title, row.titleYear, row.tmdb, ordered)
+        return CatalogTitle(title, meta.associateBy { it.itemId })
     }
 }

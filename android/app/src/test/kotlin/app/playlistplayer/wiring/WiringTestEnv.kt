@@ -116,6 +116,8 @@ class WiringTestEnv(tempDir: File) {
             ),
         )
         catalog.activateGeneration(playlistId, generation) { it }
+        // The background index maintenance (not started in these tests) groups the new catalog.
+        container.vodTitleIndexer.ensureFresh(playlistId)
     }
 
     fun close() {
