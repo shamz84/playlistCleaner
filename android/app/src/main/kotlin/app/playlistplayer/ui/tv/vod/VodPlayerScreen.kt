@@ -58,7 +58,11 @@ import app.playlistplayer.feature.vod.OverlayEvent
 import app.playlistplayer.feature.vod.PlaybackProgressRepository
 import app.playlistplayer.feature.vod.PlaybackRequest
 import app.playlistplayer.feature.vod.SeekDirection
+import app.playlistplayer.feature.vod.InMemoryTrackPreferenceStore
 import app.playlistplayer.feature.vod.TrackOption
+import app.playlistplayer.feature.vod.TrackPreferenceStore
+import app.playlistplayer.feature.vod.currentOrDefault
+import app.playlistplayer.feature.vod.saveQuietly
 import app.playlistplayer.feature.vod.VodOverlayState
 import app.playlistplayer.feature.vod.VodPlayerOverlayState
 import kotlinx.coroutines.CoroutineScope
@@ -74,6 +78,8 @@ import app.playlistplayer.ui.common.Media3Tracks
  *
  * @param onNextEpisode builds the request for the next episode (null at the end of a series).
  * @param saveScope outlives this screen, so the final progress save on exit completes.
+ * @param trackPreferences preferred audio/subtitle language: applied when each item starts; a
+ *   choice in the track panel (Up / Menu) applies at once and becomes the new preference (R40).
  */
 @Composable
 fun VodPlayerScreen(
@@ -85,10 +91,13 @@ fun VodPlayerScreen(
     onNextEpisode: suspend () -> PlaybackRequest?,
     onExit: () -> Unit,
     modifier: Modifier = Modifier,
+    trackPreferences: TrackPreferenceStore = InMemoryTrackPreferenceStore(),
 ) {
     val exo = player.exoPlayer
     val scope = rememberCoroutineScope()
     val overlay = remember { VodPlayerOverlayState() }
+    /** Live playback's track parameters, put back when this screen closes (shared player). */
+    val trackSnapshot = remember(exo) { Media3Tracks.snapshot(exo) }
     var overlayState by remember { mutableStateOf(VodOverlayState()) }
     var current by remember { mutableStateOf(request) }
     val nextEpisode by rememberUpdatedState(onNextEpisode)
@@ -123,6 +132,10 @@ fun VodPlayerScreen(
             OverlayCommand.Resume -> controller.resume()
             is OverlayCommand.SeekTo -> exo.seekTo(command.positionMs)
             is OverlayCommand.ApplyTracks -> Media3Tracks.apply(exo, command.audioId, command.subtitleId)
+            is OverlayCommand.SaveTrackPreference -> {
+                Media3Tracks.preferLanguages(exo, command.preference)
+                saveScope.launch { trackPreferences.saveQuietly(command.preference) }
+            }
             OverlayCommand.PlayNext -> scope.launch {
                 saveNow()
                 val next = nextEpisode()
@@ -137,7 +150,10 @@ fun VodPlayerScreen(
     }
 
     LaunchedEffect(current) {
-        dispatch(OverlayEvent.Open(current.resumeOfferMs, current.startPositionMs ?: 0L, current.nextEpisodeLabel))
+        // The next episode keeps this session's preference (including a choice made in the panel).
+        val preference = overlay.state.tracks.preference ?: trackPreferences.currentOrDefault()
+        Media3Tracks.startWithPreference(exo, preference)
+        dispatch(OverlayEvent.Open(current.resumeOfferMs, current.startPositionMs ?: 0L, current.nextEpisodeLabel, preference))
         rootFocus.requestFocus()
     }
 
@@ -175,6 +191,7 @@ fun VodPlayerScreen(
             exo.removeListener(listener)
             latestSave()
             controller.stop()
+            Media3Tracks.restore(exo, trackSnapshot)
         }
     }
 
@@ -294,7 +311,20 @@ private fun ControlsBar(label: String, s: VodOverlayState, modifier: Modifier) {
         modifier = modifier.fillMaxWidth().background(Color(0xB0000000)).padding(horizontal = 48.dp, vertical = 24.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Text(text = label, style = MaterialTheme.typography.titleMedium, color = Color.White)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+            Text(text = label, style = MaterialTheme.typography.titleMedium, color = Color.White, modifier = Modifier.weight(1f))
+            // The track panel opens with Up / Menu; show what is playing and how to change it.
+            if (s.tracks.hasChoices) {
+                val audio = s.tracks.audio.firstOrNull { it.selected }?.label
+                val subtitles = s.tracks.subtitles.firstOrNull { it.selected }?.label ?: stringResource(R.string.vod_subtitles_off)
+                Text(
+                    text = stringResource(R.string.vod_tracks_hint, listOfNotNull(audio, subtitles).joinToString(" / ")),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.White,
+                    maxLines = 1,
+                )
+            }
+        }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             if (!s.isPlaying && s.started) Text(text = stringResource(R.string.vod_paused), color = Color.White)
             Text(text = formatClock(shown), color = Color.White)
@@ -355,17 +385,18 @@ private fun TrackPanel(
     modifier: Modifier,
 ) {
     val focus = remember { FocusRequester() }
+    // Opens on the playing audio track (D-pad: Up/Down moves, Centre picks, Back closes).
+    val focusedAudioId = remember { (audio.firstOrNull { it.selected } ?: audio.firstOrNull())?.id }
     LazyColumn(
         modifier = modifier.width(360.dp).fillMaxSize().background(Color(0xE0101010)).padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         item { Text(text = stringResource(R.string.vod_audio), style = MaterialTheme.typography.titleMedium, color = Color.White) }
         items(audio, key = { "a:${it.id}" }) { track ->
-            val first = track === audio.firstOrNull()
             ListItem(
                 selected = track.selected,
                 onClick = { onAudio(track.id) },
-                modifier = if (first) Modifier.focusRequester(focus) else Modifier,
+                modifier = if (track.id == focusedAudioId) Modifier.focusRequester(focus) else Modifier,
                 headlineContent = { Text(track.label) },
             )
         }
@@ -382,7 +413,7 @@ private fun TrackPanel(
             ListItem(selected = track.selected, onClick = { onSubtitle(track.id) }, headlineContent = { Text(track.label) })
         }
     }
-    LaunchedEffect(Unit) { focus.requestFocus() }
+    LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
 }
 
 private const val POLL_MS = 500L

@@ -37,6 +37,7 @@
     <string name="vod_audio">Audio</string>
     <string name="vod_subtitles">Subtitles</string>
     <string name="vod_subtitles_off">Off</string>
+    <string name="vod_tracks_hint">▲ Audio and subtitles: %1$s</string>
     <string name="vod_paused">Paused</string>
     <string name="vod_retry_playback">Retry</string>
     <string name="vod_trending">Trending</string>

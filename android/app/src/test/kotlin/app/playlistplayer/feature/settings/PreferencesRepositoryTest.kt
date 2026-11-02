@@ -82,6 +82,37 @@ class PreferencesRepositoryTest {
     }
 
     @Test
+    fun trackLanguagesDefaultToDeviceAudioAndSubtitlesOffAndPersist() = runTest {
+        val repo = PreferencesRepository(storage)
+        assertThat(repo.current().playback.audioLanguage).isNull()
+        assertThat(repo.current().playback.subtitleLanguage).isNull()
+
+        assertThat(repo.setAudioLanguage(" FR ")).isTrue()
+        assertThat(repo.setSubtitleLanguage("pt-BR")).isTrue()
+        assertThat(repo.setAudioLanguage("not a tag!")).isFalse()
+        val reopened = PreferencesRepository(SecretSlotPreferencesStorage(slots)).current().playback
+        assertThat(reopened.audioLanguage).isEqualTo("fr")
+        assertThat(reopened.subtitleLanguage).isEqualTo("pt-br")
+
+        // Back to device language / subtitles off.
+        assertThat(repo.setTrackLanguages(null, null)).isTrue()
+        assertThat(PreferencesRepository(SecretSlotPreferencesStorage(slots)).current().playback)
+            .isEqualTo(PlaybackPreferences())
+        assertThat(repo.setTrackLanguages("en", "??")).isFalse()
+        assertThat(repo.current().playback.audioLanguage).isNull()
+    }
+
+    @Test
+    fun invalidStoredTrackLanguagesReadAsDefaults() = runTest {
+        val raw = InMemoryPreferencesStorage(
+            mapOf(PreferencesCodec.KEY_AUDIO_LANGUAGE to "!!", PreferencesCodec.KEY_SUBTITLE_LANGUAGE to ""),
+        )
+        val playback = PreferencesRepository(raw).current().playback
+        assertThat(playback.audioLanguage).isNull()
+        assertThat(playback.subtitleLanguage).isNull()
+    }
+
+    @Test
     fun unreadableOrCorruptRecordFallsBackToDefaults() = runTest {
         PreferencesRepository(storage).setQuality(QualityPreference.SD)
         slots.unreadable += SecretSlotPreferencesStorage.SLOT

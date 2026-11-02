@@ -33,7 +33,8 @@ Both agents were stopped by the spend limit before running tests.
 ## Phase 5 progress
 
 - U21 + U22 done and committed (no device check yet): TiviMate-style Live TV (details + live preview on top, dense guide, slide-in groups panel), smaller TV type scale and `TvDensity` tokens app-wide, guide rows loaded lazily in blocks of 24, zap shows info overlay immediately with a corner buffering indicator, last-channel shortcut (KEYCODE_LAST_CHANNEL + overlay button; phone button). Behaviour change: Back in the guide opens the groups panel; Menu opens groups. Check on device: guide scroll speed, text size at 1080p/4K, preview continues after Back from fullscreen, last frame kept while zapping.
-- U19 (measure), U20 (cheap VOD path), U23 (audio/subtitles) still to do.
+- U23 done (no device check yet): every movie/episode (TV and phone players, resume and next-episode paths) picks audio and subtitles from the stream's tracks with labels like "English · 5.1 · Dolby Digital+", "English · Forced", "Audio 2"; Settings → Playback has Audio language (default: device language, then English) and Subtitles (default Off); a choice in the player applies at once and becomes the new preference. Live keeps its behaviour (the VOD player restores the shared player's track parameters on exit). Check on device: a multi-language MKV/MP4 and an HLS movie with WebVTT/CEA-608 switch audio and subtitles on Fire TV (Up/Menu opens the panel) and phone.
+- U19 (measure), U20 (cheap VOD path) still to do.
 
 ## Phase 5 (planned 2026-11-01)
 

@@ -253,6 +253,16 @@ class SettingsViewModel(
 
     fun setTunneling(enabled: Boolean) = launchPrefs { preferences.setTunneling(enabled) }
 
+    /** Preferred audio language of movies and episodes; null = device language. */
+    fun setAudioLanguage(code: String?) = launchPrefs {
+        if (!preferences.setAudioLanguage(code)) post(SettingsMessage.InvalidLanguage)
+    }
+
+    /** Preferred subtitle language of movies and episodes; null = subtitles off. */
+    fun setSubtitleLanguage(code: String?) = launchPrefs {
+        if (!preferences.setSubtitleLanguage(code)) post(SettingsMessage.InvalidLanguage)
+    }
+
     fun setCatchupOffsetHours(hours: Int) = launchPrefs {
         val applied = preferences.setCatchupOffsetHours(hours)
         if (applied != hours) _state.update { it.copy(message = SettingsMessage.ValueClamped(applied)) }

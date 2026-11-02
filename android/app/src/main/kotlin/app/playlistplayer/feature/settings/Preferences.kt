@@ -71,6 +71,9 @@ data class ContentPreferences(
  * Playback preferences.
  *
  * @property catchupOffsetHours correction applied to catch-up start times, in [CATCHUP_OFFSET_RANGE].
+ * @property audioLanguage preferred audio language of movies and episodes (lower-case BCP 47
+ *   tag such as `en` or `pt-br`); null = the device language (then English).
+ * @property subtitleLanguage preferred subtitle language of movies and episodes; null = off.
  */
 data class PlaybackPreferences(
     val liveFormat: LiveFormatPreference = LiveFormatPreference.TS,
@@ -78,9 +81,13 @@ data class PlaybackPreferences(
     val tunneling: Boolean = false,
     val catchupOffsetHours: Int = 0,
     val catchupUrlStyle: CatchupUrlStyle = CatchupUrlStyle.PATH,
+    val audioLanguage: String? = null,
+    val subtitleLanguage: String? = null,
 ) {
     init {
         require(catchupOffsetHours in CATCHUP_OFFSET_RANGE) { "catch-up offset out of range" }
+        require(audioLanguage == null || ContentPreferences.LANGUAGE.matches(audioLanguage)) { "invalid audio language" }
+        require(subtitleLanguage == null || ContentPreferences.LANGUAGE.matches(subtitleLanguage)) { "invalid subtitle language" }
     }
 
     companion object {
@@ -130,6 +137,8 @@ object PreferencesCodec {
     const val KEY_TUNNELING = "playback.tunneling"
     const val KEY_CATCHUP_OFFSET = "playback.catchupOffsetHours"
     const val KEY_CATCHUP_STYLE = "playback.catchupUrlStyle"
+    const val KEY_AUDIO_LANGUAGE = "playback.audioLanguage"
+    const val KEY_SUBTITLE_LANGUAGE = "playback.subtitleLanguage"
     const val KEY_REFRESH_HOURS = "sync.refreshIntervalHours"
     const val KEY_STALE_DAYS = "sync.staleWarningDays"
     private const val VERSION = "1"
@@ -143,6 +152,9 @@ object PreferencesCodec {
         KEY_TUNNELING to prefs.playback.tunneling.toString(),
         KEY_CATCHUP_OFFSET to prefs.playback.catchupOffsetHours.toString(),
         KEY_CATCHUP_STYLE to prefs.playback.catchupUrlStyle.name,
+        // Empty = null (device language / subtitles off).
+        KEY_AUDIO_LANGUAGE to prefs.playback.audioLanguage.orEmpty(),
+        KEY_SUBTITLE_LANGUAGE to prefs.playback.subtitleLanguage.orEmpty(),
         KEY_REFRESH_HOURS to prefs.sync.refreshIntervalHours.toString(),
         KEY_STALE_DAYS to prefs.sync.staleWarningDays.toString(),
     )
@@ -167,6 +179,8 @@ object PreferencesCodec {
                 tunneling = boolOr(map[KEY_TUNNELING], d.playback.tunneling),
                 catchupOffsetHours = intIn(map[KEY_CATCHUP_OFFSET], PlaybackPreferences.CATCHUP_OFFSET_RANGE, d.playback.catchupOffsetHours),
                 catchupUrlStyle = enumOr(map[KEY_CATCHUP_STYLE], d.playback.catchupUrlStyle),
+                audioLanguage = languageOrNull(map[KEY_AUDIO_LANGUAGE]),
+                subtitleLanguage = languageOrNull(map[KEY_SUBTITLE_LANGUAGE]),
             ),
             sync = SyncPreferences(
                 refreshIntervalHours = intIn(map[KEY_REFRESH_HOURS], SyncPreferences.REFRESH_RANGE, d.sync.refreshIntervalHours),
@@ -183,6 +197,10 @@ object PreferencesCodec {
         "false" -> false
         else -> default
     }
+
+    /** A valid normalised language tag, else null (blank, missing or invalid). */
+    private fun languageOrNull(value: String?): String? =
+        value?.let(ContentPreferences::normalizeLanguage)?.takeIf { ContentPreferences.LANGUAGE.matches(it) }
 
     private fun intIn(value: String?, range: IntRange, default: Int): Int =
         value?.trim()?.toIntOrNull()?.coerceIn(range) ?: default

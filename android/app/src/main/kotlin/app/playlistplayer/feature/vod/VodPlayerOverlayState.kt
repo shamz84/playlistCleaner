@@ -35,46 +35,65 @@ data class TrackOption(
     val id: String,
     val type: TrackType,
     val label: String,
+    /** Normalised language tag (`TrackLanguage.normalize`), null when unknown. */
     val language: String? = null,
     val selected: Boolean = false,
+    /** Forced subtitles (foreign-language parts only). */
+    val forced: Boolean = false,
 )
 
 /**
  * Audio and subtitle selection. Input: the player's track list (with the player's current
  * selection flags). Output: [selectedAudioId] and [selectedSubtitleId] (null = subtitles off).
+ *
+ * With a [preference] (on-demand playback, R40) the tracks matching it are chosen
+ * ([TrackPreferenceResolver]) until the user picks a track ([manual]); each pick also updates
+ * [preference] to the picked track's language. Without one (live), the player's selection is kept.
  */
 data class TrackSelectionModel(
     val audio: List<TrackOption> = emptyList(),
     val subtitles: List<TrackOption> = emptyList(),
     val selectedAudioId: String? = null,
     val selectedSubtitleId: String? = null,
+    val preference: TrackPreference? = null,
+    /** The user picked a track for the current item; the preference no longer overrides it. */
+    val manual: Boolean = false,
 ) {
     val hasChoices: Boolean get() = audio.size > 1 || subtitles.isNotEmpty()
 
     /**
-     * New track list from the player. A user choice that still exists is kept; otherwise the
-     * player's selected track (or the first audio track) is used.
+     * New track list from the player. Before a manual pick with a [preference], the preferred
+     * tracks are chosen. Otherwise a user choice that still exists is kept, else the player's
+     * selected track (or the first audio track) is used.
      */
     fun withTracks(tracks: List<TrackOption>): TrackSelectionModel {
         val a = tracks.filter { it.type == TrackType.AUDIO }
         val t = tracks.filter { it.type == TrackType.TEXT }
-        val audioId = selectedAudioId?.takeIf { id -> a.any { it.id == id } }
-            ?: a.firstOrNull { it.selected }?.id
-            ?: a.firstOrNull()?.id
-        val textId = selectedSubtitleId?.takeIf { id -> t.any { it.id == id } }
-            ?: t.firstOrNull { it.selected }?.id
-        return TrackSelectionModel(a.markSelected(audioId), t.markSelected(textId), audioId, textId)
+        val pref = preference
+        val audioId: String?
+        val textId: String?
+        if (pref != null && !manual) {
+            audioId = TrackPreferenceResolver.audio(a, pref)
+            textId = TrackPreferenceResolver.subtitle(t, pref)
+        } else {
+            audioId = selectedAudioId?.takeIf { id -> a.any { it.id == id } }
+                ?: a.firstOrNull { it.selected }?.id
+                ?: a.firstOrNull()?.id
+            textId = selectedSubtitleId?.takeIf { id -> t.any { it.id == id } }
+                ?: t.firstOrNull { it.selected }?.id
+        }
+        return copy(audio = a.markSelected(audioId), subtitles = t.markSelected(textId), selectedAudioId = audioId, selectedSubtitleId = textId)
     }
 
     fun selectAudio(id: String): TrackSelectionModel {
-        if (audio.none { it.id == id }) return this
-        return copy(audio = audio.markSelected(id), selectedAudioId = id)
+        val track = audio.firstOrNull { it.id == id } ?: return this
+        return copy(audio = audio.markSelected(id), selectedAudioId = id, manual = true, preference = preference?.withAudioChoice(track))
     }
 
     /** [id] null turns subtitles off. */
     fun selectSubtitle(id: String?): TrackSelectionModel {
-        if (id != null && subtitles.none { it.id == id }) return this
-        return copy(subtitles = subtitles.markSelected(id), selectedSubtitleId = id)
+        val track = id?.let { i -> subtitles.firstOrNull { it.id == i } ?: return this }
+        return copy(subtitles = subtitles.markSelected(id), selectedSubtitleId = id, manual = true, preference = preference?.withSubtitleChoice(track))
     }
 
     private fun List<TrackOption>.markSelected(id: String?) = map { it.copy(selected = it.id == id) }
@@ -105,8 +124,17 @@ data class VodOverlayState(
 )
 
 sealed interface OverlayEvent {
-    /** New episode/movie opened. [resumeOfferMs] shows the prompt; [nextLabel] enables auto-advance. */
-    data class Open(val resumeOfferMs: Long?, val startPositionMs: Long = 0, val nextLabel: String? = null) : OverlayEvent
+    /**
+     * New episode/movie opened. [resumeOfferMs] shows the prompt; [nextLabel] enables auto-advance.
+     * [trackPreference] (R40) selects the preferred audio/subtitles when the tracks arrive; null
+     * keeps the previous item's track model (no automatic selection).
+     */
+    data class Open(
+        val resumeOfferMs: Long?,
+        val startPositionMs: Long = 0,
+        val nextLabel: String? = null,
+        val trackPreference: TrackPreference? = null,
+    ) : OverlayEvent
     data object ChooseResume : OverlayEvent
     data object ChooseStartOver : OverlayEvent
     data object PlayPause : OverlayEvent
@@ -135,6 +163,9 @@ sealed interface OverlayCommand {
     data class SeekTo(val positionMs: Long) : OverlayCommand
     data object PlayNext : OverlayCommand
     data class ApplyTracks(val audioId: String?, val subtitleId: String?) : OverlayCommand
+
+    /** A manual track choice changed the language preference: persist it and prefer it from now on. */
+    data class SaveTrackPreference(val preference: TrackPreference) : OverlayCommand
 }
 
 /**
@@ -162,11 +193,13 @@ class VodPlayerOverlayState(initial: VodOverlayState = VodOverlayState()) {
             is OverlayEvent.Open -> {
                 nextLabel = event.nextLabel
                 countdownStartedAt = null
+                // A preference starts a fresh track model: the new item's tracks are chosen from it.
+                val tracks = event.trackPreference?.let { TrackSelectionModel(preference = it) } ?: s.tracks
                 if (event.resumeOfferMs != null && event.resumeOfferMs > 0) {
-                    state = VodOverlayState(resumePrompt = ResumePrompt(event.resumeOfferMs), tracks = s.tracks)
+                    state = VodOverlayState(resumePrompt = ResumePrompt(event.resumeOfferMs), tracks = tracks)
                     emptyList()
                 } else {
-                    state = VodOverlayState(started = true, isPlaying = true, positionMs = event.startPositionMs, tracks = s.tracks)
+                    state = VodOverlayState(started = true, isPlaying = true, positionMs = event.startPositionMs, tracks = tracks)
                     listOf(OverlayCommand.Start(event.startPositionMs))
                 }
             }
@@ -213,10 +246,7 @@ class VodPlayerOverlayState(initial: VodOverlayState = VodOverlayState()) {
                 state = s.copy(isPlaying = false, nextEpisode = null, controlsVisible = true)
                 emptyList()
             }
-            is OverlayEvent.TracksChanged -> {
-                state = s.copy(tracks = s.tracks.withTracks(event.tracks))
-                emptyList()
-            }
+            is OverlayEvent.TracksChanged -> onTracksChanged(s, event.tracks)
             OverlayEvent.ToggleTrackPanel -> {
                 state = s.copy(trackPanelOpen = !s.trackPanelOpen)
                 emptyList()
@@ -269,10 +299,31 @@ class VodPlayerOverlayState(initial: VodOverlayState = VodOverlayState()) {
         return listOf(OverlayCommand.PlayNext)
     }
 
+    /**
+     * Before a manual pick, a preference-driven model applies its choice when the player selected
+     * something else (e.g. a default-flagged track, or a language the player's own rules missed).
+     */
+    private fun onTracksChanged(s: VodOverlayState, tracks: List<TrackOption>): List<OverlayCommand> {
+        val next = s.tracks.withTracks(tracks)
+        state = s.copy(tracks = next)
+        if (next.preference == null || next.manual || tracks.isEmpty()) return emptyList()
+        val playerAudio = tracks.firstOrNull { it.type == TrackType.AUDIO && it.selected }?.id
+        val playerText = tracks.firstOrNull { it.type == TrackType.TEXT && it.selected }?.id
+        if (next.selectedAudioId == playerAudio && next.selectedSubtitleId == playerText) return emptyList()
+        return listOf(OverlayCommand.ApplyTracks(next.selectedAudioId, next.selectedSubtitleId))
+    }
+
+    /** A manual pick: applied at once; a changed language preference is saved too. */
     private fun applyTracks(s: VodOverlayState, tracks: TrackSelectionModel): List<OverlayCommand> {
         if (tracks == s.tracks) return emptyList()
         state = s.copy(tracks = tracks)
-        return listOf(OverlayCommand.ApplyTracks(tracks.selectedAudioId, tracks.selectedSubtitleId))
+        val apply = OverlayCommand.ApplyTracks(tracks.selectedAudioId, tracks.selectedSubtitleId)
+        val preference = tracks.preference
+        return if (preference != null && preference != s.tracks.preference) {
+            listOf(apply, OverlayCommand.SaveTrackPreference(preference))
+        } else {
+            listOf(apply)
+        }
     }
 
     /** Seeking back out of the credits hides the card and re-arms it. */

@@ -174,6 +174,24 @@ class SettingsViewModelTest {
     }
 
     @Test
+    fun audioAndSubtitleLanguagesAreSavedAndCanBeCleared() = runBlocking<Unit> {
+        val vm = vm()
+        vm.await { it.preferencesLoaded }
+        vm.setAudioLanguage("fr")
+        vm.setSubtitleLanguage("en")
+        vm.await { it.preferences.playback.subtitleLanguage == "en" }
+        val reopened = PreferencesRepository(SecretSlotPreferencesStorage(SecureStoreSecretSlots(env.secureStore))).current()
+        assertThat(reopened.playback.audioLanguage).isEqualTo("fr")
+        assertThat(reopened.playback.subtitleLanguage).isEqualTo("en")
+
+        vm.setSubtitleLanguage(null)
+        vm.await { it.preferences.playback.subtitleLanguage == null }
+        vm.setAudioLanguage("not a tag!")
+        assertThat(vm.await { it.message != null }.message).isEqualTo(SettingsMessage.InvalidLanguage)
+        assertThat(prefs.current().playback.audioLanguage).isEqualTo("fr")
+    }
+
+    @Test
     fun outOfRangeValuesAreClampedAndReported() = runBlocking<Unit> {
         val vm = vm()
         vm.await { it.preferencesLoaded }

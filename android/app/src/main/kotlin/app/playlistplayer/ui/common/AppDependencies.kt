@@ -30,6 +30,8 @@ import app.playlistplayer.feature.vod.VodBrowseViewModel
 import app.playlistplayer.feature.vod.VodCatalogRepository
 import app.playlistplayer.feature.vod.VodSortStore
 import app.playlistplayer.feature.vod.InMemoryVodSortStore
+import app.playlistplayer.feature.vod.InMemoryTrackPreferenceStore
+import app.playlistplayer.feature.vod.TrackPreferenceStore
 import app.playlistplayer.core.consolidation.VodKind
 import app.playlistplayer.ui.common.live.ChannelRow
 import kotlinx.coroutines.CoroutineScope
@@ -45,7 +47,8 @@ import java.time.ZoneId
  * [TitleDetailViewModel] and [SeriesViewModel], plus [visibilityChanges] (parental lock/unlock),
  * on which the browse screens reload so a newly locked category disappears at once.
  * [trending] (null without a TMDB key) and [sorts] feed the browse screen's Trending row and
- * per-section sort (U18).
+ * per-section sort (U18). [trackPreferences] is the audio/subtitle language preference that the
+ * VOD players apply and update (R40).
  */
 class VodDependencies(
     val repository: VodCatalogRepository,
@@ -59,6 +62,7 @@ class VodDependencies(
     val visibilityChanges: Flow<Unit> = emptyFlow(),
     val trending: TrendingProvider? = null,
     val sorts: VodSortStore = InMemoryVodSortStore(),
+    val trackPreferences: TrackPreferenceStore = InMemoryTrackPreferenceStore(),
 ) {
     fun browseViewModel(kind: VodKind): VodBrowseViewModel =
         VodBrowseViewModel(kind, repository, trending = trending, progress = progress, seriesInfo = seriesInfo, sortStore = sorts)

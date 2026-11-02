@@ -45,6 +45,7 @@ import app.playlistplayer.feature.settings.QualityPreference
 import app.playlistplayer.feature.settings.SettingsTexts
 import app.playlistplayer.feature.settings.SettingsUiState
 import app.playlistplayer.feature.settings.SettingsViewModel
+import app.playlistplayer.feature.vod.TrackLanguageCatalog
 import app.playlistplayer.ui.common.UiTokens
 import app.playlistplayer.ui.tv.components.TvButton
 import app.playlistplayer.ui.tv.components.TvTextField
@@ -288,6 +289,76 @@ internal fun LazyListScope.playbackSection(state: SettingsUiState, viewModel: Se
             checked = playback.tunneling,
             onToggle = viewModel::setTunneling,
         )
+    }
+    item(key = "audio-language") {
+        var picking by rememberSaveable { mutableStateOf(false) }
+        val device = stringResource(R.string.settings_playback_audio_device)
+        TvSettingRow(
+            title = stringResource(R.string.settings_playback_audio_language),
+            value = playback.audioLanguage?.let(TrackLanguageCatalog::label) ?: device,
+            supporting = stringResource(R.string.settings_playback_audio_language_description),
+            onClick = { picking = true },
+        )
+        if (picking) {
+            TvTrackLanguageDialog(
+                title = stringResource(R.string.settings_playback_audio_language),
+                noneLabel = device,
+                selected = playback.audioLanguage,
+                onPick = { picking = false; viewModel.setAudioLanguage(it) },
+                onCancel = { picking = false },
+            )
+        }
+    }
+    item(key = "subtitle-language") {
+        var picking by rememberSaveable { mutableStateOf(false) }
+        val off = stringResource(R.string.settings_playback_subtitles_off)
+        TvSettingRow(
+            title = stringResource(R.string.settings_playback_subtitles),
+            value = playback.subtitleLanguage?.let(TrackLanguageCatalog::label) ?: off,
+            supporting = stringResource(R.string.settings_playback_subtitles_description),
+            onClick = { picking = true },
+        )
+        if (picking) {
+            TvTrackLanguageDialog(
+                title = stringResource(R.string.settings_playback_subtitles),
+                noneLabel = off,
+                selected = playback.subtitleLanguage,
+                onPick = { picking = false; viewModel.setSubtitleLanguage(it) },
+                onCancel = { picking = false },
+            )
+        }
+    }
+}
+
+/** Audio / subtitle language picker: [noneLabel] (device language / Off) first, then the catalog. */
+@Composable
+private fun TvTrackLanguageDialog(title: String, noneLabel: String, selected: String?, onPick: (String?) -> Unit, onCancel: () -> Unit) {
+    val codes = remember(selected) { (listOfNotNull(selected) + TrackLanguageCatalog.codes).distinct() }
+    TvSettingsDialog(title = title, onDismiss = onCancel) { focus ->
+        LazyColumn(modifier = Modifier.heightIn(max = 360.dp), verticalArrangement = Arrangement.spacedBy(UiTokens.SpaceXs)) {
+            item(key = "none") {
+                ListItem(
+                    selected = selected == null,
+                    onClick = { onPick(null) },
+                    headlineContent = { Text(noneLabel) },
+                    modifier = if (selected == null) Modifier.focusRequester(focus) else Modifier,
+                    scale = ListItemDefaults.scale(focusedScale = 1.02f),
+                    border = ListItemDefaults.border(focusedBorder = TvDimens.FocusBorder),
+                )
+            }
+            items(codes, key = { it }) { code ->
+                ListItem(
+                    selected = code == selected,
+                    onClick = { onPick(code) },
+                    headlineContent = { Text(TrackLanguageCatalog.label(code)) },
+                    trailingContent = { Text(code, style = MaterialTheme.typography.labelMedium) },
+                    modifier = if (code == selected) Modifier.focusRequester(focus) else Modifier,
+                    scale = ListItemDefaults.scale(focusedScale = 1.02f),
+                    border = ListItemDefaults.border(focusedBorder = TvDimens.FocusBorder),
+                )
+            }
+        }
+        TvButton(text = stringResource(R.string.settings_cancel), onClick = onCancel)
     }
 }
 
