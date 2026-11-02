@@ -430,6 +430,7 @@ private fun TvEntryContent(
                 request = screen.request,
                 progress = vod.progress,
                 saveScope = playback.saveScope,
+                trackPreferences = vod.trackPreferences,
                 onNextEpisode = screen.onNextEpisode,
                 onExit = {
                     screen.onClosed()

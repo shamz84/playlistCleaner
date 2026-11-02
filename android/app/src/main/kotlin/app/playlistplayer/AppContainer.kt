@@ -109,6 +109,8 @@ import app.playlistplayer.feature.vod.PlaybackProgressRepository
 import app.playlistplayer.feature.vod.PlaybackProgressStore
 import app.playlistplayer.feature.vod.SeriesInfoLoader
 import app.playlistplayer.feature.vod.TitlePickStore
+import app.playlistplayer.feature.vod.PreferencesTrackPreferenceStore
+import app.playlistplayer.feature.vod.TrackPreferenceStore
 import app.playlistplayer.feature.vod.VersionPreferencesProvider
 import app.playlistplayer.feature.vod.VodCatalogRepository
 import app.playlistplayer.feature.vod.VodPlaylist
@@ -569,6 +571,9 @@ class AppContainer(context: Context, private val overrides: Overrides = Override
 
     val versionPreferences: VersionPreferencesProvider =
         VersionPreferencesProvider { preferencesRepository.current().content.versionPreferences(deviceCapabilities) }
+
+    /** Audio/subtitle language for movies and episodes (Settings → Playback; in-player choices update it). */
+    val trackPreferenceStore: TrackPreferenceStore by lazy { PreferencesTrackPreferenceStore(preferencesRepository) }
 
     val liveChannelSource: LiveChannelSource by lazy { RoomLiveChannelSource(playlistStore, catalogStore, streamUrlVault, visibility) }
 

@@ -36,6 +36,7 @@ fun AppContainer.uiDependencies(): UiDependencies {
         visibilityChanges = visibilityChanges(),
         trending = trendingRepository,
         sorts = vodSortStore,
+        trackPreferences = trackPreferenceStore,
     )
     val player = PlaybackDependencies(
         controller = playback.controller(),

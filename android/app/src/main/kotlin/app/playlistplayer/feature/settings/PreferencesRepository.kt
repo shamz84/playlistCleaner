@@ -78,7 +78,8 @@ class SecretSlotPreferencesStorage(
 
 /**
  * App preferences (U12): content (language list, quality), playback (live format, frame-rate
- * matching, tunneling, catch-up offset/style) and sync (refresh interval, stale warning).
+ * matching, tunneling, catch-up offset/style, audio/subtitle language) and sync (refresh
+ * interval, stale warning).
  *
  * Reads are lenient ([PreferencesCodec.decode]); every update validates its input: numbers are
  * clamped into their range (the applied value is returned), language tags are normalised and
@@ -160,6 +161,37 @@ class PreferencesRepository(private val storage: PreferencesStorage) {
     }
 
     suspend fun setCatchupUrlStyle(style: CatchupUrlStyle) = update { it.copy(playback = it.playback.copy(catchupUrlStyle = style)) }
+
+    /** Preferred audio language of movies and episodes; null = device language. False for an invalid tag. */
+    suspend fun setAudioLanguage(tag: String?): Boolean {
+        val code = validLanguageOrNull(tag) ?: return false
+        update { it.copy(playback = it.playback.copy(audioLanguage = code.value)) }
+        return true
+    }
+
+    /** Preferred subtitle language of movies and episodes; null = subtitles off. False for an invalid tag. */
+    suspend fun setSubtitleLanguage(tag: String?): Boolean {
+        val code = validLanguageOrNull(tag) ?: return false
+        update { it.copy(playback = it.playback.copy(subtitleLanguage = code.value)) }
+        return true
+    }
+
+    /** Both track languages at once (an in-player choice). False, and nothing stored, when a tag is invalid. */
+    suspend fun setTrackLanguages(audio: String?, subtitle: String?): Boolean {
+        val a = validLanguageOrNull(audio) ?: return false
+        val s = validLanguageOrNull(subtitle) ?: return false
+        update { it.copy(playback = it.playback.copy(audioLanguage = a.value, subtitleLanguage = s.value)) }
+        return true
+    }
+
+    /** Wrapped so "valid null" (cleared) differs from "invalid" (Kotlin null). */
+    private class Language(val value: String?)
+
+    private fun validLanguageOrNull(tag: String?): Language? {
+        if (tag == null) return Language(null)
+        val code = ContentPreferences.normalizeLanguage(tag)
+        return if (ContentPreferences.LANGUAGE.matches(code)) Language(code) else null
+    }
 
     // ---- sync ----
 

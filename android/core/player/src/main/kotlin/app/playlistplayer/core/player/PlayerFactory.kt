@@ -16,6 +16,7 @@ import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.source.MediaSource
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.extractor.DefaultExtractorsFactory
+import androidx.media3.extractor.text.DefaultSubtitleParserFactory
 import androidx.media3.extractor.ts.DefaultTsPayloadReaderFactory
 import okhttp3.ConnectionPool
 import okhttp3.OkHttpClient
@@ -78,7 +79,13 @@ class PlayerFactory(
 
         val liveSourceFactory = DefaultMediaSourceFactory(dataSourceFactory, extractorsFactory)
             .setLoadErrorHandlingPolicy(LiveErrorPolicy(settings.liveLoaderRetry))
+        // On-demand items expose their embedded text tracks (MKV SRT/ASS/PGS/VobSub, MP4 tx3g/WebVTT,
+        // HLS WebVTT renditions, CEA-608/708 captions): subtitles are parsed during extraction with
+        // the default parsers, and the default TextRenderer renders them (R40). Track selection
+        // (preferred languages, text on/off) happens in the app's VOD players.
         val vodSourceFactory = DefaultMediaSourceFactory(dataSourceFactory, extractorsFactory)
+            .setSubtitleParserFactory(DefaultSubtitleParserFactory())
+            .experimentalParseSubtitlesDuringExtraction(true)
             .setLoadErrorHandlingPolicy(LiveErrorPolicy(settings.vodLoaderRetry))
 
         val renderersFactory = DefaultRenderersFactory(context)

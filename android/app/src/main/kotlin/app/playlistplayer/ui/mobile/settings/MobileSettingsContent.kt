@@ -61,6 +61,7 @@ import app.playlistplayer.feature.settings.SettingsText
 import app.playlistplayer.feature.settings.SettingsTexts
 import app.playlistplayer.feature.settings.SettingsUiState
 import app.playlistplayer.feature.settings.SettingsViewModel
+import app.playlistplayer.feature.vod.TrackLanguageCatalog
 import app.playlistplayer.ui.common.UiTokens
 import app.playlistplayer.ui.mobile.GlyphIcon
 import app.playlistplayer.ui.mobile.MobileDimens
@@ -409,6 +410,74 @@ private fun LazyListScope.playback(state: SettingsUiState, viewModel: SettingsVi
             stringResource(R.string.settings_playback_tunneling_description),
         )
     }
+    item(key = "audio-language") {
+        var picking by rememberSaveable { mutableStateOf(false) }
+        val device = stringResource(R.string.settings_playback_audio_device)
+        ClickRow(
+            title = stringResource(R.string.settings_playback_audio_language),
+            onClick = { picking = true },
+            supporting = stringResource(R.string.settings_playback_audio_language_description),
+            value = playback.audioLanguage?.let(TrackLanguageCatalog::label) ?: device,
+        )
+        if (picking) {
+            TrackLanguageDialog(
+                title = stringResource(R.string.settings_playback_audio_language),
+                noneLabel = device,
+                selected = playback.audioLanguage,
+                onPick = { picking = false; viewModel.setAudioLanguage(it) },
+                onCancel = { picking = false },
+            )
+        }
+    }
+    item(key = "subtitle-language") {
+        var picking by rememberSaveable { mutableStateOf(false) }
+        val off = stringResource(R.string.settings_playback_subtitles_off)
+        ClickRow(
+            title = stringResource(R.string.settings_playback_subtitles),
+            onClick = { picking = true },
+            supporting = stringResource(R.string.settings_playback_subtitles_description),
+            value = playback.subtitleLanguage?.let(TrackLanguageCatalog::label) ?: off,
+        )
+        if (picking) {
+            TrackLanguageDialog(
+                title = stringResource(R.string.settings_playback_subtitles),
+                noneLabel = off,
+                selected = playback.subtitleLanguage,
+                onPick = { picking = false; viewModel.setSubtitleLanguage(it) },
+                onCancel = { picking = false },
+            )
+        }
+    }
+}
+
+/** Audio / subtitle language picker: [noneLabel] (device language / Off) first, then the catalog. */
+@Composable
+private fun TrackLanguageDialog(title: String, noneLabel: String, selected: String?, onPick: (String?) -> Unit, onCancel: () -> Unit) {
+    val codes = remember(selected) { (listOfNotNull(selected) + TrackLanguageCatalog.codes).distinct() }
+    AlertDialog(
+        onDismissRequest = onCancel,
+        title = { Text(title) },
+        text = {
+            LazyColumn(modifier = Modifier.heightIn(max = 360.dp)) {
+                item(key = "none") {
+                    ListItem(
+                        headlineContent = { Text(noneLabel) },
+                        trailingContent = if (selected == null) ({ Text("✓") }) else null,
+                        modifier = Modifier.clickable(role = Role.RadioButton) { onPick(null) }.heightIn(min = MobileDimens.MinTouchTarget),
+                    )
+                }
+                items(codes, key = { it }) { code ->
+                    ListItem(
+                        headlineContent = { Text(TrackLanguageCatalog.label(code)) },
+                        trailingContent = { Text(if (code == selected) "✓" else code) },
+                        modifier = Modifier.clickable(role = Role.RadioButton) { onPick(code) }.heightIn(min = MobileDimens.MinTouchTarget),
+                    )
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = { TextButton(onClick = onCancel) { Text(stringResource(R.string.settings_cancel)) } },
+    )
 }
 
 // ---- Content ----

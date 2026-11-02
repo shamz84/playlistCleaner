@@ -445,13 +445,14 @@ private fun FullscreenEntry(
             onExit = onClose,
         )
         is MobileScreen.VodPlayer -> {
-            val progress = dependencies.vod?.progress ?: return
+            val vodDeps = dependencies.vod ?: return
             MobileVodPlayerScreen(
                 controller = playback.controller,
                 player = playback.player,
                 request = screen.request,
-                progress = progress,
+                progress = vodDeps.progress,
                 saveScope = playback.saveScope,
+                trackPreferences = vodDeps.trackPreferences,
                 onNextEpisode = screen.onNextEpisode,
                 onExit = {
                     screen.onClosed()

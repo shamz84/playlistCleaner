@@ -54,7 +54,11 @@ import app.playlistplayer.feature.vod.OverlayCommand
 import app.playlistplayer.feature.vod.OverlayEvent
 import app.playlistplayer.feature.vod.PlaybackProgressRepository
 import app.playlistplayer.feature.vod.PlaybackRequest
+import app.playlistplayer.feature.vod.InMemoryTrackPreferenceStore
 import app.playlistplayer.feature.vod.SeekDirection
+import app.playlistplayer.feature.vod.TrackPreferenceStore
+import app.playlistplayer.feature.vod.currentOrDefault
+import app.playlistplayer.feature.vod.saveQuietly
 import app.playlistplayer.feature.vod.VodOverlayState
 import app.playlistplayer.feature.vod.VodPlayerOverlayState
 import app.playlistplayer.ui.mobile.vod.OptionsSheet
@@ -98,11 +102,14 @@ fun MobileVodPlayerScreen(
     onExit: () -> Unit,
     modifier: Modifier = Modifier,
     onVersionPicked: (versionId: String) -> Unit = {},
+    trackPreferences: TrackPreferenceStore = InMemoryTrackPreferenceStore(),
 ) {
     FullscreenLandscapeEffect()
     val exo = player.exoPlayer
     val scope = rememberCoroutineScope()
     val overlay = remember { VodPlayerOverlayState() }
+    /** Live playback's track parameters, put back when this screen closes (shared player). */
+    val trackSnapshot = remember(exo) { Media3Tracks.snapshot(exo) }
     var overlayState by remember { mutableStateOf(VodOverlayState()) }
     var current by remember { mutableStateOf(request) }
     val nextEpisode by rememberUpdatedState(onNextEpisode)
@@ -142,6 +149,10 @@ fun MobileVodPlayerScreen(
             OverlayCommand.Resume -> controller.resume()
             is OverlayCommand.SeekTo -> exo.seekTo(command.positionMs)
             is OverlayCommand.ApplyTracks -> Media3Tracks.apply(exo, command.audioId, command.subtitleId)
+            is OverlayCommand.SaveTrackPreference -> {
+                Media3Tracks.preferLanguages(exo, command.preference)
+                saveScope.launch { trackPreferences.saveQuietly(command.preference) }
+            }
             OverlayCommand.PlayNext -> scope.launch {
                 saveNow()
                 val next = nextEpisode?.invoke()
@@ -179,7 +190,10 @@ fun MobileVodPlayerScreen(
     val gesture by rememberUpdatedState<(GestureCommand) -> Unit> { onGesture(it) }
 
     LaunchedEffect(current) {
-        dispatch(OverlayEvent.Open(current.resumeOfferMs, current.startPositionMs ?: 0L, current.nextEpisodeLabel))
+        // The next episode keeps this session's preference (including a choice made in the sheet).
+        val preference = overlay.state.tracks.preference ?: trackPreferences.currentOrDefault()
+        Media3Tracks.startWithPreference(exo, preference)
+        dispatch(OverlayEvent.Open(current.resumeOfferMs, current.startPositionMs ?: 0L, current.nextEpisodeLabel, preference))
     }
 
     // Position polling: overlay progress, countdown and the 10 s progress save.
@@ -228,6 +242,7 @@ fun MobileVodPlayerScreen(
             exo.removeListener(listener)
             saveNow()
             controller.stop()
+            Media3Tracks.restore(exo, trackSnapshot)
         }
     }
 
