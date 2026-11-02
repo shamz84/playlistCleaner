@@ -82,10 +82,10 @@ class PreferencesRepositoryTest {
     }
 
     @Test
-    fun trackLanguagesDefaultToDeviceAudioAndSubtitlesOffAndPersist() = runTest {
+    fun trackLanguagesDefaultToDeviceAudioAndEnglishSubtitlesAndPersist() = runTest {
         val repo = PreferencesRepository(storage)
         assertThat(repo.current().playback.audioLanguage).isNull()
-        assertThat(repo.current().playback.subtitleLanguage).isNull()
+        assertThat(repo.current().playback.subtitleLanguage).isEqualTo("en")
 
         assertThat(repo.setAudioLanguage(" FR ")).isTrue()
         assertThat(repo.setSubtitleLanguage("pt-BR")).isTrue()
@@ -97,7 +97,7 @@ class PreferencesRepositoryTest {
         // Back to device language / subtitles off.
         assertThat(repo.setTrackLanguages(null, null)).isTrue()
         assertThat(PreferencesRepository(SecretSlotPreferencesStorage(slots)).current().playback)
-            .isEqualTo(PlaybackPreferences())
+            .isEqualTo(PlaybackPreferences(subtitleLanguage = null))
         assertThat(repo.setTrackLanguages("en", "??")).isFalse()
         assertThat(repo.current().playback.audioLanguage).isNull()
     }
@@ -109,7 +109,7 @@ class PreferencesRepositoryTest {
         )
         val playback = PreferencesRepository(raw).current().playback
         assertThat(playback.audioLanguage).isNull()
-        assertThat(playback.subtitleLanguage).isNull()
+        assertThat(playback.subtitleLanguage).isEqualTo("en")
     }
 
     @Test

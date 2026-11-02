@@ -73,7 +73,8 @@ data class ContentPreferences(
  * @property catchupOffsetHours correction applied to catch-up start times, in [CATCHUP_OFFSET_RANGE].
  * @property audioLanguage preferred audio language of movies and episodes (lower-case BCP 47
  *   tag such as `en` or `pt-br`); null = the device language (then English).
- * @property subtitleLanguage preferred subtitle language of movies and episodes; null = off.
+ * @property subtitleLanguage preferred subtitle language of movies and episodes (default English);
+ *   null = off.
  */
 data class PlaybackPreferences(
     val liveFormat: LiveFormatPreference = LiveFormatPreference.TS,
@@ -82,7 +83,7 @@ data class PlaybackPreferences(
     val catchupOffsetHours: Int = 0,
     val catchupUrlStyle: CatchupUrlStyle = CatchupUrlStyle.PATH,
     val audioLanguage: String? = null,
-    val subtitleLanguage: String? = null,
+    val subtitleLanguage: String? = DEFAULT_SUBTITLE_LANGUAGE,
 ) {
     init {
         require(catchupOffsetHours in CATCHUP_OFFSET_RANGE) { "catch-up offset out of range" }
@@ -92,6 +93,7 @@ data class PlaybackPreferences(
 
     companion object {
         val CATCHUP_OFFSET_RANGE = -12..12
+        const val DEFAULT_SUBTITLE_LANGUAGE = "en"
     }
 }
 
@@ -143,6 +145,9 @@ object PreferencesCodec {
     const val KEY_STALE_DAYS = "sync.staleWarningDays"
     private const val VERSION = "1"
 
+    /** Stored subtitle value for an explicit "Off"; missing or empty means the default (English). */
+    const val SUBTITLES_OFF = "off"
+
     fun encode(prefs: AppPreferences): Map<String, String> = mapOf(
         KEY_VERSION to VERSION,
         KEY_LANGUAGES to prefs.content.languages.joinToString(","),
@@ -152,9 +157,9 @@ object PreferencesCodec {
         KEY_TUNNELING to prefs.playback.tunneling.toString(),
         KEY_CATCHUP_OFFSET to prefs.playback.catchupOffsetHours.toString(),
         KEY_CATCHUP_STYLE to prefs.playback.catchupUrlStyle.name,
-        // Empty = null (device language / subtitles off).
+        // Empty audio = device language.
         KEY_AUDIO_LANGUAGE to prefs.playback.audioLanguage.orEmpty(),
-        KEY_SUBTITLE_LANGUAGE to prefs.playback.subtitleLanguage.orEmpty(),
+        KEY_SUBTITLE_LANGUAGE to (prefs.playback.subtitleLanguage ?: SUBTITLES_OFF),
         KEY_REFRESH_HOURS to prefs.sync.refreshIntervalHours.toString(),
         KEY_STALE_DAYS to prefs.sync.staleWarningDays.toString(),
     )
@@ -180,7 +185,9 @@ object PreferencesCodec {
                 catchupOffsetHours = intIn(map[KEY_CATCHUP_OFFSET], PlaybackPreferences.CATCHUP_OFFSET_RANGE, d.playback.catchupOffsetHours),
                 catchupUrlStyle = enumOr(map[KEY_CATCHUP_STYLE], d.playback.catchupUrlStyle),
                 audioLanguage = languageOrNull(map[KEY_AUDIO_LANGUAGE]),
-                subtitleLanguage = languageOrNull(map[KEY_SUBTITLE_LANGUAGE]),
+                subtitleLanguage = map[KEY_SUBTITLE_LANGUAGE]?.trim().let { v ->
+                    if (v == SUBTITLES_OFF) null else languageOrNull(v) ?: d.playback.subtitleLanguage
+                },
             ),
             sync = SyncPreferences(
                 refreshIntervalHours = intIn(map[KEY_REFRESH_HOURS], SyncPreferences.REFRESH_RANGE, d.sync.refreshIntervalHours),

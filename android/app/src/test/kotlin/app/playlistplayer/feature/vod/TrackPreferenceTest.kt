@@ -149,7 +149,7 @@ class TrackPreferenceTest {
     fun preferenceStorePersistsThroughTheAppPreferences() = runTest {
         val storage = InMemoryPreferencesStorage()
         val store = PreferencesTrackPreferenceStore(PreferencesRepository(storage), deviceLanguage = { "nl" })
-        assertThat(store.current()).isEqualTo(TrackPreference(deviceLanguage = "nl"))
+        assertThat(store.current()).isEqualTo(TrackPreference(subtitleLanguage = "en", deviceLanguage = "nl"))
 
         store.save(TrackPreference(audioLanguage = "fr", subtitleLanguage = "en"))
         val reopened = PreferencesTrackPreferenceStore(PreferencesRepository(storage), deviceLanguage = { "nl" })
