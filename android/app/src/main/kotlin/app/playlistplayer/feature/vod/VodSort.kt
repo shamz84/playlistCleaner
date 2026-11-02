@@ -51,17 +51,39 @@ class SharedPreferencesVodSortStore(context: Context) : VodSortStore {
     }
 }
 
-/** Sorting of merged titles for the full list. Stable: ties keep provider order. */
+/**
+ * Sorting of merged titles for the full list. Stable: ties keep provider order. Runs only when the
+ * title index is built (U20); browse reads the resulting ranks.
+ */
 object VodTitleSorter {
     private val collator: Collator = Collator.getInstance(Locale.ROOT).apply { strength = Collator.PRIMARY }
 
     private val byName: Comparator<CatalogTitle> = Comparator { a, b -> collator.compare(a.title.title, b.title.title) }
 
-    fun sort(titles: List<CatalogTitle>, sort: VodSort): List<CatalogTitle> = when (sort) {
+    fun comparator(sort: VodSort): Comparator<CatalogTitle> = when (sort) {
         // Newest first; titles without an added time go last.
-        VodSort.RECENTLY_ADDED -> titles.sortedWith(compareBy(nullsLast(reverseOrder())) { it.addedAt })
-        VodSort.A_Z -> titles.sortedWith(byName)
+        VodSort.RECENTLY_ADDED -> compareBy(nullsLast(reverseOrder())) { it.addedAt }
+        VodSort.A_Z -> byName
         // Newest year first; unknown years last; A–Z within a year.
-        VodSort.RELEASE_YEAR -> titles.sortedWith(compareBy<CatalogTitle, Int?>(nullsLast(reverseOrder())) { it.releaseYear }.then(byName))
+        VodSort.RELEASE_YEAR -> compareBy<CatalogTitle, Int?>(nullsLast(reverseOrder())) { it.releaseYear }.then(byName)
+    }
+
+    fun sort(titles: List<CatalogTitle>, sort: VodSort): List<CatalogTitle> = titles.sortedWith(comparator(sort))
+
+    /** Each title's 0-based position in [sort] order, indexed like [titles]. */
+    fun ranks(titles: List<CatalogTitle>, sort: VodSort): IntArray {
+        val cmp = comparator(sort)
+        val order = titles.indices.sortedWith { a, b -> cmp.compare(titles[a], titles[b]) }
+        val ranks = IntArray(titles.size)
+        order.forEachIndexed { rank, i -> ranks[i] = rank }
+        return ranks
     }
 }
+
+/** The index rank column that serves [this] sort. */
+internal val VodSort.order: app.playlistplayer.core.database.TitleOrder
+    get() = when (this) {
+        VodSort.RECENTLY_ADDED -> app.playlistplayer.core.database.TitleOrder.ADDED
+        VodSort.A_Z -> app.playlistplayer.core.database.TitleOrder.NAME
+        VodSort.RELEASE_YEAR -> app.playlistplayer.core.database.TitleOrder.YEAR
+    }

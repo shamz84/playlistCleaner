@@ -146,6 +146,21 @@ class SearchRepositoryTest {
     }
 
     @Test
+    fun searchRebuildsReuseThePrecomputedTitlesWithoutRegrouping() = runBlocking<Unit> {
+        env.indexer.ensureAllFresh()
+        val grouped = env.grouper.calls.get()
+        assertThat(grouped).isEqualTo(2) // main's movies and series, once
+        val before = env.repository.search("dune").movies.single().hits.map { it.titleKey }
+
+        // Losing the search index (upgrade, wipe) rebuilds it by copying the title index.
+        env.searchStore.clearPlaylist(main)
+        assertThat(env.indexer.ensureFresh(main)).isTrue()
+        assertThat(env.grouper.calls.get()).isEqualTo(grouped)
+        assertThat(env.repository.search("dune").movies.single().hits.map { it.titleKey }).containsExactlyElementsIn(before)
+        assertThat(env.searchStore.state(main)!!.catalogGeneration).isEqualTo(env.titleIndex.state(main)!!.catalogGeneration)
+    }
+
+    @Test
     fun overridesPersistAndApplyToBrowseAndSearch() = runBlocking<Unit> {
         assertThat(env.repository.search("dune").movies.single().hits.count { it.title == "Dune" }).isEqualTo(1)
 

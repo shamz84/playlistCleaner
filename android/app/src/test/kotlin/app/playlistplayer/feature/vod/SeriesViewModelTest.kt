@@ -23,7 +23,7 @@ class SeriesViewModelTest {
         .vodCategory(1, "10", "EN Movies")
         .movie(1, 101, "EN - Dune (2021) 4K", "10", tmdb = "438631")
 
-    private val repository = VodCatalogRepository(source, groupingDispatcher = main.dispatcher)
+    private val repository = indexedRepository(source)
     private val info = FakeSeriesInfoLoader()
         .episodes(201, 1 to 1, 1 to 2, 1 to 3, 1 to 4, 1 to 6, 2 to 1)
         .episodes(202, 1 to 1, 1 to 2, 1 to 3, 1 to 4, 1 to 5, 1 to 6)
@@ -116,7 +116,7 @@ class SeriesViewModelTest {
     @Test
     fun `get_series_info failure shows retry and leaves browse usable`() = runTest(main.dispatcher) {
         info.failing += setOf(201L, 202L)
-        val browse = VodBrowseViewModel(VodKind.SERIES, repository, computeDispatcher = main.dispatcher)
+        val browse = VodBrowseViewModel(VodKind.SERIES, repository)
         val vm = viewModel()
         advanceUntilIdle()
         assertThat(vm.state.value.episodesFailed).isTrue()

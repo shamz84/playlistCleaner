@@ -24,7 +24,7 @@ class TitleDetailViewModelTest {
         .movie(1, 102, "EN - Dune (2021) HD", "10", tmdb = "438631")
         .movie(1, 103, "FR - Dune (2021) FHD", "30", tmdb = "438631", ext = "mp4")
 
-    private val repository = VodCatalogRepository(source, groupingDispatcher = main.dispatcher)
+    private val repository = indexedRepository(source)
     private val picks = InMemoryTitlePickStore()
     private val favourites = InMemoryFavouritesStore()
     private val progressStore = InMemoryPlaybackProgressStore()

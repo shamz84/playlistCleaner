@@ -3,18 +3,16 @@ package app.playlistplayer.feature.vod
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.playlistplayer.core.consolidation.VodKind
-import app.playlistplayer.core.sync.catalog.DetailResult
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kotlin.coroutines.cancellation.CancellationException
 
 /**
@@ -31,7 +29,8 @@ data class ContinueCard(
 
 /**
  * One playlist section (header = playlist name, R25): Trending, Continue watching, then the full
- * title list in [sort] order. [titles] is the shown page of [totalTitles].
+ * title list in [sort] order. [titles] is the shown page of [totalTitles]. [loading] stays true
+ * while the playlist's title index is still being built in the background (first sync, upgrade).
  */
 data class PlaylistSection(
     val playlist: VodPlaylist,
@@ -58,10 +57,14 @@ data class VodBrowseUiState(
 }
 
 /**
- * Movies or TV Shows browse (R12, R25, R32, R33). Per playlist section: Trending (TMDB weekly
+ * Movies or TV Shows browse (R12, R25, R32, R33, R35). Per playlist section: Trending (TMDB weekly
  * trending matched to this playlist's catalog), Continue watching, then every merged title
- * (parental-hidden ones excluded) sorted by the section's persisted [VodSort], paged by
- * [pageSize]. Grouping runs in [VodCatalogRepository]; sorting on [computeDispatcher].
+ * (parental-hidden ones excluded) in the section's persisted [VodSort], paged by [pageSize].
+ *
+ * Every read is an indexed query on the precomputed title index ([VodCatalogRepository]); this
+ * ViewModel never groups or sorts the catalog. [changes] (index rebuilt after a catalog sync)
+ * reloads the screen. TV shows' "next episode" uses cached series info only: details are fetched
+ * when a title is opened, never while browsing.
  */
 class VodBrowseViewModel(
     val kind: VodKind,
@@ -72,13 +75,16 @@ class VodBrowseViewModel(
     private val sortStore: VodSortStore = InMemoryVodSortStore(),
     private val pageSize: Int = DEFAULT_PAGE_SIZE,
     private val rowLimit: Int = DEFAULT_ROW_LIMIT,
-    private val computeDispatcher: CoroutineDispatcher = Dispatchers.Default,
+    changes: Flow<Unit> = emptyFlow(),
 ) : ViewModel() {
 
     private val mutableState = MutableStateFlow(VodBrowseUiState(kind))
     val state: StateFlow<VodBrowseUiState> = mutableState.asStateFlow()
 
-    private class Loaded(val titles: List<CatalogTitle>, var sorted: List<CatalogTitle>, var shown: Int)
+    /** A loaded section: its hidden categories and the cards shown so far for [sort]. */
+    private class Loaded(val hidden: Set<String>, var sort: VodSort, var cards: List<VodCard>, var total: Int) {
+        var paging: Job? = null
+    }
 
     private val loaded = HashMap<Long, Loaded>()
     private var refreshJob: Job? = null
@@ -86,12 +92,14 @@ class VodBrowseViewModel(
 
     init {
         refresh()
+        viewModelScope.launch { changes.collect { refresh() } }
     }
 
     fun refresh() {
         refreshJob?.cancel()
         continueJobs.values.forEach { it.cancel() }
         continueJobs.clear()
+        loaded.values.forEach { it.paging?.cancel() }
         refreshJob = viewModelScope.launch {
             loaded.clear()
             mutableState.value = VodBrowseUiState(kind, loading = true)
@@ -109,15 +117,29 @@ class VodBrowseViewModel(
 
     /** Re-reads Continue watching (e.g. when the screen shows again after playback). */
     fun refreshContinueWatching() {
-        loaded.forEach { (playlistId, l) -> launchContinue(playlistId, l.titles) }
+        loaded.forEach { (playlistId, l) -> launchContinue(playlistId, l.hidden) }
     }
 
     /** Shows the next page of a section's full list. */
     fun loadMore(playlistId: Long) {
         val l = loaded[playlistId] ?: return
-        if (l.shown >= l.sorted.size) return
-        l.shown = (l.shown + pageSize).coerceAtMost(l.sorted.size)
-        publishTitles(playlistId, l)
+        if (l.cards.size >= l.total || l.paging?.isActive == true) return
+        val sort = l.sort
+        val offset = l.cards.size
+        l.paging = viewModelScope.launch {
+            val page = try {
+                repository.page(playlistId, kind, sort, l.hidden, offset, pageSize)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                return@launch
+            }
+            if (l.sort != sort || l.cards.size != offset || loaded[playlistId] !== l) return@launch
+            l.cards = l.cards + page
+            // Fewer rows than counted (the index changed underneath): stop paging.
+            if (page.size < pageSize) l.total = l.cards.size
+            publishTitles(playlistId, l)
+        }
     }
 
     /** Switches a section's sort; the choice persists per section. */
@@ -131,13 +153,24 @@ class VodBrowseViewModel(
             } catch (e: Exception) {
                 // Not persisted; the in-session choice still applies.
             }
-            val l = loaded[playlistId] ?: return@launch
-            val sorted = withContext(computeDispatcher) { VodTitleSorter.sort(l.titles, sort) }
-            if (sectionSort(playlistId) != sort) return@launch
-            l.sorted = sorted
-            l.shown = pageSize.coerceAtMost(sorted.size)
-            publishTitles(playlistId, l)
+            reloadFirstPage(playlistId, sort)
         }
+    }
+
+    private suspend fun reloadFirstPage(playlistId: Long, sort: VodSort) {
+        val l = loaded[playlistId] ?: return
+        l.paging?.cancel()
+        l.sort = sort
+        val first = try {
+            repository.page(playlistId, kind, sort, l.hidden, 0, pageSize)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            return
+        }
+        if (l.sort != sort || loaded[playlistId] !== l) return
+        l.cards = first
+        publishTitles(playlistId, l)
     }
 
     private suspend fun readSort(playlistId: Long): VodSort? = try {
@@ -157,36 +190,41 @@ class VodBrowseViewModel(
     }
 
     private suspend fun loadSection(playlistId: Long, trendingList: Deferred<List<TrendingEntry>?>) {
-        val titles = try {
-            val titles = repository.visibleTitles(playlistId, kind)
+        val l = try {
+            // Still building in the background: stay "loading"; [changes] reloads once it is ready.
+            if (repository.isIndexPending(playlistId)) return
+            val hidden = repository.hiddenCategories(playlistId, kind)
             val sort = sectionSort(playlistId)
-            val sorted = withContext(computeDispatcher) { VodTitleSorter.sort(titles, sort) }
-            val l = Loaded(titles, sorted, pageSize.coerceAtMost(sorted.size))
-            loaded[playlistId] = l
-            updateSection(playlistId) {
-                it.copy(loading = false, titles = sorted.take(l.shown).map(CatalogTitle::card), totalTitles = sorted.size)
-            }
-            titles
+            val total = repository.count(playlistId, kind, hidden)
+            val first = repository.page(playlistId, kind, sort, hidden, 0, pageSize)
+            Loaded(hidden, sort, first, total).also { loaded[playlistId] = it }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             updateSection(playlistId) { it.copy(loading = false, failed = true) }
             return
         }
-        launchContinue(playlistId, titles)
+        updateSection(playlistId) { it.copy(loading = false, titles = l.cards, totalTitles = l.total) }
+        // A sort chosen while the first page loaded wins.
+        sectionSort(playlistId).takeIf { it != l.sort }?.let { reloadFirstPage(playlistId, it) }
+        launchContinue(playlistId, l.hidden)
         val entries = trendingList.await() ?: return
-        val cards = withContext(computeDispatcher) {
-            TrendingMatcher.match(entries, titles, kind, rowLimit).map(CatalogTitle::card)
+        val cards = try {
+            repository.trending(playlistId, kind, entries, l.hidden, rowLimit)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            return
         }
         updateSection(playlistId) { it.copy(trending = cards) }
     }
 
-    private fun launchContinue(playlistId: Long, titles: List<CatalogTitle>) {
+    private fun launchContinue(playlistId: Long, hidden: Set<String>) {
         val repo = progress ?: return
         continueJobs[playlistId]?.cancel()
         continueJobs[playlistId] = viewModelScope.launch {
             val cards = try {
-                continueCards(repo, playlistId, titles)
+                continueCards(repo, playlistId, hidden)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -196,49 +234,55 @@ class VodBrowseViewModel(
         }
     }
 
-    private suspend fun continueCards(repo: PlaybackProgressRepository, playlistId: Long, titles: List<CatalogTitle>): List<ContinueCard> {
-        val byKey = titles.associateBy { it.key }
-        val recent = repo.recent(RECENT_SCAN).filter { it.playlistId == playlistId && it.kind == kind && it.key.titleKey in byKey }
+    private suspend fun continueCards(repo: PlaybackProgressRepository, playlistId: Long, hidden: Set<String>): List<ContinueCard> {
+        val candidates = repo.recent(RECENT_SCAN).filter { it.playlistId == playlistId && it.kind == kind }
+        if (candidates.isEmpty()) return emptyList()
+        // Only titles still in the catalog and not parental-hidden (one indexed lookup).
+        val byKey = repository.cards(playlistId, kind, candidates.map { it.key.titleKey }.distinct(), hidden)
+        val recent = candidates.filter { it.key.titleKey in byKey }
         return when (kind) {
             VodKind.MOVIE -> recent
                 .filter { PlaybackProgressRepository.isResumable(it.positionMs, it.durationMs) && !PlaybackProgressRepository.isWatched(it.positionMs, it.durationMs) }
                 .distinctBy { it.key.titleKey }
                 .take(rowLimit)
-                .map { ContinueCard(byKey.getValue(it.key.titleKey).card(), fraction = it.fraction.toFloat().coerceIn(0f, 1f)) }
+                .map { ContinueCard(byKey.getValue(it.key.titleKey), fraction = it.fraction.toFloat().coerceIn(0f, 1f)) }
             VodKind.SERIES -> {
                 // The newest entry per show decides: unfinished → that episode; finished → the next one.
                 val latest = recent.filter { it.key.season != null && it.key.episode != null }.distinctBy { it.key.titleKey }
                 val out = ArrayList<ContinueCard>()
                 for (p in latest) {
                     if (out.size >= rowLimit) break
-                    val title = byKey.getValue(p.key.titleKey)
+                    val card = byKey.getValue(p.key.titleKey)
                     if (!PlaybackProgressRepository.isWatched(p.positionMs, p.durationMs)) {
                         val fraction = p.fraction.toFloat().coerceIn(0f, 1f).takeIf { PlaybackProgressRepository.isResumable(p.positionMs, p.durationMs) }
-                        out += ContinueCard(title.card(), p.key.season, p.key.episode, fraction)
+                        out += ContinueCard(card, p.key.season, p.key.episode, fraction)
                         continue
                     }
-                    val next = nextEpisode(title, p.key.season!!, p.key.episode!!) ?: continue
-                    if (repo.isWatched(ProgressKey(title.key, next.first, next.second))) continue
-                    out += ContinueCard(title.card(), next.first, next.second, upNext = true)
+                    val next = nextEpisode(playlistId, card.titleKey, p.key.season!!, p.key.episode!!) ?: continue
+                    if (repo.isWatched(ProgressKey(card.titleKey, next.first, next.second))) continue
+                    out += ContinueCard(card, next.first, next.second, upNext = true)
                 }
                 out
             }
         }
     }
 
-    /** The episode after (season, episode) across the show's source series, from their cached info. */
-    private suspend fun nextEpisode(title: CatalogTitle, season: Int, episode: Int): Pair<Int, Int>? {
+    /**
+     * The episode after (season, episode) across the show's source series, from their **cached**
+     * info only: get_series_info runs when a series is opened, never while browsing. A show
+     * without cached info gets no "next" card.
+     */
+    private suspend fun nextEpisode(playlistId: Long, titleKey: String, season: Int, episode: Int): Pair<Int, Int>? {
         val loader = seriesInfo ?: return null
         val order = compareBy<Pair<Int, Int>>({ it.first }, { it.second })
         val current = season to episode
         var best: Pair<Int, Int>? = null
-        for (v in title.title.versions) {
-            val seriesId = v.item.id.toLongOrNull() ?: continue
-            val result = loader.load(title.playlistId, seriesId, forceRefresh = false)
-            if (result !is DetailResult.Loaded) continue
+        for (itemId in repository.versionIds(playlistId, titleKey)) {
+            val seriesId = itemId.toLongOrNull() ?: continue
+            val details = loader.cached(playlistId, seriesId) ?: continue
             // Same numbering as the series screen: a missing episode number is its position in the season.
             val positionInSeason = HashMap<Int, Int>()
-            result.value.episodes.sortedBy { it.sortOrder }
+            details.episodes.sortedBy { it.sortOrder }
                 .map { e ->
                     val n = (positionInSeason[e.season] ?: 0) + 1
                     positionInSeason[e.season] = n
@@ -257,9 +301,7 @@ class VodBrowseViewModel(
         state.value.sections.firstOrNull { it.playlist.id == playlistId }?.sort ?: VodSort.RECENTLY_ADDED
 
     private fun publishTitles(playlistId: Long, l: Loaded) {
-        updateSection(playlistId) {
-            it.copy(titles = l.sorted.take(l.shown).map(CatalogTitle::card), totalTitles = l.sorted.size)
-        }
+        updateSection(playlistId) { it.copy(titles = l.cards, totalTitles = l.total) }
     }
 
     private fun updateSection(playlistId: Long, change: (PlaylistSection) -> PlaylistSection) {

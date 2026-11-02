@@ -18,10 +18,17 @@ import kotlinx.coroutines.launch
 
 /** get_series_info for one source series ([SeriesInfoRepository.load] in the app). */
 fun interface SeriesInfoLoader {
+    /** Cached copy, else get_series_info: only when the user opens a series. */
     suspend fun load(playlistId: Long, seriesId: Long, forceRefresh: Boolean): DetailResult<SeriesDetails>
 
+    /** The cached copy only, never a network call (browse: Continue watching's next episode). */
+    suspend fun cached(playlistId: Long, seriesId: Long): SeriesDetails? = null
+
     companion object {
-        fun from(repository: SeriesInfoRepository) = SeriesInfoLoader { p, s, f -> repository.load(p, s, f) }
+        fun from(repository: SeriesInfoRepository) = object : SeriesInfoLoader {
+            override suspend fun load(playlistId: Long, seriesId: Long, forceRefresh: Boolean) = repository.load(playlistId, seriesId, forceRefresh)
+            override suspend fun cached(playlistId: Long, seriesId: Long) = repository.cached(playlistId, seriesId)
+        }
     }
 }
 

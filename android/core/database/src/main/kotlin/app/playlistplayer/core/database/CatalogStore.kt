@@ -112,7 +112,7 @@ class CatalogStore(private val db: AppDatabase) {
     suspend fun generationsPresent(playlistId: Long): List<Long> = catalogDao.generationsPresent(playlistId)
 
     /**
-     * Removes the playlist's whole catalog, caches, account status and catalog state (Xtream
+     * Removes the playlist's whole catalog, caches, merged-title index, account status and catalog state (Xtream
      * processing turned off). Live channels are untouched.
      */
     suspend fun clearPlaylist(playlistId: Long) = db.withWriteTransaction { deleteAllForPlaylist(playlistId) }
@@ -127,6 +127,8 @@ class CatalogStore(private val db: AppDatabase) {
         cacheDao.deleteAllSeasons(playlistId)
         cacheDao.deleteAllEpisodes(playlistId)
         cacheDao.deleteAllVodInfo(playlistId)
+        // The merged titles were grouped from this catalog.
+        VodTitleStore(db).deleteAllForPlaylist(playlistId)
         accountDao.delete(playlistId)
         stateDao.delete(playlistId)
     }

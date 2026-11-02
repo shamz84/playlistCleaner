@@ -26,15 +26,21 @@ interface VodCatalogSource {
     /** Keyset page in provider order; start with `afterOrder = -1`. */
     suspend fun vodStreamsPage(playlistId: Long, afterOrder: Int, limit: Int): List<VodStreamEntity>
 
+    /** One movie version of the active catalog (detail screens). */
+    suspend fun vodStream(playlistId: Long, streamId: Long): VodStreamEntity?
+
     suspend fun seriesCategories(playlistId: Long): List<SeriesCategoryEntity>
     suspend fun seriesInCategory(playlistId: Long, categoryId: String, limit: Int, offset: Int): List<SeriesEntity>
     suspend fun seriesPage(playlistId: Long, afterOrder: Int, limit: Int): List<SeriesEntity>
+
+    /** One series of the active catalog (detail screens). */
+    suspend fun series(playlistId: Long, seriesId: Long): SeriesEntity?
 }
 
 /**
  * [VodCatalogSource] over Room. [playlists] comes from the playlist registry (wiring unit); the
  * catalog generation is the `catalog_sync_state` active pointer, which changes on every
- * successful catalog refresh and so invalidates grouping caches.
+ * successful catalog refresh and so triggers a title index rebuild ([VodTitleIndexer]).
  */
 class CatalogStoreVodSource(
     private val store: CatalogStore,
@@ -47,9 +53,11 @@ class CatalogStoreVodSource(
         store.vodStreamsInCategory(playlistId, categoryId, limit, offset)
     override suspend fun vodStreamsPage(playlistId: Long, afterOrder: Int, limit: Int) =
         store.vodStreamsPage(playlistId, afterOrder, limit)
+    override suspend fun vodStream(playlistId: Long, streamId: Long) = store.vodStream(playlistId, streamId)
     override suspend fun seriesCategories(playlistId: Long) = store.seriesCategories(playlistId)
     override suspend fun seriesInCategory(playlistId: Long, categoryId: String, limit: Int, offset: Int) =
         store.seriesInCategory(playlistId, categoryId, limit, offset)
     override suspend fun seriesPage(playlistId: Long, afterOrder: Int, limit: Int) =
         store.seriesPage(playlistId, afterOrder, limit)
+    override suspend fun series(playlistId: Long, seriesId: Long) = store.series(playlistId, seriesId)
 }

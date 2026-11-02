@@ -22,6 +22,7 @@ import app.playlistplayer.core.database.dao.ProgrammeDao
 import app.playlistplayer.core.database.dao.SyncStateDao
 import app.playlistplayer.core.database.dao.TrendingDao
 import app.playlistplayer.core.database.dao.UserDataDao
+import app.playlistplayer.core.database.dao.VodTitleDao
 import app.playlistplayer.core.database.entity.AccountStatusEntity
 import app.playlistplayer.core.database.entity.CatalogSyncStateEntity
 import app.playlistplayer.core.database.entity.ChannelEntity
@@ -40,6 +41,9 @@ import app.playlistplayer.core.database.entity.SyncStateEntity
 import app.playlistplayer.core.database.entity.VodCategoryEntity
 import app.playlistplayer.core.database.entity.VodInfoCacheEntity
 import app.playlistplayer.core.database.entity.VodStreamEntity
+import app.playlistplayer.core.database.entity.VodTitleEntity
+import app.playlistplayer.core.database.entity.VodTitleItemEntity
+import app.playlistplayer.core.database.entity.VodTitleStateEntity
 import app.playlistplayer.core.database.entity.FavouriteEntity
 import app.playlistplayer.core.database.entity.LastChannelEntity
 import app.playlistplayer.core.database.entity.PlaybackProgressEntity
@@ -102,17 +106,23 @@ import kotlin.coroutines.CoroutineContext
         // U18: TMDB trending cache
         TrendingTitleEntity::class,
         TrendingStateEntity::class,
+        // U20: precomputed merged VOD titles
+        VodTitleStateEntity::class,
+        VodTitleEntity::class,
+        VodTitleItemEntity::class,
     ],
-    version = 5,
+    version = 6,
     exportSchema = true,
     // Additive only: 1 -> 2 adds the catalog tables, 2 -> 3 the EPG tables, 3 -> 4 the personal
     // data and search index tables (the empty index is built by the app's SearchIndexer), 4 -> 5
-    // the TMDB trending cache.
+    // the TMDB trending cache, 5 -> 6 the precomputed title index (empty; the app builds it in the
+    // background from the active catalog).
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
         AutoMigration(from = 2, to = 3),
         AutoMigration(from = 3, to = 4, spec = AppDatabase.Migration3To4::class),
         AutoMigration(from = 4, to = 5),
+        AutoMigration(from = 5, to = 6),
     ],
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -129,6 +139,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun userDataDao(): UserDataDao
     abstract fun searchDao(): SearchDao
     abstract fun trendingDao(): TrendingDao
+    abstract fun vodTitleDao(): VodTitleDao
 
     /** Adds the FTS content-sync triggers that AutoMigration leaves out (see [SearchFtsTriggers]). */
     class Migration3To4 : AutoMigrationSpec {

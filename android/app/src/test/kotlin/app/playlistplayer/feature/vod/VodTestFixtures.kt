@@ -11,7 +11,13 @@ import app.playlistplayer.core.player.url.StreamAccount
 import app.playlistplayer.core.sync.catalog.DetailResult
 import app.playlistplayer.core.sync.catalog.SeriesDetails
 import app.playlistplayer.feature.settings.ContentPreferences
+import app.playlistplayer.core.consolidation.TitleGrouper
+import app.playlistplayer.core.consolidation.TitleOverride
+import app.playlistplayer.core.consolidation.VodItem
+import app.playlistplayer.core.consolidation.VodTitle
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
+import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -87,7 +93,30 @@ class FakeVodCatalogSource : VodCatalogSource {
         seriesRows.filter { it.playlistId == playlistId && it.categoryId == categoryId }.sortedBy { it.providerOrder }.drop(offset).take(limit)
     override suspend fun seriesPage(playlistId: Long, afterOrder: Int, limit: Int) =
         seriesRows.filter { it.playlistId == playlistId && it.providerOrder > afterOrder }.sortedBy { it.providerOrder }.take(limit)
+    override suspend fun vodStream(playlistId: Long, streamId: Long) = vodRows.firstOrNull { it.playlistId == playlistId && it.streamId == streamId }
+    override suspend fun series(playlistId: Long, seriesId: Long) = seriesRows.firstOrNull { it.playlistId == playlistId && it.seriesId == seriesId }
 }
+
+/** A grouping function that counts its calls (asserts browse never groups). */
+class CountingGrouper : (List<VodItem>, List<TitleOverride>) -> List<VodTitle> {
+    val calls = AtomicInteger()
+    override fun invoke(items: List<VodItem>, overrides: List<TitleOverride>): List<VodTitle> {
+        calls.incrementAndGet()
+        return TitleGrouper.group(items, overrides)
+    }
+}
+
+/**
+ * Groups [source] into a fresh in-memory title index, as the background indexer does after each
+ * catalog sync.
+ */
+fun indexOf(source: VodCatalogSource, grouper: CountingGrouper = CountingGrouper()): InMemoryVodTitleIndex = runBlocking {
+    InMemoryVodTitleIndex().also { VodTitleIndexer(source, it, group = grouper).ensureAllFresh() }
+}
+
+/** A repository over a freshly built index of [source]; [hidden] category ids are parental-hidden. */
+fun indexedRepository(source: VodCatalogSource, hidden: Set<String> = emptySet(), index: VodTitleIndex = indexOf(source)) =
+    VodCatalogRepository(source, index, isCategoryHidden = { _, _, id -> id in hidden })
 
 /** A syntactically valid account with obviously fake values. */
 val testAccount = StreamAccount(scheme = "http", host = "provider.invalid", port = 8080, username = "user-secret", password = "pass-secret")
@@ -111,17 +140,29 @@ class FakeMovieInfoLoader(var fail: Boolean = false) : MovieInfoLoader {
     }
 }
 
-/** Series info per series id; ids in [failing] fail (retryable). */
+/** Series info per series id; ids in [failing] fail (retryable). [cached] serves the same data without counting a fetch. */
 class FakeSeriesInfoLoader : SeriesInfoLoader {
     val episodesBySeries = HashMap<Long, List<Pair<Int, Int>>>()
     val failing = HashSet<Long>()
     val calls = mutableListOf<Long>()
+
+    /** Series ids whose info is cached (what [cached] returns); all of them by default. */
+    var cachedIds: Set<Long>? = null
+
+    override suspend fun cached(playlistId: Long, seriesId: Long): SeriesDetails? {
+        if (cachedIds?.contains(seriesId) == false || seriesId in failing) return null
+        return details(playlistId, seriesId)
+    }
 
     fun episodes(seriesId: Long, vararg seasonEpisode: Pair<Int, Int>) = apply { episodesBySeries[seriesId] = seasonEpisode.toList() }
 
     override suspend fun load(playlistId: Long, seriesId: Long, forceRefresh: Boolean): DetailResult<SeriesDetails> {
         calls += seriesId
         if (seriesId in failing) return DetailResult.Failed("network", "timeout", retryable = true)
+        return DetailResult.Loaded(details(playlistId, seriesId), fromCache = false)
+    }
+
+    private fun details(playlistId: Long, seriesId: Long): SeriesDetails {
         val list = episodesBySeries[seriesId] ?: emptyList()
         val info = SeriesInfoCacheEntity(
             playlistId, seriesId, "Series $seriesId", null, null, "Series plot", "Cast", null, "Drama", null, 8.0, null, 45, null, 0,
@@ -133,6 +174,6 @@ class FakeSeriesInfoLoader : SeriesInfoLoader {
                 rating = null, sortOrder = i,
             )
         }
-        return DetailResult.Loaded(SeriesDetails(info, emptyList(), episodes), fromCache = false)
+        return SeriesDetails(info, emptyList(), episodes)
     }
 }

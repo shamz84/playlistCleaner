@@ -88,4 +88,32 @@ class MigrationTest {
         assertThat(count("SELECT COUNT(*) FROM trending_state")).isEqualTo(0)
         connection.close()
     }
+
+    @Test
+    fun migrate5To6KeepsDataAndAddsTheTitleIndexTables() = runBlocking<Unit> {
+        helper.createDatabase(5).apply {
+            execSQL("INSERT INTO playlist (id, name, sourceType, xtreamEnabled, createdAt) VALUES (1, 'P', 'DRIVE', 1, 1)")
+            execSQL("INSERT INTO catalog_sync_state (playlistId, activeGeneration, lastGeneration, accountExpired, liveInfoCount, liveMissingCount, vodCategoryCount, vodCount, seriesCategoryCount, seriesCount) VALUES (1, 3, 3, 0, 0, 0, 0, 1, 0, 0)")
+            execSQL(
+                "INSERT INTO vod_stream (playlistId, generation, streamId, name, icon, rating, added, categoryId, containerExtension, tmdb, isAdult, providerOrder) " +
+                    "VALUES (1, 3, 101, 'EN - Dune (2021)', NULL, NULL, 5, '10', 'mkv', '438631', 0, 0)",
+            )
+            execSQL("INSERT INTO trending_state (kind, fetchedAt) VALUES ('MOVIE', 7)")
+            close()
+        }
+        val connection = helper.runMigrationsAndValidate(6)
+        fun count(sql: String): Long = connection.prepare(sql).use { it.step(); it.getLong(0) }
+
+        assertThat(count("SELECT COUNT(*) FROM playlist")).isEqualTo(1)
+        assertThat(count("SELECT COUNT(*) FROM vod_stream")).isEqualTo(1)
+        assertThat(count("SELECT COUNT(*) FROM trending_state")).isEqualTo(1)
+        // Empty until the app's title indexer groups the active catalog in the background.
+        for (table in listOf("vod_title_state", "vod_title", "vod_title_item")) {
+            assertThat(count("SELECT COUNT(*) FROM $table")).isEqualTo(0)
+        }
+        // The browse sorts and Trending lookups are indexed.
+        assertThat(count("SELECT COUNT(*) FROM sqlite_master WHERE type = 'index' AND tbl_name = 'vod_title' AND name LIKE 'index_%'")).isEqualTo(5)
+        assertThat(count("SELECT COUNT(*) FROM sqlite_master WHERE type = 'index' AND tbl_name = 'vod_title_item' AND name LIKE 'index_%'")).isEqualTo(2)
+        connection.close()
+    }
 }

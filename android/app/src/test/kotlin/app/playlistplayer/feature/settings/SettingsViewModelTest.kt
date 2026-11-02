@@ -179,7 +179,7 @@ class SettingsViewModelTest {
         vm.await { it.preferencesLoaded }
         vm.setAudioLanguage("fr")
         vm.setSubtitleLanguage("en")
-        vm.await { it.preferences.playback.subtitleLanguage == "en" }
+        vm.await { it.preferences.playback.audioLanguage == "fr" && it.preferences.playback.subtitleLanguage == "en" }
         val reopened = PreferencesRepository(SecretSlotPreferencesStorage(SecureStoreSecretSlots(env.secureStore))).current()
         assertThat(reopened.playback.audioLanguage).isEqualTo("fr")
         assertThat(reopened.playback.subtitleLanguage).isEqualTo("en")

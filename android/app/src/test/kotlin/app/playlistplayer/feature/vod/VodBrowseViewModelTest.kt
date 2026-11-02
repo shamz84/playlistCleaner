@@ -4,7 +4,8 @@ import app.playlistplayer.core.consolidation.QualityTier
 import app.playlistplayer.core.consolidation.VodKind
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -41,15 +42,15 @@ class VodBrowseViewModelTest {
     private val progress = PlaybackProgressRepository(progressStore) { now }
     private val seriesInfo = FakeSeriesInfoLoader()
 
-    private fun repository(src: VodCatalogSource = source) =
-        VodCatalogRepository(src, main.dispatcher, isCategoryHidden = { _, _, id -> id in hidden })
+    private fun repository(src: VodCatalogSource = source, index: VodTitleIndex = indexOf(src)) = indexedRepository(src, hidden, index)
 
     private fun vm(
         kind: VodKind = VodKind.MOVIE,
         trending: TrendingProvider? = null,
         repo: VodCatalogRepository = repository(),
         pageSize: Int = VodBrowseViewModel.DEFAULT_PAGE_SIZE,
-    ) = VodBrowseViewModel(kind, repo, trending, progress, seriesInfo, sorts, pageSize = pageSize, computeDispatcher = main.dispatcher)
+        changes: Flow<Unit> = emptyFlow(),
+    ) = VodBrowseViewModel(kind, repo, trending, progress, seriesInfo, sorts, pageSize = pageSize, changes = changes)
 
     private fun TestScope.loaded(vm: VodBrowseViewModel): VodBrowseUiState {
         advanceUntilIdle()
@@ -193,27 +194,67 @@ class VodBrowseViewModelTest {
         ).inOrder()
         assertThat(s.continueWatching[0].fraction).isNull()
         assertThat(s.continueWatching[1].fraction).isWithin(0.001f).of(0.4f)
+        // Browsing never calls get_series_info: "next" comes from cached episode lists only.
+        assertThat(seriesInfo.calls).isEmpty()
     }
 
     @Test
-    fun `grouping happens off the main dispatcher`() = runTest(main.dispatcher) {
-        val grouping = StandardTestDispatcher(testScheduler, name = "vod-grouping")
-        val vm = VodBrowseViewModel(VodKind.MOVIE, VodCatalogRepository(source, grouping), computeDispatcher = main.dispatcher)
-        // Main (unconfined) ran the ViewModel; sections wait for the grouping dispatcher.
-        assertThat(vm.state.value.loading).isFalse()
-        assertThat(vm.state.value.sections.first().loading).isTrue()
+    fun `a finished show without cached episodes gets no next card and no network call`() = runTest(main.dispatcher) {
+        source.seriesCategory(1, "70", "EN Series").series(1, 201, "EN - Utopia (2013)", "70", tmdb = "46896")
+        seriesInfo.episodes(201, 1 to 1, 1 to 2)
+        seriesInfo.cachedIds = emptySet()
+        val utopia = titleKey(1, VodKind.SERIES, "201")
+        progress.save(ProgressKey(utopia, 1, 1), 1, VodKind.SERIES, "S1 E1", "201", 99, 100)
+
+        val s = loaded(vm(kind = VodKind.SERIES)).sections[0]
+        assertThat(s.titles.map { it.title }).containsExactly("Utopia")
+        assertThat(s.continueWatching).isEmpty()
+        assertThat(seriesInfo.calls).isEmpty()
+    }
+
+    @Test
+    fun `browsing never groups the catalog`() = runTest(main.dispatcher) {
+        val grouper = CountingGrouper()
+        val index = indexOf(source, grouper)
+        // The background build grouped once per kind and playlist...
+        val built = grouper.calls.get()
+        assertThat(built).isEqualTo(4)
+        val trending = listOf(TrendingEntry(438631, "Dune", null, 2021), TrendingEntry(77, "Bluey", null, 2018))
+        val leo = repository(index = index).title(1, VodKind.MOVIE, "104")!!.key
+        progress.save(ProgressKey(leo), 1, VodKind.MOVIE, "Leo", "104", 50, 100)
+
+        val vm = vm(trending = { trending }, repo = repository(index = index), pageSize = 2)
+        val s = loaded(vm).sections[0]
+        vm.setSort(1, VodSort.A_Z)
+        vm.loadMore(1)
         advanceUntilIdle()
-        assertThat(vm.state.value.sections.first().loading).isFalse()
-        assertThat(vm.state.value.sections.first().titles).isNotEmpty()
+        // ...and the first page, paging, sorting, Trending, Continue watching and detail lookups grouped nothing.
+        assertThat(s.titles).hasSize(2)
+        assertThat(s.trending.map { it.title }).containsExactly("Dune", "Bluey").inOrder()
+        assertThat(s.continueWatching.map { it.card.title }).containsExactly("Leo")
+        assertThat(vm.state.value.sections[0].titles.map { it.title }).containsExactly("Bluey", "Dune", "Leo", "Planet Earth").inOrder()
+        assertThat(grouper.calls.get()).isEqualTo(built)
+    }
+
+    @Test
+    fun `sections wait for a title index still being built and load when it lands`() = runTest(main.dispatcher) {
+        val index = InMemoryVodTitleIndex()
+        val vm = vm(repo = repository(index = index), changes = index.changes())
+        val pending = loaded(vm)
+        assertThat(pending.sections.map { it.loading }).containsExactly(true, true)
+        assertThat(pending.isEmpty).isFalse()
+
+        // The background indexer finishes after the catalog sync.
+        VodTitleIndexer(source, index).ensureAllFresh()
+        val ready = loaded(vm)
+        assertThat(ready.sections.map { it.loading }).containsExactly(false, false)
+        assertThat(ready.sections[0].titles.map { it.title }).containsExactly("Dune", "Leo", "Bluey", "Planet Earth").inOrder()
     }
 
     @Test
     fun `a failing playlist leaves other sections usable`() = runTest(main.dispatcher) {
-        val broken = object : VodCatalogSource by source {
-            override suspend fun vodStreamsPage(playlistId: Long, afterOrder: Int, limit: Int) =
-                if (playlistId == 2L) error("db closed") else source.vodStreamsPage(playlistId, afterOrder, limit)
-        }
-        val s = loaded(vm(repo = repository(broken)))
+        val index = indexOf(source).apply { failingPlaylists = setOf(2L) }
+        val s = loaded(vm(repo = repository(index = index)))
         assertThat(s.sections[0].failed).isFalse()
         assertThat(s.sections[0].titles).isNotEmpty()
         assertThat(s.sections[1].failed).isTrue()

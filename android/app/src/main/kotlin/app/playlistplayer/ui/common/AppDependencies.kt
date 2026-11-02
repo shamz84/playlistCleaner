@@ -65,7 +65,15 @@ class VodDependencies(
     val trackPreferences: TrackPreferenceStore = InMemoryTrackPreferenceStore(),
 ) {
     fun browseViewModel(kind: VodKind): VodBrowseViewModel =
-        VodBrowseViewModel(kind, repository, trending = trending, progress = progress, seriesInfo = seriesInfo, sortStore = sorts)
+        VodBrowseViewModel(
+            kind,
+            repository,
+            trending = trending,
+            progress = progress,
+            seriesInfo = seriesInfo,
+            sortStore = sorts,
+            changes = repository.changes(),
+        )
 }
 
 /**

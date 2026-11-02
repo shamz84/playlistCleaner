@@ -1,5 +1,6 @@
 package app.playlistplayer.core.sync.epg
 
+import app.playlistplayer.core.sync.BackgroundWorkGate
 import app.playlistplayer.core.database.CatalogStore
 import app.playlistplayer.core.database.EpgStore
 import app.playlistplayer.core.database.PlaylistStore
@@ -129,11 +130,14 @@ class EpgSyncer(
     private val logger: RedactingLogger = RedactingLogger.NONE,
     private val config: EpgSyncConfig = EpgSyncConfig(),
     private val pause: suspend (Long) -> Unit = { delay(it) },
+    /** Shared with the catalog sync and index builds so they never overlap (U20); own gate by default. */
+    private val gate: BackgroundWorkGate = BackgroundWorkGate(),
 ) {
     private val mutex = Mutex()
     private val parser = XmltvParser(pullFactory)
 
-    suspend fun sync(playlistId: Long, backfill: Boolean = true): EpgSyncOutcome = mutex.withLock { syncLocked(playlistId, backfill) }
+    suspend fun sync(playlistId: Long, backfill: Boolean = true): EpgSyncOutcome =
+        gate.run("epg-import") { mutex.withLock { syncLocked(playlistId, backfill) } }
 
     private class PassResult(val match: EpgMatchResult, val programmesStaged: Int)
 
