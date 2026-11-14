@@ -252,6 +252,7 @@ class SeriesViewModel(
             startPositionMs = if (resume) progress.resumePosition(progressKey) ?: 0L else 0L,
             nextEpisodeLabel = nextEpisode(key)?.let { next -> episodes[next]?.firstOrNull()?.let { episodeLabel(t, next, it) } },
             versionIds = sources.zip(ordered) { source, version -> source.id to version.series.item.id }.toMap(),
+            tmdbId = t.title.tmdb?.toLongOrNull(),
         )
     }
 

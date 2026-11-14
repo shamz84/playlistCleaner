@@ -15,7 +15,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -36,25 +38,32 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.tv.material3.ListItem
+import androidx.tv.material3.Button
+import androidx.tv.material3.ButtonDefaults
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import app.playlistplayer.R
 import app.playlistplayer.core.player.ConfiguredPlayer
 import app.playlistplayer.feature.live.CatchupRequest
+import app.playlistplayer.feature.live.ChannelRef
 import app.playlistplayer.feature.live.LivePlayerEvent
 import app.playlistplayer.feature.live.LivePlayerUiState
 import app.playlistplayer.feature.live.LivePlayerViewModel
 import app.playlistplayer.feature.live.LiveStartError
 import app.playlistplayer.feature.live.VersionItem
 import app.playlistplayer.ui.common.UiTokens
+import app.playlistplayer.ui.common.RecentChannelLogo
+import app.playlistplayer.ui.common.liveVideoInfoLabel
 import app.playlistplayer.ui.tv.components.TvBadge
 import app.playlistplayer.ui.tv.components.TvButton
+import app.playlistplayer.ui.tv.theme.TvDimens
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import app.playlistplayer.ui.common.badge
@@ -215,6 +224,7 @@ fun LivePlayerScreen(
                 onOtherVersions = viewModel::openVersions,
                 onRestart = viewModel::restart,
                 onLastChannel = viewModel::lastChannel,
+                onRecentChannel = viewModel::tuneRecent,
                 modifier = Modifier.align(Alignment.BottomCenter),
             )
         }
@@ -257,6 +267,7 @@ private fun ChannelOverlay(
     onOtherVersions: () -> Unit,
     onRestart: () -> Unit,
     onLastChannel: () -> Unit,
+    onRecentChannel: (ChannelRef) -> Unit,
     modifier: Modifier,
 ) {
     val time = rememberTimeFormatter()
@@ -282,6 +293,7 @@ private fun ChannelOverlay(
                 modifier = Modifier.weight(1f, fill = false),
             )
             state.qualityBadge?.let { TvBadge(it) }
+            liveVideoInfoLabel()?.let { Text(text = it, color = UiTokens.OnSurfaceMuted, style = MaterialTheme.typography.labelMedium) }
             if (state.currentVersionLabel != null && state.currentVersionLabel != channel.name) {
                 Text(text = state.currentVersionLabel, color = UiTokens.OnSurfaceMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
@@ -310,33 +322,51 @@ private fun ChannelOverlay(
                 overflow = TextOverflow.Ellipsis,
             )
         }
-        val hasButtons = state.hasOtherVersions || state.canRestart || state.hasLastChannel
+        val hasButtons = state.hasOtherVersions || state.canRestart || state.hasLastChannel || state.recentChannels.isNotEmpty()
         if (hasButtons) {
-            Row(horizontalArrangement = Arrangement.spacedBy(UiTokens.SpaceM), modifier = Modifier.padding(top = UiTokens.SpaceS)) {
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(UiTokens.SpaceM), verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = UiTokens.SpaceS)) {
                 if (state.hasOtherVersions) {
-                    TvButton(
-                        text = stringResource(R.string.player_other_versions_count, state.versions.size - 1),
-                        onClick = onOtherVersions,
-                        modifier = Modifier.focusRequester(buttonsFocus),
-                    )
+                    item {
+                        TvButton(
+                            text = stringResource(R.string.player_other_versions_count, state.versions.size - 1),
+                            onClick = onOtherVersions,
+                            modifier = Modifier.focusRequester(buttonsFocus),
+                        )
+                    }
                 }
                 if (state.canRestart) {
-                    TvButton(
-                        text = stringResource(R.string.player_restart_programme),
-                        onClick = onRestart,
-                        modifier = if (state.hasOtherVersions) Modifier else Modifier.focusRequester(buttonsFocus),
-                    )
+                    item {
+                        TvButton(
+                            text = stringResource(R.string.player_restart_programme),
+                            onClick = onRestart,
+                            modifier = if (state.hasOtherVersions) Modifier else Modifier.focusRequester(buttonsFocus),
+                        )
+                    }
                 }
                 if (state.hasLastChannel) {
-                    TvButton(
-                        text = stringResource(R.string.player_last_channel),
-                        onClick = onLastChannel,
-                        modifier = if (state.hasOtherVersions || state.canRestart) {
-                            Modifier.testTag(LivePlayerTags.LAST_CHANNEL)
-                        } else {
-                            Modifier.focusRequester(buttonsFocus).testTag(LivePlayerTags.LAST_CHANNEL)
-                        },
-                    )
+                    item {
+                        TvButton(
+                            text = stringResource(R.string.player_last_channel),
+                            onClick = onLastChannel,
+                            modifier = if (state.hasOtherVersions || state.canRestart) {
+                                Modifier.testTag(LivePlayerTags.LAST_CHANNEL)
+                            } else {
+                                Modifier.focusRequester(buttonsFocus).testTag(LivePlayerTags.LAST_CHANNEL)
+                            },
+                        )
+                    }
+                }
+                itemsIndexed(state.recentChannels, key = { _, recent -> "${recent.ref.playlistId}:${recent.ref.ordinal}" }) { index, recent ->
+                    val description = stringResource(R.string.livetv_recent_channel, recent.name)
+                    Button(
+                        onClick = { onRecentChannel(recent.ref) },
+                        modifier = (if (!state.hasOtherVersions && !state.canRestart && !state.hasLastChannel && index == 0) Modifier.focusRequester(buttonsFocus) else Modifier)
+                            .semantics { contentDescription = description },
+                        scale = ButtonDefaults.scale(focusedScale = UiTokens.FocusScale),
+                        border = ButtonDefaults.border(focusedBorder = TvDimens.FocusBorder),
+                    ) {
+                        RecentChannelLogo(recent.name, recent.logoUrl, Modifier.size(36.dp))
+                    }
                 }
             }
         }

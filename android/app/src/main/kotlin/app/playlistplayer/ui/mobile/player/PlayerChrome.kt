@@ -82,13 +82,7 @@ internal fun FullscreenLandscapeEffect() {
  */
 @Composable
 internal fun VideoSurface(exoPlayer: ExoPlayer, modifier: Modifier = Modifier) {
-    val surface = remember { mutableStateOf<SurfaceView?>(null) }
-    AndroidView(factory = { context -> SurfaceView(context).also { surface.value = it } }, modifier = modifier)
-    val view = surface.value
-    DisposableEffect(exoPlayer, view) {
-        if (view != null) exoPlayer.setVideoSurfaceView(view)
-        onDispose { if (view != null) exoPlayer.clearVideoSurfaceView(view) }
-    }
+    app.playlistplayer.ui.common.ScaledVideoSurface(exoPlayer, modifier)
 }
 
 /** A round control over the video with a glyph and a mandatory content description (≥ 48 dp). */

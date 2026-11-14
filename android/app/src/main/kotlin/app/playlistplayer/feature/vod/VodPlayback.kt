@@ -30,6 +30,8 @@ data class PlaybackRequest(
      * [PlayableSource.id]: a version chosen in the player is persisted as the title's pick.
      */
     val versionIds: Map<String, String> = emptyMap(),
+    /** TMDB id of the movie or show, when the playlist provides one (looks up skip markers). */
+    val tmdbId: Long? = null,
 )
 
 /** Why a play action could not build a request. */

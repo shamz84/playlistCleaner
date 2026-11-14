@@ -49,13 +49,7 @@ import java.util.Locale
  */
 @Composable
 internal fun PlayerVideoSurface(exoPlayer: ExoPlayer, modifier: Modifier = Modifier) {
-    val surface = remember { mutableStateOf<SurfaceView?>(null) }
-    AndroidView(factory = { context -> SurfaceView(context).also { surface.value = it } }, modifier = modifier)
-    val view = surface.value
-    DisposableEffect(exoPlayer, view) {
-        if (view != null) exoPlayer.setVideoSurfaceView(view)
-        onDispose { if (view != null) exoPlayer.clearVideoSurfaceView(view) }
-    }
+    app.playlistplayer.ui.common.ScaledVideoSurface(exoPlayer, modifier)
 }
 
 @Composable

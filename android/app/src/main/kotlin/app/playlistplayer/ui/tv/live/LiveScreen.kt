@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.tv.material3.ListItem
 import androidx.tv.material3.ListItemDefaults
+import androidx.tv.material3.LocalTextStyle
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import app.playlistplayer.R
@@ -227,29 +228,30 @@ internal fun GroupRail(
     onFocusGroup: (GroupKey) -> Unit,
     onOpenGroup: (GroupKey) -> Unit,
     modifier: Modifier = Modifier,
+    compact: Boolean = false,
 ) {
     val description = stringResource(R.string.live_groups_description)
     LazyColumn(
         modifier = modifier.testTag(LiveTags.GROUPS).semantics { contentDescription = description },
-        verticalArrangement = Arrangement.spacedBy(UiTokens.SpaceXs),
+        verticalArrangement = Arrangement.spacedBy(if (compact) 0.dp else UiTokens.SpaceXs),
     ) {
         sections.forEach { section ->
             // Section header: playlist name, not focusable (R25).
             item(key = "section-${section.playlistId}", contentType = "header") {
                 Text(
                     text = section.name,
-                    style = MaterialTheme.typography.titleMedium,
+                    style = if (compact) MaterialTheme.typography.labelLarge else MaterialTheme.typography.titleMedium,
                     color = UiTokens.Accent,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier
-                        .padding(top = UiTokens.SpaceM, bottom = UiTokens.SpaceXs, start = UiTokens.SpaceS)
+                        .padding(top = if (compact) UiTokens.SpaceS else UiTokens.SpaceM, bottom = UiTokens.SpaceXs, start = UiTokens.SpaceS)
                         .semantics { heading() },
                 )
             }
             section.groups.forEach { group ->
                 item(key = "group-${group.playlistId}-${group.ordinal}", contentType = "group") {
-                    GroupRow(group, selected = group.key == selected, onFocus = onFocusGroup, onOpen = onOpenGroup)
+                    GroupRow(group, selected = group.key == selected, onFocus = onFocusGroup, onOpen = onOpenGroup, compact = compact)
                 }
             }
         }
@@ -257,17 +259,17 @@ internal fun GroupRail(
 }
 
 @Composable
-private fun GroupRow(group: GroupItem, selected: Boolean, onFocus: (GroupKey) -> Unit, onOpen: (GroupKey) -> Unit) {
+private fun GroupRow(group: GroupItem, selected: Boolean, onFocus: (GroupKey) -> Unit, onOpen: (GroupKey) -> Unit, compact: Boolean = false) {
     val description = stringResource(R.string.live_group_item_description, group.name, group.channelCount)
+    val textStyle = if (compact) MaterialTheme.typography.bodySmall else LocalTextStyle.current
     ListItem(
         selected = selected,
         onClick = { onOpen(group.key) },
-        headlineContent = { Text(group.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-        trailingContent = { Text(group.channelCount.toString(), style = MaterialTheme.typography.labelMedium) },
+        headlineContent = { Text(group.name, style = textStyle, maxLines = 1, overflow = TextOverflow.Ellipsis) },
         modifier = Modifier
             .onFocusChanged { if (it.isFocused) onFocus(group.key) }
             .semantics { contentDescription = description },
-        scale = ListItemDefaults.scale(focusedScale = 1.03f, focusedSelectedScale = 1.03f),
+        scale = ListItemDefaults.scale(focusedScale = if (compact) 1f else 1.03f, focusedSelectedScale = if (compact) 1f else 1.03f),
         border = ListItemDefaults.border(focusedBorder = TvDimens.FocusBorder, focusedSelectedBorder = TvDimens.FocusBorder),
     )
 }

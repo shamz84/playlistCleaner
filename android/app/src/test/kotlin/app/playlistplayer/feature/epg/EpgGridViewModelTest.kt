@@ -2,6 +2,7 @@ package app.playlistplayer.feature.epg
 
 import app.playlistplayer.feature.live.CatchupPlaybackController
 import app.playlistplayer.feature.live.CatchupStart
+import app.playlistplayer.feature.live.EpgGridSource
 import app.playlistplayer.feature.live.FakeEpgGridSource
 import app.playlistplayer.feature.live.FakeLiveChannelSource
 import app.playlistplayer.feature.live.FakePreferences
@@ -15,11 +16,13 @@ import app.playlistplayer.feature.vod.MainDispatcherRule
 import app.playlistplayer.ui.common.GroupKey
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.runCurrent
 import org.junit.Rule
 import org.junit.Test
 import java.time.LocalDate
@@ -315,5 +318,59 @@ class EpgGridViewModelTest {
         assertThat(vm.state.value.row(13).noGuideData).isTrue()
         // Unchanged rows keep their instance.
         assertThat(vm.state.value.row(10)).isSameInstanceAs(first)
+    }
+
+    @Test
+    fun `scrolling evicts distant guide blocks and reloads them when revisited`() = runTest(main.dispatcher) {
+        val manyChannels = FakeLiveChannelSource()
+        val manyProgrammes = FakeEpgGridSource()
+        repeat(100) { ordinal ->
+            manyChannels.add(LiveChannel(1, ordinal, 2, "Channel $ordinal", streamId = ordinal.toLong() + 1))
+            manyProgrammes.add(
+                ordinal,
+                programme(ordinal.toLong() + 1, "id$ordinal", now - 60_000, now + 60_000, "Programme $ordinal"),
+            )
+        }
+        val vm = EpgGridViewModel(
+            GroupKey(1, 2), manyChannels, manyProgrammes, OtherVersionsResolver { emptyList() },
+            clock = { now }, zone = zone, rowBlock = 10,
+        )
+        advanceUntilIdle()
+        vm.onFocus(0, 1)
+        vm.onVisibleRows(80, 89)
+        advanceUntilIdle()
+
+        assertThat(vm.state.value.row(0).loaded).isTrue()
+        assertThat(vm.state.value.row(80).loaded).isTrue()
+        assertThat(vm.state.value.row(40).loaded).isFalse()
+        assertThat(vm.state.value.rows.count { it.loaded }).isAtMost(40)
+        vm.onFocus(80, 81)
+        vm.onVisibleRows(0, 9)
+        advanceUntilIdle()
+        assertThat(vm.state.value.cell(0, 1).title).isEqualTo("Programme 0")
+    }
+
+    @Test
+    fun `visible rows changed during the initial load are loaded afterwards`() = runTest(main.dispatcher) {
+        val manyChannels = FakeLiveChannelSource()
+        repeat(50) { ordinal ->
+            manyChannels.add(LiveChannel(1, ordinal, 2, "Channel $ordinal", streamId = ordinal.toLong() + 1))
+        }
+        val gate = CompletableDeferred<Unit>()
+        var calls = 0
+        val slowGrid = EpgGridSource { _, _, _, _ ->
+            if (calls++ == 0) gate.await()
+            emptyList()
+        }
+        val vm = EpgGridViewModel(
+            GroupKey(1, 2), manyChannels, slowGrid, OtherVersionsResolver { emptyList() },
+            clock = { now }, zone = zone, rowBlock = 10,
+        )
+        runCurrent()
+        vm.onVisibleRows(40, 49)
+        gate.complete(Unit)
+        advanceUntilIdle()
+        assertThat(vm.state.value.row(40).loaded).isTrue()
+        assertThat(vm.state.value.row(49).loaded).isTrue()
     }
 }

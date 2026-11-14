@@ -3,6 +3,7 @@ package app.playlistplayer.feature.onboarding
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.playlistplayer.core.model.Playlist
+import app.playlistplayer.core.sync.epg.EpgOverrideSettings
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
@@ -56,6 +57,8 @@ data class OnboardingUiState(
     val playlistId: Long? = null,
     /** True when Xtream was requested but the downloaded playlist is not Xtream-shaped (sync turned it off). */
     val xtreamTurnedOff: Boolean = false,
+    /** Use the curated guide as this playlist's EPG override instead of the provider guide. */
+    val useCuratedEpg: Boolean = true,
 ) {
     /** The Drive file ID read from the field (bare or extracted from a link), unvalidated. */
     val driveId: String? get() = (driveInput as? DriveFieldInput.Parsed)?.id
@@ -158,6 +161,11 @@ class OnboardingViewModel(
         _state.update { it.copy(xtreamRequested = enabled) }
     }
 
+    fun onCuratedEpgToggled(enabled: Boolean) {
+        if (_state.value.phase != OnboardingPhase.Form) return
+        _state.update { it.copy(useCuratedEpg = enabled) }
+    }
+
     fun dismissError() {
         _state.update { it.copy(error = null) }
     }
@@ -169,6 +177,7 @@ class OnboardingViewModel(
         val source = form.sourceInput() ?: return
         val name = form.effectiveName
         val xtream = form.xtreamEnabled
+        val epgUrl = if (form.useCuratedEpg) EpgOverrideSettings.DEFAULT_URL else null
         _state.update {
             it.copy(
                 phase = OnboardingPhase.Progress,
@@ -188,7 +197,7 @@ class OnboardingViewModel(
                 }
             }
             val result = try {
-                onboarder.addPlaylist(name, source, xtream)
+                onboarder.addPlaylist(name, source, xtream, epgUrl)
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {

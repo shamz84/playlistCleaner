@@ -1,5 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="vod_diagnostics_title">Playback diagnostics</string>
+    <string name="vod_diagnostics_status">State: %1$s</string>
+    <string name="vod_diagnostics_playing">Playing</string>
+    <string name="vod_diagnostics_buffering">Buffering</string>
+    <string name="vod_diagnostics_paused">Paused / idle</string>
+    <string name="vod_diagnostics_waiting">Waiting</string>
+    <string name="vod_diagnostics_buffer">Buffered ahead: %1$.1f s</string>
+    <string name="vod_diagnostics_buffer_memory">Player buffer: %1$.1f MiB</string>
+    <string name="vod_diagnostics_heap">App heap: %1$.1f / %2$.1f MiB</string>
+    <string name="vod_diagnostics_dropped">Dropped frames (decoder): %1$d</string>
+    <string name="vod_diagnostics_resolution">Video: %1$d × %2$d</string>
+    <string name="vod_diagnostics_fps">Frame rate: %1$.2f fps</string>
+    <string name="vod_diagnostics_decoder">Decoder: %1$s</string>
     <string name="vod_loading">Loading…</string>
     <string name="vod_empty_movies">No movies yet. They appear after the playlist\'s catalog syncs.</string>
     <string name="vod_empty_series">No TV shows yet. They appear after the playlist\'s catalog syncs.</string>
@@ -19,6 +32,9 @@
     <string name="vod_filter_all">All</string>
     <string name="vod_language_unknown">Unknown</string>
     <string name="vod_versions">Versions</string>
+    <string name="vod_versions_and_filters">Versions &amp; filters</string>
+    <string name="vod_selected_version">Selected version: %1$s</string>
+    <string name="vod_no_matching_versions">No matching versions. Change or clear a filter.</string>
     <string name="vod_version_default">Default</string>
     <string name="vod_no_account">No account is stored for this playlist. Re-import it, then try again.</string>
     <string name="vod_invalid_stream">This version can\'t be played.</string>
@@ -37,6 +53,7 @@
     <string name="vod_audio">Audio</string>
     <string name="vod_subtitles">Subtitles</string>
     <string name="vod_subtitles_off">Off</string>
+    <string name="vod_subtitles_none">This stream has no subtitle tracks.</string>
     <string name="vod_tracks_hint">▲ Audio and subtitles: %1$s</string>
     <string name="vod_paused">Paused</string>
     <string name="vod_retry_playback">Retry</string>
@@ -50,4 +67,18 @@
     <string name="vod_sort_release_year">Release year</string>
     <string name="vod_episode_short">S%1$d E%2$d</string>
     <string name="vod_up_next">Next: S%1$d E%2$d</string>
+    <string name="vod_picture_format">Picture: %1$s</string>
+    <string name="video_scaling_fit">Normal</string>
+    <string name="video_scaling_zoom">Zoom (fill, crop edges)</string>
+    <string name="video_scaling_stretch">Full (stretch to screen)</string>
+    <string name="video_scaling_4_3">4:3</string>
+    <string name="video_scaling_16_9">16:9</string>
+    <string name="video_scaling_2_35">2.35:1</string>
+    <string name="vod_picture_title">Picture</string>
+    <string name="vod_skip_intro_tv">Skip intro  (press OK)</string>
+    <string name="vod_skip_credits_tv">Skip credits  (press OK)</string>
+    <string name="vod_skip_intro">Skip intro</string>
+    <string name="vod_skip_credits">Skip credits</string>
+    <string name="vod_skip_recap_tv">Skip recap  (press OK)</string>
+    <string name="vod_skip_recap">Skip recap</string>
 </resources>

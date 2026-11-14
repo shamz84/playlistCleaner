@@ -4,12 +4,12 @@ The app is distributed as a signed APK for sideloading. There is no store listin
 
 ## Supported devices
 
-- Fire OS 7 and 8: Fire TV Stick 4K (2nd gen), Fire TV Stick 4K Max (1st and 2nd gen), Fire TV Cube.
-- Android phones on Android 9 (API 28) or newer.
+- Fire OS 6, 7 and 8: Android 7.1 (API 25) or newer, including Fire TV Stick and Fire TV Cube devices running those versions.
+- Android phones on Android 7.1 (API 25) or newer.
 
 Not supported: devices running Vega OS (for example Fire TV Stick 4K Select and the newer 2026 sticks). Vega OS cannot install APKs, and v1 has no Vega build. Check Settings, My Fire TV, About on the device if unsure.
 
-Device verification on real hardware is still pending; see the plan's U14 device matrix.
+The user reports stable usage on a Fire OS 6 debug build. The optimized release and phone support on Android 7.1 still require device verification; see the plan's U14 device matrix.
 
 ## Build
 
@@ -25,6 +25,22 @@ cd Z:\training\playlistCleaner\android
 `android/local.properties` holds `sdk.dir` and is untracked.
 
 Debug APK: `app\build\outputs\apk\debug\app-debug.apk`.
+
+### Separate debug test build
+
+To test separately without replacing the normal app, build a separate debug-signed app:
+
+```powershell
+.\gradlew.bat :app:assembleDebug -PfireOs6Test=true
+```
+
+The output uses the same debug APK path, but its package is
+`app.playlistplayer.fireos6test` and its label is **8TV Player Test**. It installs alongside
+the normal app with separate playlists and settings; the regular release also has minSdk 25 (targetSdk 36).
+A later ordinary debug build overwrites this APK. The restricted Drive API key for the normal
+package does not apply to this test package, so Drive imports may need separate key authorization.
+The debug playback harness is exported and is intended only for trusted test devices. This build
+is intended for testing, and debug performance may differ from the optimized release.
 
 Release APK: provide signing details in `android/local.properties` (untracked):
 
@@ -43,7 +59,36 @@ or as environment variables `RELEASE_STORE_FILE`, `RELEASE_STORE_PASSWORD`, `REL
 
 Output: `app\build\outputs\apk\release\`. If any of the four values is missing the release build is unsigned and will not install. Create a keystore once with `keytool -genkeypair -v -keystore <file> -alias <alias> -keyalg RSA -keysize 4096 -validity 10000`, keep it outside the repo, and back it up. Updates must be signed with the same key.
 
-Signing notes: the build enables v1 and v2 signing. With minSdk 28 the Android Gradle Plugin emits only v2, which every API 24+ device (including Fire OS 7/8) verifies. Never commit keystores, passwords or the Drive API key.
+### 8TV Player release key on this Windows account
+
+The 8TV Player release key is stored outside the repository in `%USERPROFILE%\8TV-Player-Signing\8tv-release.p12`, with alias `8tv-player`. Its generated password is in `password.dpapi`, protected for the Windows account that created it. To build with this key, in a fresh PowerShell session:
+
+```powershell
+$env:JAVA_HOME = "$env:LOCALAPPDATA\DevTools\jdk21"
+$env:ANDROID_HOME = "$env:LOCALAPPDATA\Android\Sdk"
+$signing = Join-Path $env:USERPROFILE '8TV-Player-Signing'
+$secure = Get-Content -Raw (Join-Path $signing 'password.dpapi') | ConvertTo-SecureString
+$env:RELEASE_STORE_FILE = Join-Path $signing '8tv-release.p12'
+$env:RELEASE_KEY_ALIAS = '8tv-player'
+$env:RELEASE_STORE_PASSWORD = [System.Net.NetworkCredential]::new('', $secure).Password
+$env:RELEASE_KEY_PASSWORD = $env:RELEASE_STORE_PASSWORD
+cd Z:\training\playlistCleaner\android
+.\gradlew.bat :app:assembleRelease
+Remove-Item Env:RELEASE_STORE_PASSWORD, Env:RELEASE_KEY_PASSWORD
+```
+
+Back up the keystore and its password securely. The DPAPI-protected password file alone is **not** a portable recovery backup: it normally requires the original Windows account and machine. Save the password separately in a password manager from a trusted local session; do not paste it into chat or commit it. The following copies it to the clipboard so it can be saved; clipboard history or other applications may capture it, so clear the clipboard immediately afterwards:
+
+```powershell
+$secure = Get-Content -Raw (Join-Path $env:USERPROFILE '8TV-Player-Signing\password.dpapi') | ConvertTo-SecureString
+[System.Net.NetworkCredential]::new('', $secure).Password | Set-Clipboard
+# After saving it in the password manager:
+Set-Clipboard -Value ''
+```
+
+The release and debug builds share an application ID but use different signing keys. A release signed with this key cannot replace the debug installation in place; uninstalling the debug app also removes its app data.
+
+Signing notes: the build enables v1 and v2 signing. With minSdk 25 the Android Gradle Plugin emits only v2, which every API 24+ device (including Fire OS 6/7/8) verifies. Never commit keystores, passwords or the Drive API key.
 
 To embed a Drive API key, see the last section of [../../docs/ANDROID_PLAYER_SETUP.md](../../docs/ANDROID_PLAYER_SETUP.md). The key restriction uses the SHA-1 of the key that signed the APK, so register the release key's SHA-1 before shipping.
 

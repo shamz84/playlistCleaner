@@ -44,6 +44,14 @@ data class PlaybackDebugStats(
     val videoFormat: VideoFormatInfo? = null,
     val videoDecoderName: String? = null,
     val audioDecoderName: String? = null,
+    /** Current decoder's counter; it resets if the decoder is recreated. */
+    val decoderDroppedFrames: Long? = null,
+    val allocatedBufferBytes: Int = 0,
+    val heapUsedBytes: Long = 0,
+    val heapMaxBytes: Long = 0,
+    val isBuffering: Boolean = false,
+    val isPlaying: Boolean = false,
+    val playWhenReady: Boolean = false,
 )
 
 /**
@@ -205,6 +213,7 @@ class ExoPlaybackController(
     // ---- Internals ----------------------------------------------------------------------
 
     private fun poll() {
+        val runtime = Runtime.getRuntime()
         val position = exo.currentPosition
         if (exo.isPlaying && position != lastPositionMs) {
             lastPositionMs = position
@@ -216,6 +225,16 @@ class ExoPlaybackController(
             videoFormat = mutableVideoFormat.value,
             videoDecoderName = videoDecoderName,
             audioDecoderName = audioDecoderName,
+            decoderDroppedFrames = exo.videoDecoderCounters?.let { counters ->
+                counters.ensureUpdated()
+                counters.droppedBufferCount.toLong()
+            },
+            allocatedBufferBytes = player.loadControl.allocatedBufferBytes,
+            heapUsedBytes = runtime.totalMemory() - runtime.freeMemory(),
+            heapMaxBytes = runtime.maxMemory(),
+            isBuffering = exo.playbackState == Player.STATE_BUFFERING,
+            isPlaying = exo.isPlaying,
+            playWhenReady = exo.playWhenReady,
         )
     }
 
@@ -225,6 +244,7 @@ class ExoPlaybackController(
         videoDecoderName = null
         audioDecoderName = null
         mutableVideoFormat.value = null
+        mutableDebugStats.value = PlaybackDebugStats()
     }
 
     private fun Format.toInfo(): VideoFormatInfo = VideoFormatInfo(

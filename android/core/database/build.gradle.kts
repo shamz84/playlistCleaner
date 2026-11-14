@@ -16,6 +16,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        isCoreLibraryDesugaringEnabled = true
     }
 
     sourceSets {
@@ -49,6 +50,7 @@ configurations.configureEach {
 }
 
 dependencies {
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
     api(project(":core:model"))
     api(libs.androidx.room3.runtime)
     implementation(libs.androidx.sqlite.bundled)

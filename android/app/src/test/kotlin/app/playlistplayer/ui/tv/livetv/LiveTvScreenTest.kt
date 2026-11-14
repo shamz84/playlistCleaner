@@ -104,9 +104,9 @@ class LiveTvScreenTest {
     }
 
     @Test
-    fun `selecting a group in the side panel shows its grid and hides the panel`() {
+    fun `the group tree is always visible and selecting a group shows its grid`() {
         val vm = show()
-        assertThat(exists(hasTestTag(LiveTvTags.GROUPS_PANEL))).isFalse()
+        assertThat(exists(hasTestTag(LiveTvTags.GROUPS_PANEL))).isTrue()
         vm.openGroupsPanel()
         compose.waitForIdle()
         assertThat(exists(hasTestTag(LiveTvTags.GROUPS_PANEL))).isTrue()

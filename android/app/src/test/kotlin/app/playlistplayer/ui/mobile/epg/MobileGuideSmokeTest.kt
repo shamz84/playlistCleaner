@@ -171,7 +171,7 @@ class MobileGuideSmokeTest {
 
     private object NoOnboarder : PlaylistOnboarder {
         override val progress: Flow<OnboardingProgress> = emptyFlow()
-        override suspend fun addPlaylist(name: String, source: SourceInput, xtreamEnabled: Boolean): OnboardingResult =
+        override suspend fun addPlaylist(name: String, source: SourceInput, xtreamEnabled: Boolean, epgOverrideUrl: String?): OnboardingResult =
             OnboardingResult.Success(1, xtreamEnabled = false)
     }
 

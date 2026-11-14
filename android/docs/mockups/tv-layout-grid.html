@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Live TV layout grid</title>
+<style>
+*{box-sizing:border-box;margin:0}
+body{background:#111;color:#eee;font:14px system-ui,sans-serif;padding:24px}
+h1{font-size:20px;margin-bottom:4px}h2{font-size:16px;color:#7cc4ff;margin:22px 0 4px}
+p{color:#aaa;max-width:960px;margin-bottom:8px;font-size:13px}
+/* 960x540 dp screen drawn 1:1 in px (1080p TV = 960x540 dp) */
+.tv{position:relative;width:960px;height:540px;background:#1b222b;border:2px solid #000;overflow:hidden;font-size:11px}
+.b{position:absolute;display:flex;align-items:center;justify-content:center;text-align:center;color:#dde;border:1px solid rgba(255,255,255,.25);overflow:hidden}
+.rail{background:#1d242e}.tree{background:#252d38}.prev{background:#0a0d11;color:#567}
+.info{background:#2b3340;align-items:flex-start;justify-content:flex-start;padding:6px;text-align:left}
+.ruler{background:#2f3d52;color:#7cc4ff}.ch{background:#323b48}.pg{background:#3b4656}.on{background:#2f9bf0;color:#fff}
+.dead{background:repeating-linear-gradient(45deg,rgba(255,70,70,.30) 0 6px,rgba(255,70,70,.08) 6px 12px);border:1px dashed #f55;color:#fbb;font-weight:600}
+.dim{position:absolute;color:#ffd166;font-size:10px;background:#000a;padding:0 3px}
+.wrap{display:flex;gap:24px;flex-wrap:wrap}
+table{border-collapse:collapse;margin-top:10px}td,th{border:1px solid #333;padding:4px 10px;text-align:left;font-size:12px}th{color:#7cc4ff}
+</style></head><body>
+<h1>Live TV: layout grid, to scale (960 × 540 dp, a 1080p TV)</h1>
+<p>Left: what the app does now. Red hatching = space doing no useful work. Right: the proposed tighter layout. Yellow numbers are dp.</p>
+
+<h2>1. Now</h2>
+<div class="tv">
+ <!-- screen padding 32/18 -->
+ <div class="b dead" style="left:0;top:0;width:960px;height:18px">top padding 18</div>
+ <div class="b dead" style="left:0;top:18px;width:32px;height:504px;writing-mode:vertical-rl">edge 32</div>
+ <div class="b dead" style="left:928px;top:18px;width:32px;height:504px;writing-mode:vertical-rl">edge 32</div>
+ <div class="b dead" style="left:32px;top:522px;width:896px;height:18px">bottom 18</div>
+ <div class="b rail" style="left:32px;top:18px;width:80px;height:504px">rail<br>80 dp<br>(icons)</div>
+ <div class="b tree" style="left:116px;top:18px;width:150px;height:504px">playlists<br>+ groups<br>150 dp</div>
+ <div class="b info" style="left:270px;top:18px;width:300px;height:189px">Details: logo, title, time, description<br><br><span style="color:#f99">Only ~4 short lines of text. Much of this box is empty.</span></div>
+ <div class="b dead" style="left:574px;top:18px;width:20px;height:189px">gap</div>
+ <div class="b prev" style="left:594px;top:18px;width:334px;height:189px">preview 334×189 (16:9)</div>
+ <div class="b ruler" style="left:270px;top:211px;width:658px;height:20px">day / time ruler 20</div>
+ <div class="b ch" style="left:270px;top:235px;width:145px;height:44px">channel col 22% = 145</div>
+ <div class="b on" style="left:417px;top:235px;width:200px;height:44px">programme</div><div class="b pg" style="left:619px;top:235px;width:309px;height:44px">programme</div>
+ <div class="b ch" style="left:270px;top:283px;width:145px;height:44px"></div><div class="b pg" style="left:417px;top:283px;width:511px;height:44px"></div>
+ <div class="b ch" style="left:270px;top:331px;width:145px;height:44px"></div><div class="b pg" style="left:417px;top:331px;width:511px;height:44px"></div>
+ <div class="b ch" style="left:270px;top:379px;width:145px;height:44px"></div><div class="b pg" style="left:417px;top:379px;width:511px;height:44px"></div>
+ <div class="b ch" style="left:270px;top:427px;width:145px;height:44px"></div><div class="b pg" style="left:417px;top:427px;width:511px;height:44px"></div>
+ <div class="b ch" style="left:270px;top:475px;width:145px;height:47px"></div><div class="b pg" style="left:417px;top:475px;width:511px;height:47px"></div>
+ <span class="dim" style="left:272px;top:213px">guide: 658 × 291 dp, about 6 rows</span>
+</div>
+
+<h2>2. Proposed (reclaims about 150 dp across and 60 dp down)</h2>
+<div class="tv">
+ <div class="b rail" style="left:0;top:0;width:48px;height:540px">rail<br>48 dp<br>icons only</div>
+ <div class="b tree" style="left:48px;top:0;width:128px;height:540px">groups<br>128 dp<br><br>playlist headers collapse</div>
+ <div class="b prev" style="left:180px;top:10px;width:224px;height:126px">preview 224×126 (16:9)</div>
+ <div class="b info" style="left:408px;top:10px;width:520px;height:126px">Details fill the width beside the smaller preview:<br>logo · number · name · title · time · progress · description (3 lines) · Next up</div>
+ <div class="b ruler" style="left:180px;top:140px;width:748px;height:18px">day / time ruler 18</div>
+ <div class="b ch" style="left:180px;top:162px;width:130px;height:36px">channel col 130</div><div class="b on" style="left:312px;top:162px;width:200px;height:36px"></div><div class="b pg" style="left:514px;top:162px;width:414px;height:36px"></div>
+ <div class="b ch" style="left:180px;top:200px;width:130px;height:36px"></div><div class="b pg" style="left:312px;top:200px;width:616px;height:36px"></div>
+ <div class="b ch" style="left:180px;top:238px;width:130px;height:36px"></div><div class="b pg" style="left:312px;top:238px;width:616px;height:36px"></div>
+ <div class="b ch" style="left:180px;top:276px;width:130px;height:36px"></div><div class="b pg" style="left:312px;top:276px;width:616px;height:36px"></div>
+ <div class="b ch" style="left:180px;top:314px;width:130px;height:36px"></div><div class="b pg" style="left:312px;top:314px;width:616px;height:36px"></div>
+ <div class="b ch" style="left:180px;top:352px;width:130px;height:36px"></div><div class="b pg" style="left:312px;top:352px;width:616px;height:36px"></div>
+ <div class="b ch" style="left:180px;top:390px;width:130px;height:36px"></div><div class="b pg" style="left:312px;top:390px;width:616px;height:36px"></div>
+ <div class="b ch" style="left:180px;top:428px;width:130px;height:36px"></div><div class="b pg" style="left:312px;top:428px;width:616px;height:36px"></div>
+ <div class="b ch" style="left:180px;top:466px;width:130px;height:36px"></div><div class="b pg" style="left:312px;top:466px;width:616px;height:36px"></div>
+ <div class="b dead" style="left:930px;top:0;width:30px;height:540px;writing-mode:vertical-rl">safe edge 30</div>
+ <div class="b dead" style="left:48px;top:506px;width:880px;height:34px">safe bottom 34 (overscan)</div>
+ <span class="dim" style="left:182px;top:142px;background:none"></span>
+ <span class="dim" style="left:520px;top:300px">guide: 748 × 340 dp, about 9 rows (was 6)</span>
+</div>
+
+<table>
+<tr><th>Area</th><th>Now</th><th>Proposed</th><th>Gain</th></tr>
+<tr><td>Left rail</td><td>80 dp, icons</td><td>48 dp, icons only</td><td>+32 across</td></tr>
+<tr><td>Group tree</td><td>150 dp</td><td>128 dp, playlist headers collapse</td><td>+22 across</td></tr>
+<tr><td>Screen edges</td><td>32 left and right, 18 top and bottom</td><td>0 left, 30 right, 0 top, 34 bottom (rail and tree bleed to the edge)</td><td>+about 34 across, +18 down</td></tr>
+<tr><td>Details + preview</td><td>189 dp tall, preview 334 wide, text box half empty</td><td>126 dp tall, preview 224 wide, text across the full remaining width</td><td>+63 down</td></tr>
+<tr><td>Guide rows</td><td>44 dp, about 6 visible</td><td>36 dp, about 9 visible</td><td>+3 rows</td></tr>
+<tr><td>Guide width</td><td>658 dp</td><td>748 dp</td><td>+90 across</td></tr>
+</table>
+<p style="margin-top:10px">Trade-offs: a 224 dp preview is smaller (Enter still opens full screen), 36 dp rows are denser (TiviMate is about 36 to 40 dp), and edge-to-edge panels sit nearer the TV bezel. Fire TV reports no overscan, but your Sony may crop a few dp.</p>
+</body></html>

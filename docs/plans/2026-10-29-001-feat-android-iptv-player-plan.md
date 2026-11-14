@@ -6,7 +6,7 @@ date: 2026-10-29
 
 # feat: Android IPTV player for Fire TV and mobile
 
-**Target repo:** a new Android repository (working name `playlist-player-android`). All file paths in Implementation Units are relative to that repo unless prefixed with `playlistCleaner:`, which means this repository.
+**Current implementation:** `playlistCleaner/android` on `feat/android-player`, branded **8TV Player**. The original implementation units below retain their planning-era path conventions. The session addenda record later scope, current behavior and remaining verification; where they differ from original requirements (notably R5 and device support), they supersede them.
 
 ## Summary
 
@@ -46,7 +46,7 @@ Users may also hold more than one provider or playlist. They need to add them si
 - R4. Group order follows the playlist order; emoji and UTF-8 group names render correctly.
 
 **EPG and catch-up**
-- R5. A default EPG works with zero setup (the provider's Xtream `xmltv.php` for the account).
+- R5. A default EPG works with zero setup. Updated: new playlists default to the curated override, with an opt-out to provider `xmltv.php`; provider data fills unmatched channels where available. See the session addendum for existing playlists.
 - R6. The user can override the EPG with their own XMLTV URL. The app reports the match rate and falls back to the provider EPG for unmatched channels.
 - R7. For catch-up-enabled channels, past programmes within the channel's archive window are marked in the EPG and playable from the start.
 - R8. During live playback of a catch-up channel, the user can restart the current programme.
@@ -146,7 +146,7 @@ Users may also hold more than one provider or playlist. They need to add them si
 
 - **Native Kotlin with Media3, not cross-platform:** playback quality on Fire TV is the top requirement. Media3 gives direct control of load control, extractors, tunneling and error handling, which Flutter/RN players hide.
 - **Google Media3, not Amazon's ExoPlayer port:** the port is frozen at ExoPlayer 2.18.7, and Amazon's own Fire OS 14 guidance points to Media3. Pin the 1.11.x line and move to 1.12 once stable for the Fire TV AC-3 fix.
-- **minSdk 28, Fire OS 7/8 only:** this covers Fire TV Stick 4K (2nd gen), 4K Max (both gens), the Cube, and Android 9+ phones. Vega OS devices (Stick 4K Select, newer 2026 sticks) cannot run APKs and are out of scope.
+- **minSdk 25, Fire OS 6/7/8:** one APK also supports Android 7.1+ phones; the optimized release still requires device acceptance. Vega OS devices (Stick 4K Select, newer 2026 sticks) cannot run APKs and are out of scope.
 - **One APK, two UI trees over shared ViewModels:** tv-material on TV and material3 on phone, selected at runtime by `UiModeManager`/leanback feature. Google advises against mobile Material on TV, and a shared presentation layer keeps behaviour identical.
 - **Room 3 with `@Fts5` as the single source of truth:** 15k channels, large VOD lists and a multi-day EPG cannot live in heap on 1–2 GB devices. Everything streams into Room and UI pages from it. Greenfield means no Room 2 migration cost.
 - **Drive download via Drive API v3 with a restricted API key, usercontent URL as fallback:** the metadata call returns `md5Checksum`/`version`, so refresh only downloads when the pipeline overwrote the file. The legacy `uc?export=download` endpoint is deprecated. The key is restricted to the Drive API and the app's package/signing SHA-1.
@@ -163,7 +163,7 @@ Users may also hold more than one provider or playlist. They need to add them si
 - **Xtream processing is opt-in per playlist:** it is chosen when the playlist is added and can be changed later. It is off when the playlist's URLs are not Xtream-shaped. Without it, the playlist is live-only. Its guide comes only from an EPG override URL, and it has no catch-up.
 - **Keep-awake is tied to player state, not to screens:** one shared helper sets `keepScreenOn` while the player state is Preparing, Playing, Stalled, Retrying or Failover, and clears it otherwise. Fire TV's screensaver respects this flag.
 - **TMDB for Trending only, matched to the catalog:** TMDB v3 `trending/{movie|tv}/week` with a build-time API key (`tmdb.apiKey` in `local.properties`, like the Drive key). Matching uses the provider's `tmdb` id, falling back to normalized title + year. TMDB never adds titles the provider lacks. Missing key or network failure hides the row. TMDB terms require a visible "Powered by TMDB" credit.
-- **minSdk stays 28:** Fire OS 6 (API 25) support was built and then reverted at the user's request because the UI was too sluggish on the older stick.
+- **Fire OS 6 was revisited:** earlier API 25 support was reverted due to sluggish UI; the user later reported stable usage on a separate debug build and chose a unified API 25 release. See the 2026-11-14 addendum for release-test status.
 - **Live as progressive `.ts` by default, HLS when the server allows and the user opts in:** `.ts` starts faster with no playlist round-trips. HLS adds live-window recovery on flaky networks. Format comes from `user_info.allowed_output_formats`.
 - **Low-latency live buffer profile plus an app-level reconnect watchdog:**
   - Media3 live-speed control does not apply to progressive TS. Buffer-free behaviour comes from a tuned `DefaultLoadControl` (short start threshold, bounded max buffer scaled by device RAM) and a custom `LoadErrorHandlingPolicy` with long retry.
@@ -181,11 +181,11 @@ Users may also hold more than one provider or playlist. They need to add them si
 
 - Language handling: a global ranked language list (English first by default) plus a per-title language/quality filter and remembered manual pick (user answer).
 - v1 includes search, favourites, continue watching and parental PIN (user answer).
-- Minimum devices: Fire TV 4K / 4K Max class on Fire OS 7/8, Android 9+ phones (user answer; Vega exclusion from research).
+- Minimum devices: Fire OS 6/7/8 devices and Android 7.1+ phones; phone and optimized Fire OS 6 release acceptance remain open (Vega exclusion from research).
 - Drive access: link-shared file, no Google sign-in (user answer).
 - Live channels: never merged. The playlist decides what is listed, and up to five other versions of the same channel are offered (user answer).
 - Multiple playlists: added from a Drive file ID or an M3U URL, Xtream processing optional per playlist, content grouped under each playlist's name, and no merging across playlists (user answer).
-- Fire OS 6: not supported; minSdk 28 (user decision after device test).
+- Fire OS 6: supported by the unified API 25 build after the later debug-device trial; release acceptance remains open.
 - TMDB: build-time key; weekly trending list; full list default "Recently added" with A–Z / Release year switch (user answers).
 - Home stays in the menu; Live TV becomes the start screen on TV and phone (agent default, user may revisit for phone).
 - Drive file ID stability: preserved across pipeline uploads because `--backup` updates in place.
@@ -200,7 +200,7 @@ Users may also hold more than one provider or playlist. They need to add them si
   - whether archive URLs support Range seeking.
 - Exact `DefaultLoadControl` numbers per device class, tuned against measured zap time and rebuffer counts on real hardware.
 - Whether eager full-VOD sync or lazy per-category sync is used. This depends on the measured response size.
-- Whether Fire TV Stick 4K (1st gen) reports Fire OS 7 (API 28) on current firmware. If it stays on Fire OS 6 it falls below minSdk.
+- Whether each older Fire TV model meets performance expectations on its current firmware; Fire OS 6 is now within minSdk.
 - GCP project for the API key. The repo already has an OAuth client (`playlistCleaner:data/config/gdrive_credentials.json`), so a project exists. Confirm which project hosts the restricted key.
 
 ---
@@ -365,7 +365,7 @@ programme (UTC start/stop from EPG)
 - Test: `app/src/test/kotlin/.../FormFactorTest.kt`
 
 **Approach:**
-- minSdk 28; target current SDK. APK signature v1 + v2; uncompressed, 4-byte-aligned resources per Fire OS 8 guidance.
+- minSdk 25; target SDK 36. APK signature v2 (AGP does not emit v1 at minSdk 25); uncompressed, aligned resources per Fire OS guidance.
 - Manifest declares `LEANBACK_LAUNCHER` and `LAUNCHER`, `leanback` and `touchscreen` features `required=false`, and a 320×180 banner.
 - The network security config permits cleartext, because provider hosts are `http://` and only known at runtime. Drive and other HTTPS calls stay HTTPS.
 - DI (Hilt) and module skeletons per Output Structure.
@@ -897,7 +897,7 @@ programme (UTC start/stop from EPG)
 
 ### Phase 5 — Performance and UX redesign
 
-Direction agreed in principle; details to confirm before building. Start with U19; its findings decide U20.
+Historical planning direction: start with U19 to inform U20. U20–U23 were subsequently implemented, but U19 device measurement remains outstanding; see the session addendum.
 
 ### U19. Measure on the Fire TV
 
@@ -971,6 +971,47 @@ Direction agreed in principle; details to confirm before building. Start with U1
 
 ---
 
+## Session addendum — 8TV Player refinements (2026-11-11)
+
+This addendum records work requested after the original units. **Implemented** means code exists, not that every device acceptance test is complete. For exact wiring, limitations and the current worktree see `android/docs/HANDOFF.md` and `android/docs/agent-build-brief.md`.
+
+### Implemented and user-reported working
+
+- **Playlist loading and cache:** TV/phone onboarding shows loading feedback; Room retains the last playlist, catalog and guide, with scheduled refresh rather than an unconditional download on every app launch. Playlist schedule choices are 2, 4, 6 or 12 hours; existing out-of-list values remain until changed. EPG refresh has a separate schedule.
+- **Picture and subtitles:** six persisted formats — Normal, Full, 4:3, 16:9, 2.35:1, Zoom — use shared TV/phone video surfaces. The VOD TV track panel selects a format and the phone button cycles formats. The user reported picture formats working, and TV subtitles displaying with language/track labels. The saved format also affects shared live surfaces, but live playback has no format-selection control of its own.
+- **Live start and guide layout:** TV launch resumes the last live channel full-screen, reported working. The compact TV guide uses a 52 dp icon rail, 128 dp category tree and 36 dp rows, with channel logo and stacked number/name. Layout was reported to look right and debug tints are disabled; Sony overscan and D-pad edge cases remain to be checked.
+- **Curated guide:** adding a playlist defaults the per-playlist override to `https://github.com/ferteque/Curated-M3U-Repository/raw/refs/heads/main/epg6.xml.gz`, with a switch to use the provider instead. The override takes priority and provider data can fill unmatched channels. Existing playlists are not migrated automatically: Settings → Guide can apply the curated URL to playlists without an existing override, leaving custom overrides intact. User reported the curated guide and apply-to-all working.
+
+### Implemented, awaiting further user/device verification
+
+- **Skip intro, recap and credits:** VOD obtains available markers from TheIntroDB using TMDB ID and, for episodes, season/episode, with a 4-second timeout and in-memory cache; playback is not blocked. With no markers, position-based intro/credits guesses are used; when markers have no credits, a guessed credits prompt may still appear. Recap requires real data. The user reported intro seems to work; test actual recap and credits markers and verify guessed boundaries. Provider TMDB IDs can be wrong and are not validated against title/year. TVDB was researched but no suitable skip-marker API was identified; IntroDB and AniSkip are research candidates, not integrations.
+- **Guide controls:** Guide cards on TV/phone have Refresh guide. The Fire Stick Test action was changed to retain focus while a test runs instead of triggering the URL keyboard; repeated presses are ignored while running. Verify both on a Fire Stick.
+- **Playlist ordering:** phone Settings playlist cards have Move up / Move down; TV Live TV Menu exposes playlist order when applicable. Phone ordering was previously reported not working; successful retest after the new controls is outstanding.
+- **Faster first tune:** the selected live stream opens before the whole playlist is indexed; the index warms in the background. Until it is ready, that first tune has no alternative versions/failover. Measure selection-to-picture on the same device/stream against TiviMate; the reported quality difference remains undiagnosed.
+- **Recent channels and playback overlays:** the last five distinct channels, including current, are held in memory for the session; player banners show selectable recent logos except the current one. History clears when visibility or playlist/catalog generations change. TV Menu also has a recent-channel dialog. Optional clock is small (24 sp) translucent white text without a background; optional live video info shows decoded resolution/frame rate when available. Both options default off. Verify focus, cross-playlist tuning and readability on TV and phone.
+- **Appearance and navigation:** Settings → App → Colour theme persists Midnight Blue (default), Cinema Ember or Graphite on TV and phone. Rounded Modern outline navigation icons are shared between the TV rail and mobile navigation. Category counts are hidden in live group rows and home cards but remain in accessibility descriptions. Check Graphite contrast, focus visibility, icon rendering and long category names on real devices.
+- **Branding and signed release:** app label is **8TV Player**; selected launcher icon is Midnight Wordmark (concept 2), with matching TV banner. See the 2026-11-14 addendum for the current release and device installs. The signing key and non-portable Windows DPAPI password file are outside the repo; back up the keystore and a separately recoverable password as described in `android/docs/distribution.md`. Regular debug and release share an application ID but have different signatures: replacing debug requires uninstalling it, which removes its app data.
+
+### Remaining decisions and acceptance
+
+1. Perform the release smoke test and device matrix: first-run onboarding, retained cached data/refresh, live and VOD playback, guide, navigation, picture, subtitles, skip prompts and phone layout. Confirm update signing and Drive API key SHA-1 restrictions if the Drive API key is used.
+2. Measure U19/U14 performance, first-tune delay and quality on target hardware; define targets and evaluate Baseline Profiles. The index warm-up change is not proof of an instant start.
+3. Consider, rather than assume as committed scope: skip-prompt setting, visible TheIntroDB attribution, persistent marker cache, alternate marker provider after terms/rate-limit review, and live picture-format controls.
+4. Preserve data safety and scope: no secrets in logs or source control; retain existing playlists/custom EPG overrides and avoid staging unrelated local data. Session work was committed on 2026-11-14.
+
+---
+
+## Session addendum — playback stability and unified release (2026-11-14)
+
+- **4K stability and memory:** the affected episode played smoothly on 0.1.3 after the `ProfileLoadControl` fix enforced the shared allocator's actual byte threshold. Before the fix the user observed approximately 160 MiB player buffer against a 192 MiB heap; afterwards approximately 49 MiB player buffer and 94 MiB used heap were reported. Serialized playlist-index builds and eviction of distant guide blocks also reduce memory pressure; Back and guide navigation were reported working after the earlier update. Longer playback, seeking, rebuffer recovery and guide stress tests remain.
+- **TV series and film details:** the user chose the seasons-first prototype: season tabs and episodes appear before the separate Versions & filters dialog. Film details use the same dialog and show the selected version near Play/Resume. Existing saved choices and per-episode fallback remain; episode labels reflect the actual source. Focused UI, view-model and D-pad tests passed; remote navigation and Back behaviour still need device checks.
+- **Detail text contrast:** 0.1.7 renders TV film and series title, metadata and description in white over a darker backdrop. A contrast test verifies at least 4.5:1 against white artwork at each scrim stop; the actual appearance on a TV remains to be confirmed.
+- **Older devices and unified release:** after the user reported stable usage of the separate Fire OS 6 debug app, the regular release was expanded to minSdk 25 with Java core-library desugaring, an API 25 signing-certificate path and a pre-26 launcher icon. Optimized 0.1.7 / code 8 is one release for API 25+ and is signed with the existing release key. Its APK signature, alignment and focused tests passed. The separate `-PfireOs6Test=true` debug package keeps its own data and cannot transfer it automatically.
+- **Installed, not yet accepted:** 0.1.7 was installed on three Fire Sticks (API 25, 28 and 30). On the API 28 and 30 devices it updated 0.1.5 in place; on API 25, the differently signed old regular app was removed with user approval, deleting its data, then 0.1.7 was installed. Its separate debug test app remains. On 2026-11-14 the user reported the released app working on Fire OS 6 and 7; full acceptance (Fire OS 8, phones, readability, every playback path) remains open.
+- **Open validation:** perform the optimized-release smoke test on older and newer sticks, including readability with bright/dark posters, D-pad focus, version selection, multi-season navigation, playback, guide and retained data; test Android 7.1 phone compatibility separately. Resolve release lint's seven reported errors (one playlist-order `RememberInComposition`, six Media3 subtitle `UnsafeOptInUsageError` findings); 0.1.7 lint was not rerun. No current full-suite pass is claimed.
+
+---
+
 ## System-Wide Impact
 
 - **Interaction graph:** the pipeline's Drive overwrite is now a production dependency of the app. Any change to `upload_to_gdrive.py` that creates a new file instead of updating breaks every installed app's file ID.
@@ -991,7 +1032,7 @@ Direction agreed in principle; details to confirm before building. Start with U1
 | Risk | Mitigation |
 |------|------------|
 | Amazon install-time blocklist flags the app as an IPTV/piracy app | Neutral branding, no bundled or suggested content, own package name; document Android phone and Fire OS ADB sideload as fallback |
-| Vega OS replaces Fire OS on new Fire TV sticks, shrinking the device base | Scope v1 to Fire OS 7/8; note in `docs/distribution.md`; revisit Vega (React Native/Vega SDK) as separate future work |
+| Vega OS replaces Fire OS on new Fire TV sticks, shrinking the device base | Scope Android APK to Fire OS 6/7/8; note in `docs/distribution.md`; revisit Vega (React Native/Vega SDK) as separate future work |
 | Timeshift timezone semantics differ by panel | U1 spike verifies against the real provider; user offset setting; strategy interface for URL style |
 | VOD/EPG payload sizes exceed low-RAM budgets | Streaming parse into Room, time-window filtering, per-category lazy sync if U1 shows large payloads |
 | Heuristic merging mis-merges or mis-splits titles/channels | Conservative keys (`tmdb_id`, year, never merge empty `tvg-id`), table-driven tests on real names, user split/merge overrides |

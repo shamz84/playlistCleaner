@@ -95,5 +95,6 @@ sealed interface OnboardingResult {
 interface PlaylistOnboarder {
     val progress: Flow<OnboardingProgress>
 
-    suspend fun addPlaylist(name: String, source: SourceInput, xtreamEnabled: Boolean): OnboardingResult
+    /** [epgOverrideUrl], when set, is stored as the playlist's guide override before the guide is queued. */
+    suspend fun addPlaylist(name: String, source: SourceInput, xtreamEnabled: Boolean, epgOverrideUrl: String? = null): OnboardingResult
 }

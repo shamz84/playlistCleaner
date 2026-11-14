@@ -68,8 +68,27 @@ data class ContentPreferences(
 }
 
 /**
+ * How video fills the screen: [FIT] (Normal) keeps the video's own shape and letterboxes,
+ * [STRETCH] (Full) fills the screen by distorting, [ZOOM] fills by cropping, and the ratio entries
+ * show the picture at that fixed shape, letterboxed in the screen. Declaration order is the
+ * order the phone cycles through; names are stored, so do not rename them.
+ */
+enum class VideoScaling(val forcedAspect: Float? = null) {
+    FIT, STRETCH, R4_3(4f / 3f), R16_9(16f / 9f), R2_35(2.35f), ZOOM;
+
+    fun next(): VideoScaling = entries[(ordinal + 1) % entries.size]
+}
+
+enum class AppTheme {
+    MIDNIGHT_BLUE, CINEMA_EMBER, GRAPHITE;
+
+    fun next(): AppTheme = entries[(ordinal + 1) % entries.size]
+}
+
+/**
  * Playback preferences.
  *
+ * @property videoScaling how video fills the screen (default [VideoScaling.FIT]).
  * @property catchupOffsetHours correction applied to catch-up start times, in [CATCHUP_OFFSET_RANGE].
  * @property audioLanguage preferred audio language of movies and episodes (lower-case BCP 47
  *   tag such as `en` or `pt-br`); null = the device language (then English).
@@ -84,6 +103,10 @@ data class PlaybackPreferences(
     val catchupUrlStyle: CatchupUrlStyle = CatchupUrlStyle.PATH,
     val audioLanguage: String? = null,
     val subtitleLanguage: String? = DEFAULT_SUBTITLE_LANGUAGE,
+    val videoScaling: VideoScaling = VideoScaling.FIT,
+    val showClock: Boolean = false,
+    val showVideoInfo: Boolean = false,
+    val showVodDiagnostics: Boolean = false,
 ) {
     init {
         require(catchupOffsetHours in CATCHUP_OFFSET_RANGE) { "catch-up offset out of range" }
@@ -122,6 +145,9 @@ data class AppPreferences(
     val content: ContentPreferences = ContentPreferences(),
     val playback: PlaybackPreferences = PlaybackPreferences(),
     val sync: SyncPreferences = SyncPreferences(),
+    /** Playlist ids in the order the user wants them listed in Live TV; unlisted playlists follow in the order added. */
+    val playlistOrder: List<Long> = emptyList(),
+    val theme: AppTheme = AppTheme.MIDNIGHT_BLUE,
 )
 
 /**
@@ -141,8 +167,14 @@ object PreferencesCodec {
     const val KEY_CATCHUP_STYLE = "playback.catchupUrlStyle"
     const val KEY_AUDIO_LANGUAGE = "playback.audioLanguage"
     const val KEY_SUBTITLE_LANGUAGE = "playback.subtitleLanguage"
+    const val KEY_VIDEO_SCALING = "playback.videoScaling"
+    const val KEY_SHOW_CLOCK = "playback.showClock"
+    const val KEY_SHOW_VIDEO_INFO = "playback.showVideoInfo"
+    const val KEY_SHOW_VOD_DIAGNOSTICS = "playback.showVodDiagnostics"
     const val KEY_REFRESH_HOURS = "sync.refreshIntervalHours"
     const val KEY_STALE_DAYS = "sync.staleWarningDays"
+    const val KEY_PLAYLIST_ORDER = "live.playlistOrder"
+    const val KEY_THEME = "app.theme"
     private const val VERSION = "1"
 
     /** Stored subtitle value for an explicit "Off"; missing or empty means the default (English). */
@@ -160,8 +192,14 @@ object PreferencesCodec {
         // Empty audio = device language.
         KEY_AUDIO_LANGUAGE to prefs.playback.audioLanguage.orEmpty(),
         KEY_SUBTITLE_LANGUAGE to (prefs.playback.subtitleLanguage ?: SUBTITLES_OFF),
+        KEY_VIDEO_SCALING to prefs.playback.videoScaling.name,
+        KEY_SHOW_CLOCK to prefs.playback.showClock.toString(),
+        KEY_SHOW_VIDEO_INFO to prefs.playback.showVideoInfo.toString(),
+        KEY_SHOW_VOD_DIAGNOSTICS to prefs.playback.showVodDiagnostics.toString(),
         KEY_REFRESH_HOURS to prefs.sync.refreshIntervalHours.toString(),
         KEY_STALE_DAYS to prefs.sync.staleWarningDays.toString(),
+        KEY_PLAYLIST_ORDER to prefs.playlistOrder.joinToString(","),
+        KEY_THEME to prefs.theme.name,
     )
 
     fun decode(map: Map<String, String>): AppPreferences {
@@ -185,6 +223,10 @@ object PreferencesCodec {
                 catchupOffsetHours = intIn(map[KEY_CATCHUP_OFFSET], PlaybackPreferences.CATCHUP_OFFSET_RANGE, d.playback.catchupOffsetHours),
                 catchupUrlStyle = enumOr(map[KEY_CATCHUP_STYLE], d.playback.catchupUrlStyle),
                 audioLanguage = languageOrNull(map[KEY_AUDIO_LANGUAGE]),
+                videoScaling = enumOr(map[KEY_VIDEO_SCALING], d.playback.videoScaling),
+                showClock = boolOr(map[KEY_SHOW_CLOCK], d.playback.showClock),
+                showVideoInfo = boolOr(map[KEY_SHOW_VIDEO_INFO], d.playback.showVideoInfo),
+                showVodDiagnostics = boolOr(map[KEY_SHOW_VOD_DIAGNOSTICS], d.playback.showVodDiagnostics),
                 subtitleLanguage = map[KEY_SUBTITLE_LANGUAGE]?.trim().let { v ->
                     if (v == SUBTITLES_OFF) null else languageOrNull(v) ?: d.playback.subtitleLanguage
                 },
@@ -193,6 +235,8 @@ object PreferencesCodec {
                 refreshIntervalHours = intIn(map[KEY_REFRESH_HOURS], SyncPreferences.REFRESH_RANGE, d.sync.refreshIntervalHours),
                 staleWarningDays = intIn(map[KEY_STALE_DAYS], SyncPreferences.STALE_RANGE, d.sync.staleWarningDays),
             ),
+            playlistOrder = map[KEY_PLAYLIST_ORDER].orEmpty().split(',').mapNotNull { it.trim().toLongOrNull() }.distinct(),
+            theme = enumOr(map[KEY_THEME], d.theme),
         )
     }
 

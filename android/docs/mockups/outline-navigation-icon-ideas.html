@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Outline navigation icon ideas</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#0b121b;color:#e9f1fb;font:15px/1.5 system-ui,sans-serif}
+main{max-width:1250px;margin:auto;padding:40px 25px 70px}
+.eyebrow{color:#86b9fc;letter-spacing:.16em;font-size:11px;font-weight:800;text-transform:uppercase}
+h1{font-size:clamp(30px,4vw,46px);letter-spacing:-.04em;margin:8px 0;line-height:1.15}
+.intro{max-width:800px;color:#a8b8cb;margin:0 0 25px}
+.notice{padding:12px 16px;background:#17283c;border-left:3px solid #7bb4ff;color:#c7d9ee;border-radius:0 8px 8px 0}
+.switch{display:flex;gap:8px;align-items:center;margin:25px 0 20px;flex-wrap:wrap}
+button{font:inherit;background:#182638;border:1px solid #344d68;color:#e6eefb;border-radius:8px;padding:8px 14px;cursor:pointer}
+button[aria-pressed=true]{border-color:#9fcaff;background:#294665}
+button:focus-visible{outline:2px solid #fff;outline-offset:3px}
+.sets{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.set{background:#121d2b;border:1px solid #2a3b4e;border-radius:16px;padding:21px}
+.set h2{margin:0;font-size:19px}.desc{color:#9eafc1;font-size:13px;margin:5px 0 17px;min-height:38px}
+.rail-demo{--bg:#101820;--panel:#18232e;--accent:#2f80ed;--muted:#a9b4c0;display:flex;min-height:260px;overflow:hidden;border:1px solid #344556;border-radius:10px;background:var(--bg)}
+body.ember .rail-demo{--bg:#151311;--panel:#211c19;--accent:#eea05a;--muted:#d4c1b5}
+.rail{width:58px;flex:none;background:var(--bg);display:flex;flex-direction:column;justify-content:center;align-items:center;gap:6px;padding:8px 0}
+.icon{width:38px;height:38px;display:grid;place-items:center;color:var(--muted);border-radius:8px}
+.icon.selected{background:var(--panel);color:var(--accent);outline:2px solid #fff}
+.icon svg,.key svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.content{flex:1;background:var(--panel);padding:17px;color:var(--muted);font-size:12px}
+.content strong{color:var(--accent);font-size:15px}.content p{max-width:290px}
+.key{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-top:12px;color:#b9c9d9}
+.key span{display:flex;flex-direction:column;align-items:center;gap:5px;font-size:10px;text-align:center}
+.key svg{color:#eaf1f8}
+.footer{margin-top:24px;color:#9badbe;font-size:13px}
+@media(max-width:720px){.sets{grid-template-columns:1fr}main{padding:25px 14px 45px}}
+</style>
+</head>
+<body>
+<main>
+<div class="eyebrow">Design exploration · Navigation</div>
+<h1>Outline icons, refined.</h1>
+<p class="intro">Four alternative icon families for the left-hand rail. Each set covers Live TV, Home, Movies, Series, Search and Settings. Choose a palette to compare how they look in the compact rail.</p>
+<div class="notice">Concept artwork only. The white border shows remote focus; the app’s existing icons have not been changed.</div>
+<div class="switch" aria-label="Preview palette"><strong>Preview with:</strong><button data-theme="blue" aria-pressed="true">A · Midnight Blue</button><button data-theme="ember" aria-pressed="false">B · Cinema Ember</button></div>
+<div class="sets" id="sets"></div>
+<p class="footer">Each set uses simple, consistent vector outlines rather than emoji. Labels are shown here for comparison; the actual rail stays icon-only.</p>
+</main>
+<script>
+const sets = [
+  { title:"1 · Clean Line", description:"Simple, familiar shapes with open spacing and soft corners.",
+    paths:[
+      '<rect x="3" y="6" width="18" height="13" rx="3"/><path d="M8 3l4 3 4-3M10 10l5 3-5 3z"/>',
+      '<path d="M3 11 12 4l9 7v9h-6v-6H9v6H3z"/>',
+      '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 5v14M17 5v14M3 10h4M17 10h4M3 15h4M17 15h4"/>',
+      '<rect x="4" y="6" width="16" height="13" rx="3"/><path d="M7 3h10M10 10l5 2.5-5 2.5z"/>',
+      '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.4 15.4 5 5"/>',
+      '<circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="7"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/>'
+    ]},
+  { title:"2 · Broadcast", description:"A clearer live-TV signal and channel-grid motif, with confident geometric outlines.",
+    paths:[
+      '<rect x="3" y="7" width="18" height="12" rx="2"/><path d="m10 10 5 3-5 3zM8 3c2-2 6-2 8 0M10 5c1-1 3-1 4 0"/>',
+      '<path d="M3 11.5 12 4l9 7.5M5 10v10h14V10M10 20v-6h4v6"/>',
+      '<path d="M4 8h16v12H4zM4 8l2-4h14l-2 4M9 4 7 8M15 4l-2 4"/>',
+      '<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 5v15M14 5v15"/>',
+      '<circle cx="10" cy="10" r="6"/><path d="m14.5 14.5 6 6M10 7v6M7 10h6"/>',
+      '<path d="M4 6h16M4 12h16M4 18h16"/><circle cx="9" cy="6" r="2" fill="#121d2b"/><circle cx="15" cy="12" r="2" fill="#121d2b"/><circle cx="10" cy="18" r="2" fill="#121d2b"/>'
+    ]},
+  { title:"3 · Rounded Modern", description:"Softer corners and rounded shapes for a friendly, contemporary interface.",
+    paths:[
+      '<rect x="3" y="5" width="18" height="15" rx="5"/><path d="m10 9 5 3.5-5 3.5zM9 22h6"/>',
+      '<path d="M4 10c0-1 .4-1.6 1.2-2.2l5-3.8c1-.7 2.6-.7 3.6 0l5 3.8c.8.6 1.2 1.2 1.2 2.2v7a3 3 0 0 1-3 3h-2v-6H9v6H7a3 3 0 0 1-3-3z"/>',
+      '<rect x="3" y="5" width="18" height="14" rx="4"/><path d="M3 10h18M8 5l2 5M14 5l2 5"/>',
+      '<rect x="5" y="6" width="15" height="14" rx="4"/><path d="M4 15V8a4 4 0 0 1 4-4h8M11 10l5 3-5 3z"/>',
+      '<circle cx="10" cy="10" r="6"/><path d="m14.5 14.5 5.5 5.5"/>',
+      '<circle cx="12" cy="12" r="3"/><path d="M12 3a9 9 0 0 1 9 9 9 9 0 0 1-9 9 9 9 0 0 1-9-9 9 9 0 0 1 9-9zM12 3v2M12 19v2M3 12h2M19 12h2"/>'
+    ]},
+  { title:"4 · Minimal Grid", description:"Precise, compact silhouettes with a guide-first feel and reduced visual detail.",
+    paths:[
+      '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M9 10v9M15 10v9M3 14.5h18"/>',
+      '<path d="M4 11 12 5l8 6M6 10v9h12v-9M10 19v-5h4v5"/>',
+      '<rect x="4" y="5" width="16" height="14" rx="2"/><path d="M8 5v14M16 5v14M4 10h4M16 10h4M4 15h4M16 15h4"/>',
+      '<rect x="4" y="5" width="16" height="14" rx="2"/><path d="M4 10h16M10 10v9M15 10v9M4 15h16"/>',
+      '<circle cx="10" cy="10" r="6"/><path d="m15 15 5 5"/>',
+      '<path d="M5 6h14M5 12h14M5 18h14M9 4v4M15 10v4M10 16v4"/>'
+    ]}
+];
+const labels = ["Live TV","Home","Movies","Series","Search","Settings"];
+const icon = path => `<svg viewBox="0 0 24 24" aria-hidden="true">${path}</svg>`;
+document.getElementById("sets").innerHTML=sets.map(s=>`<article class="set"><h2>${s.title}</h2><p class="desc">${s.description}</p><div class="rail-demo"><div class="rail">${s.paths.map((p,i)=>`<div class="icon ${i===0?"selected":""}">${icon(p)}</div>`).join("")}</div><div class="content"><strong>Live TV</strong><p>The compact navigation rail beside your playlist and guide.</p></div></div><div class="key">${s.paths.map((p,i)=>`<span>${icon(p)}${labels[i]}</span>`).join("")}</div></article>`).join("");
+document.querySelectorAll(".switch button").forEach(button=>button.addEventListener("click",()=>{
+  document.body.classList.toggle("ember",button.dataset.theme==="ember");
+  document.querySelectorAll(".switch button").forEach(b=>b.setAttribute("aria-pressed",String(b===button)));
+}));
+</script>
+</body>
+</html>

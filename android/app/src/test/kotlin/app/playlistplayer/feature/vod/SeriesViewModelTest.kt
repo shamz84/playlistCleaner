@@ -114,6 +114,20 @@ class SeriesViewModelTest {
     }
 
     @Test
+    fun `quality filter does not hide seasons or prevent episode fallback`() = runTest(main.dispatcher) {
+        val vm = viewModel()
+        advanceUntilIdle()
+        vm.selectQuality("HD")
+        advanceUntilIdle()
+        assertThat(vm.state.value.selectedVersionId).isEqualTo("202")
+        assertThat(vm.state.value.seasons.map { it.number }).containsExactly(1, 2).inOrder()
+        vm.selectSeason(2)
+        advanceUntilIdle()
+        assertThat(vm.state.value.episodes.single().selectedVersionId).isEqualTo("201")
+        assertThat(vm.playbackRequest(EpisodeKey(2, 1))!!.sources.single().id).isEqualTo("episode:201021")
+    }
+
+    @Test
     fun `get_series_info failure shows retry and leaves browse usable`() = runTest(main.dispatcher) {
         info.failing += setOf(201L, 202L)
         val browse = VodBrowseViewModel(VodKind.SERIES, repository)

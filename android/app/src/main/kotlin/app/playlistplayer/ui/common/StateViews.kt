@@ -102,5 +102,5 @@ private fun StateMessage(
     }
 }
 
-private val DefaultTitleStyle = TextStyle(color = UiTokens.OnBackground, fontSize = 28.sp, lineHeight = 36.sp)
-private val DefaultMessageStyle = TextStyle(color = UiTokens.OnSurfaceMuted, fontSize = 20.sp, lineHeight = 28.sp)
+private val DefaultTitleStyle: TextStyle @Composable get() = TextStyle(color = UiTokens.OnBackground, fontSize = 28.sp, lineHeight = 36.sp)
+private val DefaultMessageStyle: TextStyle @Composable get() = TextStyle(color = UiTokens.OnSurfaceMuted, fontSize = 20.sp, lineHeight = 28.sp)

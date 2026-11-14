@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Live TV themes and icon concepts</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #0a1018; color: #e9f0f8; font: 15px/1.5 system-ui, sans-serif; }
+  button { font: inherit; }
+  .page { max-width: 1330px; margin: auto; padding: 38px 28px 68px; }
+  .eyebrow { color: #83b4f8; font-size: 11px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+  h1 { font-size: clamp(30px, 4vw, 46px); line-height: 1.1; letter-spacing: -.04em; margin: 8px 0 12px; }
+  .intro { color: #a7b5c5; max-width: 750px; margin: 0 0 24px; }
+  .notice { border-left: 3px solid #6faaf4; background: #152335; padding: 12px 16px; color: #c2d4eb; border-radius: 0 8px 8px 0; margin-bottom: 24px; }
+  .controls { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 20px; }
+  .control-box { background: #101b28; border: 1px solid #263648; border-radius: 14px; padding: 16px; }
+  .control-box h2 { font-size: 13px; margin: 0 0 12px; }
+  .buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+  .choice { background: #172534; border: 1px solid #34485e; border-radius: 9px; color: #d7e3ee; cursor: pointer; padding: 9px 12px; }
+  .choice:hover, .choice:focus-visible { border-color: #9dc9ff; outline: 2px solid #9dc9ff; outline-offset: 2px; }
+  .choice[aria-pressed="true"] { border-color: #9dc9ff; background: #253e5a; color: white; }
+  .dot { display: inline-block; vertical-align: middle; width: 10px; height: 10px; margin-right: 7px; border-radius: 50%; background: var(--swatch); }
+  .preview-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 24px 0 10px; }
+  .preview-head h2, .section-title { margin: 0; font-size: 19px; }
+  .preview-head p { margin: 0; color: #9aabbd; font-size: 13px; }
+  .tv { --bg:#101820; --panel:#18232e; --cell:#223140; --muted:#a9b4c0; --accent:#2f80ed; --highlight:#297bd9; --ink:#f4f8fc; --on-accent:#fff; --edge:#354656;
+    background: var(--bg); color: var(--ink); width: 100%; aspect-ratio: 16/9; overflow: hidden; display: grid; grid-template-columns: 5.4% 13.4% 1fr; grid-template-rows: minmax(0, 1fr); border: 6px solid #05080c; border-radius: 12px; box-shadow: 0 22px 65px #0008; font-size: clamp(7px, 1.05vw, 13px); line-height: 1.25; }
+  .tv[data-theme="ember"] { --bg:#151311; --panel:#211c19; --cell:#302825; --muted:#c0aea2; --accent:#eea05a; --highlight:#a95028; --edge:#514037; }
+  .tv[data-theme="amethyst"] { --bg:#13111d; --panel:#201b2d; --cell:#30283f; --muted:#b7abc9; --accent:#c39bff; --highlight:#704ab2; --edge:#51435f; }
+  .tv[data-theme="ocean"] { --bg:#091c22; --panel:#112b31; --cell:#193940; --muted:#a5c4c6; --accent:#55e0c3; --highlight:#137e79; --edge:#31565a; }
+  .tv[data-theme="monochrome"] { --bg:#101113; --panel:#1b1d20; --cell:#2a2d32; --muted:#b1b8c2; --accent:#e0e7f2; --highlight:#526174; --edge:#454b52; }
+  .tv[data-theme="daylight"] { --bg:#e6ebf2; --panel:#f8fafc; --cell:#e5ebf2; --muted:#52647a; --accent:#0759aa; --highlight:#d5e8ff; --ink:#172a3d; --on-accent:#102d4a; --edge:#c9d4df; }
+  .rail { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2.1%; background:var(--bg); }
+  .nav-icon { display:grid; place-items:center; flex:0 0 auto; width:72%; aspect-ratio:1; min-height:0; color:var(--muted); border-radius:22%; }
+  .nav-icon.active { background:var(--cell); color:var(--accent); }
+  .ico { width:56%; height:56%; fill:none; stroke:currentColor; stroke-width:1.75; stroke-linecap:round; stroke-linejoin:round; }
+  .tv[data-icons="bold"] .ico { stroke-width:2.8; }
+  .tv[data-icons="badge"] .nav-icon { border-radius:50%; background:var(--cell); color:var(--ink); }
+  .tv[data-icons="badge"] .nav-icon.active { background:var(--accent); color:var(--on-accent); }
+  .tv[data-icons="badge"] .ico { stroke-width:2.2; width:48%; height:48%; }
+  .tree { background:var(--panel); padding: 9% 6%; overflow:hidden; }
+  .tree-heading { font-size:.75em; color:var(--muted); font-weight:800; letter-spacing:.08em; margin:0 6% 12%; }
+  .tree-row { padding:7% 7%; border-radius:5px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .tree-row strong { color:var(--ink); }
+  .tree-row.selected { background:var(--cell); color:var(--ink); border-left:3px solid var(--accent); }
+  .main { padding:2% 2.5% 2.5% 1.2%; display:flex; flex-direction:column; min-width:0; min-height:0; }
+  .top { height:27%; display:flex; gap:2%; min-height:0; }
+  .details { flex:1; min-width:0; overflow:hidden; padding:.4% 0; }
+  .details .channel-name { color:var(--accent); font-weight:700; font-size:.95em; }
+  .details h3 { font-size:1.75em; margin:.35em 0; letter-spacing:-.03em; }
+  .details p { color:var(--muted); margin:.35em 0; max-width:90%; }
+  .progress { height:3px; width:45%; background:var(--edge); border-radius:10px; margin-top:.8em; }
+  .progress:before { content:""; display:block; width:47%; height:100%; background:var(--accent); border-radius:10px; }
+  .preview { width:30%; aspect-ratio:16/9; align-self:flex-start; max-height:100%; background:linear-gradient(145deg,#2c4b62,#19232f 55%,#111821); border:1px solid var(--edge); border-radius:4px; display:flex; align-items:end; justify-content:space-between; padding:2.3%; color:white; }
+  .preview span { background:#0008; padding:.35em .6em; border-radius:3px; font-size:.75em; }
+  .preview .play { font-size:2em; background:none; opacity:.8; }
+  .guide-head { color:var(--muted); display:flex; align-items:center; justify-content:space-between; height:7%; font-size:.9em; border-bottom:1px solid var(--edge); }
+  .guide-head strong { color:var(--accent); }
+  .grid { flex:1; display:grid; grid-template-rows:repeat(7, 1fr); gap:3px; padding-top:4px; min-height:0; }
+  .guide-row { display:grid; grid-template-columns:22% 32% 1fr; gap:3px; min-height:0; }
+  .channel, .programme { display:flex; align-items:center; background:var(--cell); padding:0 5%; overflow:hidden; }
+  .channel { gap:8%; }
+  .logo { display:grid; place-items:center; flex:none; width:24%; aspect-ratio:1.3; border-radius:4px; background:var(--panel); color:var(--accent); font-size:.85em; font-weight:900; }
+  .chan-label { overflow:hidden; white-space:nowrap; text-overflow:ellipsis; font-size:.86em; }
+  .chan-label small { display:block; color:var(--muted); font-size:.85em; }
+  .programme { white-space:nowrap; text-overflow:ellipsis; font-size:.9em; }
+  .programme.focused { background:var(--highlight); color:var(--on-accent); outline:2px solid var(--ink); outline-offset:-2px; font-weight:700; }
+  .legend { color:#aab8c8; font-size:13px; margin:13px 0 38px; }
+  .app-icons { display:grid; grid-template-columns:repeat(4, 1fr); gap:14px; margin-top:14px; }
+  .icon-card { background:#101b28; border:1px solid #263648; border-radius:14px; padding:19px; }
+  .app-icon { width:74px; height:74px; display:grid; place-items:center; border-radius:21px; margin-bottom:16px; }
+  .app-icon svg { width:48px; height:48px; }
+  .app-icon.one { background:linear-gradient(145deg,#3179e5,#204ea5); }
+  .app-icon.two { background:linear-gradient(145deg,#182b3d,#0c1723); border:1px solid #47617a; }
+  .app-icon.three { background:linear-gradient(145deg,#7550c8,#242044); }
+  .app-icon.four { background:linear-gradient(145deg,#087d79,#104855); }
+  .icon-card h3 { font-size:15px; margin:0 0 5px; }
+  .icon-card p { color:#a6b5c5; font-size:13px; margin:0; }
+  .footer { margin-top:26px; color:#8fa3b8; font-size:13px; }
+  @media(max-width:750px) { .page { padding:24px 14px 40px; } .controls { grid-template-columns:1fr; } .app-icons { grid-template-columns:repeat(2,1fr); } .tv { font-size:clamp(5px,1.3vw,9px); border-width:3px; } .tree { padding-top:8%; } .tree-row { padding:5%; } .details p.description { display:none; } .preview-head { display:block; } }
+</style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0" aria-hidden="true">
+  <symbol id="tv" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M9 22h6M10 1l2 4 2-4"/><path d="m10 9 5 3-5 3z"/></symbol>
+  <symbol id="home" viewBox="0 0 24 24"><path d="M3 11 12 4l9 7v9h-6v-6H9v6H3z"/></symbol>
+  <symbol id="movie" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/></symbol>
+  <symbol id="series" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="15" rx="3"/><path d="M7 2h10M10 9l5 3.5-5 3.5z"/></symbol>
+  <symbol id="search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></symbol>
+  <symbol id="settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/><circle cx="12" cy="12" r="7"/></symbol>
+</svg>
+<main class="page">
+  <div class="eyebrow">Design exploration · Live TV</div>
+  <h1>Make it feel like yours.</h1>
+  <p class="intro">Six colour themes, three navigation-icon styles and four app-icon ideas. Mix the theme and navigation style to see them together on the same compact guide.</p>
+  <div class="notice">Concept preview only: colours, placeholder channels and icon drawings are examples. The app itself has not been changed.</div>
+  <div class="controls">
+    <section class="control-box" aria-labelledby="theme-title">
+      <h2 id="theme-title">1. Choose a colour theme</h2>
+      <div class="buttons" id="theme-choices">
+        <button class="choice" data-theme="blue" aria-pressed="true"><span class="dot" style="--swatch:#2f80ed"></span>A · Midnight Blue</button>
+        <button class="choice" data-theme="ember" aria-pressed="false"><span class="dot" style="--swatch:#eea05a"></span>B · Cinema Ember</button>
+        <button class="choice" data-theme="amethyst" aria-pressed="false"><span class="dot" style="--swatch:#c39bff"></span>C · Amethyst</button>
+        <button class="choice" data-theme="ocean" aria-pressed="false"><span class="dot" style="--swatch:#55e0c3"></span>D · Ocean Teal</button>
+        <button class="choice" data-theme="monochrome" aria-pressed="false"><span class="dot" style="--swatch:#d4deeb"></span>E · Graphite</button>
+        <button class="choice" data-theme="daylight" aria-pressed="false"><span class="dot" style="--swatch:#f2f6fb"></span>F · Daylight</button>
+      </div>
+    </section>
+    <section class="control-box" aria-labelledby="icons-title">
+      <h2 id="icons-title">2. Choose navigation icons</h2>
+      <div class="buttons" id="icon-choices">
+        <button class="choice" data-icons="outline" aria-pressed="true">1 · Outline</button>
+        <button class="choice" data-icons="bold" aria-pressed="false">2 · Bold</button>
+        <button class="choice" data-icons="badge" aria-pressed="false">3 · Round badges</button>
+      </div>
+    </section>
+  </div>
+  <div class="preview-head"><h2>Live guide preview</h2><p id="selection" aria-live="polite">A · Midnight Blue / 1 · Outline</p></div>
+  <div class="tv" id="preview" data-theme="blue" data-icons="outline" aria-label="Illustrative Live TV guide preview">
+    <div class="rail" aria-hidden="true">
+      <div class="nav-icon active"><svg class="ico"><use href="#tv"/></svg></div>
+      <div class="nav-icon"><svg class="ico"><use href="#home"/></svg></div>
+      <div class="nav-icon"><svg class="ico"><use href="#movie"/></svg></div>
+      <div class="nav-icon"><svg class="ico"><use href="#series"/></svg></div>
+      <div class="nav-icon"><svg class="ico"><use href="#search"/></svg></div>
+      <div class="nav-icon"><svg class="ico"><use href="#settings"/></svg></div>
+    </div>
+    <div class="tree">
+      <div class="tree-heading">PLAYLISTS</div>
+      <div class="tree-row"><strong>▾ My playlist</strong></div>
+      <div class="tree-row selected">All channels</div>
+      <div class="tree-row">Entertainment</div><div class="tree-row">News</div><div class="tree-row">Sport</div><div class="tree-row">Movies</div><div class="tree-row">Documentaries</div>
+      <div class="tree-row"><strong>▸ Second playlist</strong></div>
+    </div>
+    <div class="main">
+      <div class="top">
+        <div class="details">
+          <div class="channel-name">101 &nbsp; ONE HD</div>
+          <h3>The Evening Show</h3>
+          <p>19:00 – 20:00 &nbsp; · &nbsp; Entertainment</p>
+          <p class="description">Tonight's stories, guests and highlights, live from the studio.</p>
+          <div class="progress"></div>
+        </div>
+        <div class="preview"><span>LIVE PREVIEW</span><span class="play">▶</span></div>
+      </div>
+      <div class="guide-head"><strong>Today &nbsp; ▾</strong><span>19:00</span><span>19:30</span><span>20:00</span></div>
+      <div class="grid">
+        <div class="guide-row"><div class="channel"><div class="logo">ONE</div><div class="chan-label"><small>101</small>ONE HD</div></div><div class="programme focused">The Evening Show</div><div class="programme">The News at Eight</div></div>
+        <div class="guide-row"><div class="channel"><div class="logo">TWO</div><div class="chan-label"><small>102</small>TWO HD</div></div><div class="programme">Great Journeys</div><div class="programme">Coastal Escapes</div></div>
+        <div class="guide-row"><div class="channel"><div class="logo">S1</div><div class="chan-label"><small>103</small>Sports One</div></div><div class="programme">Live Sport</div><div class="programme">Match Highlights</div></div>
+        <div class="guide-row"><div class="channel"><div class="logo">N</div><div class="chan-label"><small>104</small>News 24</div></div><div class="programme">News Live</div><div class="programme">World Tonight</div></div>
+        <div class="guide-row"><div class="channel"><div class="logo">C</div><div class="chan-label"><small>105</small>Cinema</div></div><div class="programme">The Matinee</div><div class="programme">Movie Night</div></div>
+        <div class="guide-row"><div class="channel"><div class="logo">D</div><div class="chan-label"><small>106</small>Discovery</div></div><div class="programme">Wild Places</div><div class="programme">Planet Earth</div></div>
+        <div class="guide-row"><div class="channel"><div class="logo">M</div><div class="chan-label"><small>107</small>Music Live</div></div><div class="programme">Top Tracks</div><div class="programme">Live Sessions</div></div>
+      </div>
+    </div>
+  </div>
+  <p class="legend">White border = remote focus. Logos and programme names above are illustrative. The existing compact rail, playlist tree and guide layout are retained.</p>
+  <h2 class="section-title">3. App icon ideas</h2>
+  <p class="intro">These are separate from the navigation icons. You can pick any one, regardless of the theme above.</p>
+  <div class="app-icons">
+    <article class="icon-card"><div class="app-icon one"><svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><rect x="5" y="9" width="38" height="30" rx="8" stroke="white" stroke-width="3"/><path d="m20 16 13 8-13 8z" fill="white"/></svg></div><h3>I · Play TV</h3><p>A simple screen and play symbol. Familiar and easy to recognise.</p></article>
+    <article class="icon-card"><div class="app-icon two"><svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><rect x="6" y="9" width="36" height="30" rx="6" stroke="#90c3ff" stroke-width="2.5"/><path d="M17 10v28M27 10v28M7 19h34M7 29h34" stroke="#90c3ff" stroke-width="2"/><rect x="18" y="20" width="8" height="8" rx="1" fill="#90c3ff"/></svg></div><h3>II · Guide Grid</h3><p>A compact programme guide, with the selected show picked out.</p></article>
+    <article class="icon-card"><div class="app-icon three"><svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="M9 14h21M9 23h21M9 32h14" stroke="white" stroke-width="3.5" stroke-linecap="round"/><path d="m29 27 10 6-10 6z" fill="#e1ceff"/></svg></div><h3>III · Playlist Play</h3><p>A playlist with a play button: a direct nod to the app's purpose.</p></article>
+    <article class="icon-card"><div class="app-icon four"><svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><circle cx="24" cy="24" r="15" stroke="#bafbf0" stroke-width="3"/><path d="m21 16 11 8-11 8z" fill="#bafbf0"/><path d="M10 10l5 5M33 33l5 5" stroke="#bafbf0" stroke-width="2.5" stroke-linecap="round"/></svg></div><h3>IV · Signal Ring</h3><p>A minimal play mark with a subtle broadcast-inspired ring.</p></article>
+  </div>
+  <p class="footer">Designed for comparison, not a finished production asset. Final colours, focus visibility, contrast and Android TV launcher artwork should be checked on the actual device.</p>
+</main>
+<script>
+  const preview = document.getElementById('preview');
+  const themeChoices = document.getElementById('theme-choices');
+  const iconChoices = document.getElementById('icon-choices');
+  function choose(container, attribute) {
+    container.addEventListener('click', event => {
+      const button = event.target.closest('button');
+      if (!button) return;
+      container.querySelectorAll('button').forEach(item => item.setAttribute('aria-pressed', String(item === button)));
+      preview.dataset[attribute] = button.dataset[attribute];
+      document.getElementById('selection').textContent =
+        themeChoices.querySelector('[aria-pressed="true"]').textContent.trim() + ' / ' +
+        iconChoices.querySelector('[aria-pressed="true"]').textContent.trim();
+    });
+  }
+  choose(themeChoices, 'theme');
+  choose(iconChoices, 'icons');
+</script>
+</body>
+</html>

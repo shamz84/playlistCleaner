@@ -37,6 +37,7 @@ fun AppContainer.uiDependencies(): UiDependencies {
         trending = trendingRepository,
         sorts = vodSortStore,
         trackPreferences = trackPreferenceStore,
+        skipSpans = skipSpanRepository,
     )
     val player = PlaybackDependencies(
         controller = playback.controller(),
@@ -83,6 +84,7 @@ fun AppContainer.uiDependencies(): UiDependencies {
         guide = guide,
         screens = screens,
         app = app,
+        onReorderPlaylists = { order -> applicationScope.launch { preferencesRepository.setPlaylistOrder(order) } },
     )
     return UiDependencies(shared, MobileRootDependencies(shared = shared, vod = vod, playback = player, guide = guide))
 }

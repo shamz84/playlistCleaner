@@ -31,6 +31,7 @@ import app.playlistplayer.feature.vod.VodCatalogRepository
 import app.playlistplayer.feature.vod.VodSortStore
 import app.playlistplayer.feature.vod.InMemoryVodSortStore
 import app.playlistplayer.feature.vod.InMemoryTrackPreferenceStore
+import app.playlistplayer.feature.vod.SkipSpanProvider
 import app.playlistplayer.feature.vod.TrackPreferenceStore
 import app.playlistplayer.core.consolidation.VodKind
 import app.playlistplayer.ui.common.live.ChannelRow
@@ -63,6 +64,7 @@ class VodDependencies(
     val trending: TrendingProvider? = null,
     val sorts: VodSortStore = InMemoryVodSortStore(),
     val trackPreferences: TrackPreferenceStore = InMemoryTrackPreferenceStore(),
+    val skipSpans: SkipSpanProvider? = null,
 ) {
     fun browseViewModel(kind: VodKind): VodBrowseViewModel =
         VodBrowseViewModel(

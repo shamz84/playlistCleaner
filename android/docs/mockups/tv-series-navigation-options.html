@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>8TV Player — TV series navigation concepts</title>
+<style>
+  * { box-sizing: border-box; }
+  :root { color-scheme: dark; font-family: system-ui, sans-serif; }
+  body { margin: 0; color: #eef4fa; background: #0a1119; }
+  main { max-width: 1380px; margin: auto; padding: 32px 24px 60px; }
+  h1 { font-size: clamp(28px, 3.6vw, 46px); letter-spacing: -.04em; margin: 4px 0 8px; }
+  .eyebrow { color: #7db8ff; text-transform: uppercase; font-weight: 800; font-size: 11px; letter-spacing: .16em; }
+  .intro, .help { color: #a7b9ca; margin: 0 0 18px; max-width: 950px; }
+  .choices { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  button { font: inherit; color: inherit; cursor: pointer; border: 1px solid #42576e; background: #1c2a39; }
+  button:hover { border-color: #9dc9ff; }
+  button:focus-visible { outline: 3px solid #fff; outline-offset: 3px; z-index: 1; }
+  .choice { padding: 10px 15px; border-radius: 9px; font-size: 14px; font-weight: 700; }
+  .choice[aria-pressed="true"] { background: #2e76d6; border-color: #8ebeff; color: #fff; }
+  .frame { background: #080d13; border: 7px solid #030609; border-radius: 14px; padding: 3.3%; box-shadow: 0 22px 65px #0008; }
+  .tv { --accent: #6aabff; position: relative; overflow: hidden; min-height: 570px; background: radial-gradient(ellipse at 87% 2%, #314759 0, #182936 25%, #101820 63%); padding: 30px 38px; border-radius: 4px; }
+  .tv:before { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, #101820 0, transparent 80%); pointer-events: none; }
+  .tv > * { position: relative; }
+  .topline { color: #8abfff; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .14em; }
+  .heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin: 12px 0 16px; }
+  .heading h2 { font-size: clamp(25px, 3vw, 38px); line-height: 1.1; margin: 0 0 7px; letter-spacing: -.03em; }
+  .meta { color: #a9bacb; font-size: 13px; }
+  .description { max-width: 720px; margin: 10px 0 0; font-size: 14px; color: #d3deea; }
+  .toolbar { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+  .control { border-radius: 8px; padding: 10px 13px; font-size: 13px; font-weight: 650; white-space: nowrap; }
+  .control.primary { background: #2e76d6; border-color: #569aec; }
+  .version[aria-pressed="true"] { background: #2a5e98; border-color: #85baff; color: #fff; }
+  .section-head { font-size: 13px; color: #aabccc; font-weight: 750; margin: 0 0 9px; }
+  .chips { display: flex; gap: 8px; overflow-x: auto; padding: 4px 4px 9px; margin: -4px; scrollbar-color: #607890 transparent; }
+  .chip { padding: 9px 14px; border-radius: 8px; font-size: 13px; white-space: nowrap; }
+  .chip[aria-pressed="true"], .side-season[aria-pressed="true"] { color: #fff; background: #2b609c; border-color: #77b3ff; }
+  .episodes { display: grid; gap: 7px; }
+  .episode { display: flex; align-items: center; gap: 14px; text-align: left; width: 100%; padding: 11px 14px; border: 1px solid #30475b; border-radius: 8px; background: #1d2c3b; }
+  .episode-num { display: grid; place-items: center; background: #2d4359; color: #bfd9f3; font-weight: 800; border-radius: 7px; width: 44px; height: 39px; flex: none; }
+  .episode-copy { flex: 1; min-width: 0; }
+  .episode-copy strong { display: block; font-size: 14px; }
+  .episode-copy small { display: block; color: #aebed0; font-size: 12px; margin-top: 3px; }
+  .badge { background: #344c65; border-radius: 5px; font-size: 11px; padding: 3px 6px; white-space: nowrap; color: #e5eff9; }
+  .layout-a .episode-area, .layout-c .episode-area { margin-top: 19px; }
+  .layout-b .browse { display: grid; grid-template-columns: minmax(155px, 23%) 1fr; gap: 22px; margin-top: 12px; }
+  .season-list { display: grid; gap: 7px; align-content: start; max-height: 310px; overflow: auto; padding: 3px; }
+  .side-season { text-align: left; border-radius: 8px; padding: 11px 13px; font-size: 13px; }
+  .episode-list { max-height: 310px; overflow: auto; padding: 3px; }
+  .layout-c .top-panel { background: #182736; border: 1px solid #324a60; border-radius: 10px; padding: 14px; }
+  .layout-c .selected-season { display: flex; gap: 8px; align-items: center; }
+  .layout-c .selected-season strong { flex: 1; }
+  .drawer { position: absolute; inset: 0 0 0 auto; width: min(390px, 90%); padding: 26px; background: #172534; border-left: 1px solid #4a637b; box-shadow: -15px 0 45px #0009; z-index: 3; overflow-y: auto; }
+  .drawer h3 { margin: 0 0 6px; font-size: 22px; }
+  .drawer p { color: #b6c7d7; font-size: 13px; }
+  .drawer .chips { flex-wrap: wrap; overflow: visible; margin-bottom: 18px; }
+  .close { float: right; }
+  .version { display: block; width: 100%; text-align: left; margin: 6px 0; padding: 12px; border-radius: 8px; font-size: 13px; }
+  .version small { display: block; color: #b9c9d8; margin-top: 3px; }
+  .toast { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: #e6f1ff; color: #132337; padding: 10px 16px; border-radius: 8px; font-weight: 700; font-size: 13px; z-index: 4; }
+  .explain { margin-top: 20px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .explain article { background: #14202d; border: 1px solid #293e51; border-radius: 10px; padding: 15px; }
+  .explain h3 { font-size: 14px; margin: 0 0 5px; }
+  .explain p { font-size: 13px; color: #aabccc; margin: 0; }
+  .note { color: #96aabd; font-size: 13px; margin-top: 16px; }
+  @media(max-width: 700px) { main { padding: 22px 12px; } .frame { padding: 1%; } .tv { padding: 20px 14px; min-height: 580px; } .heading { flex-direction: column; } .toolbar { justify-content: flex-start; } .layout-b .browse { grid-template-columns: 35% 1fr; gap: 10px; } .episode { gap: 7px; padding: 9px; } .explain { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<main>
+  <div class="eyebrow">8TV Player · interactive design demo</div>
+  <h1>Choosing seasons on TV</h1>
+  <p class="intro">Try three directions for a show with many seasons. This is a mock-up using fictional content; it does not play video or change your app.</p>
+  <div class="choices" aria-label="Choose a layout">
+    <button class="choice" data-layout="a" aria-pressed="true">A · Seasons first</button>
+    <button class="choice" data-layout="b" aria-pressed="false">B · Side-by-side</button>
+    <button class="choice" data-layout="c" aria-pressed="false">C · Compact selector</button>
+  </div>
+  <p class="help">Click a control to start. Inside the TV preview, use <strong>arrow keys</strong> to move and <strong>Enter</strong> to select; Esc closes the versions panel. Mouse and touch also work.</p>
+  <div class="frame"><section id="tv" class="tv" aria-label="Interactive TV preview"></section></div>
+  <div class="explain">
+    <article><h3>A · Seasons first</h3><p>Season tabs lead directly to episodes. Versions and filters stay tucked away until needed.</p></article>
+    <article><h3>B · Side-by-side</h3><p>A season list stays beside the episodes. Useful for navigating a show with many seasons.</p></article>
+    <article><h3>C · Compact selector</h3><p>Previous/next controls keep the season selector compact, with an optional full season picker.</p></article>
+  </div>
+  <p class="note">Selection behaviour in this demo: seasons are never hidden by a quality or language choice. The preferred source is used where available; an episode can fall back to another source. Availability and labels are illustrative.</p>
+</main>
+<script>
+(() => {
+  const tv = document.getElementById('tv');
+  const buttons = [...document.querySelectorAll('.choice')];
+  const state = { layout: 'a', season: 1, panel: null, language: 'All', quality: 'All', version: 'en4k', favourite: false, toast: '' };
+  const versions = [
+    { id: 'en4k', language: 'EN', quality: '4K', title: 'English · 4K', note: 'Seasons 1–3' },
+    { id: 'en1080', language: 'EN', quality: '1080p', title: 'English · 1080p', note: 'Seasons 1–6' },
+    { id: 'fr1080', language: 'FR', quality: '1080p', title: 'French · 1080p', note: 'Seasons 1–6' }
+  ];
+  const names = ['The Arrival', 'A New Signal', 'Beyond the Horizon', 'The Long Way Home', 'After the Storm'];
+  const descriptions = {
+    a: 'Seasons first · Select a season, then move down to its episodes.',
+    b: 'Side-by-side · Select a season on the left, then move right to episodes.',
+    c: 'Compact selector · Step between seasons, or open the full season picker.'
+  };
+  function button(label, action, attrs = '', cls = 'control') {
+    return `<button class="${cls}" data-action="${action}" ${attrs}>${label}</button>`;
+  }
+  function seasonChip(n, cls = 'chip') {
+    return button(`Season ${n}`, `season:${n}`, `aria-pressed="${state.season === n}" data-focus="season:${n}"`, cls);
+  }
+  function actualVersion() {
+    if (state.version === 'en4k' && state.season > 3) return versions[1];
+    return versions.find(v => v.id === state.version);
+  }
+  function episodeRows() {
+    const current = actualVersion();
+    return names.map((name, i) => {
+      const fallback = current.id !== state.version ? ' · fallback from preferred version' : '';
+      return `<button class="episode" data-action="episode:${i + 1}" data-focus="episode:${i + 1}">
+        <span class="episode-num">${String(i + 1).padStart(2, '0')}</span>
+        <span class="episode-copy"><strong>Episode ${i + 1} · ${name}</strong><small>${36 + i * 3} min${fallback}</small></span>
+        <span class="badge">${current.language}</span><span class="badge">${current.quality}</span>
+      </button>`;
+    }).join('');
+  }
+  function toolbar() {
+    return `<div class="toolbar">${button(state.favourite ? '★ Favourite' : '☆ Favourite', 'favourite', 'data-focus="favourite"')}
+      ${button('Versions & filters', 'open-versions', 'data-focus="versions"', 'control primary')}</div>`;
+  }
+  function seasonPicker() {
+    const seasons = Array.from({length: 6}, (_, i) => seasonChip(i + 1));
+    if (state.layout === 'b') return `<div class="browse"><div><p class="section-head">SEASONS</p><div class="season-list">${seasons.map((_, i) => seasonChip(i + 1, 'side-season')).join('')}</div></div><div><p class="section-head">SEASON ${state.season} · EPISODES</p><div class="episodes episode-list">${episodeRows()}</div></div></div>`;
+    if (state.layout === 'c') return `<div class="top-panel"><p class="section-head">CURRENT SEASON</p><div class="selected-season">
+      ${button('◀', 'previous', `aria-label="Previous season" data-focus="previous" ${state.season === 1 ? 'disabled' : ''}`)}
+      <strong>Season ${state.season} of 6</strong>
+      ${button('▶', 'next', `aria-label="Next season" data-focus="next" ${state.season === 6 ? 'disabled' : ''}`)}
+      ${button('All seasons', 'open-seasons', 'data-focus="all-seasons"')}
+      </div></div><div class="episode-area"><p class="section-head">EPISODES</p><div class="episodes">${episodeRows()}</div></div>`;
+    return `<p class="section-head">SEASONS</p><div class="chips">${seasons.join('')}</div><div class="episode-area"><p class="section-head">SEASON ${state.season} · EPISODES</p><div class="episodes">${episodeRows()}</div></div>`;
+  }
+  function drawer() {
+    if (!state.panel) return '';
+    if (state.panel === 'seasons') return `<aside class="drawer" aria-label="All seasons">${button('Close', 'close', 'data-focus="close"', 'control close')}<h3>All seasons</h3><p>Choose any season.</p><div class="season-list">${Array.from({length: 6}, (_, i) => seasonChip(i + 1, 'side-season')).join('')}</div></aside>`;
+    const filter = (kind, values, active) => `<p class="section-head">${kind.toUpperCase()}</p><div class="chips">${values.map(v => button(v, `${kind}:${v}`, `aria-pressed="${v === active}" data-focus="${kind}:${v}"`, 'chip')).join('')}</div>`;
+    const visible = versions.filter(v => (state.language === 'All' || v.language === state.language) && (state.quality === 'All' || v.quality === state.quality));
+    return `<aside class="drawer" aria-label="Versions and filters">${button('Close', 'close', 'data-focus="close"', 'control close')}<h3>Versions & filters</h3><p>Filters narrow the versions shown here, not the season list. Choosing a version changes the preference.</p>
+      ${filter('language', ['All', 'EN', 'FR'], state.language)}${filter('quality', ['All', '4K', '1080p'], state.quality)}
+      <p class="section-head">AVAILABLE VERSIONS</p>
+      ${visible.length ? visible.map(v => button(`${v.title}<small>${v.note}${state.version === v.id ? ' · selected' : ''}</small>`, `version:${v.id}`, `aria-pressed="${state.version === v.id}" data-focus="version:${v.id}"`, 'version' + (state.version === v.id ? ' selected' : ''))).join('') : '<p>No matching versions. Change or clear a filter.</p>'}
+    </aside>`;
+  }
+  function render(focusKey) {
+    const version = versions.find(v => v.id === state.version);
+    tv.className = `tv layout-${state.layout}`;
+    tv.innerHTML = `<div class="topline">TV SHOWS / SERIES DETAILS</div><div class="heading"><div><h2>The Northern Signal</h2><div class="meta">2024 · Drama · 6 seasons · Preferred: ${version.title}</div><p class="description">A fictional series used to explore how seasons, episodes and versions could be arranged on your TV.</p></div>${toolbar()}</div>
+      ${seasonPicker()}${drawer()}${state.toast ? `<div class="toast" role="status">${state.toast}</div>` : ''}`;
+    if (focusKey) {
+      const next = [...tv.querySelectorAll('[data-focus]')].find(el => el.dataset.focus === focusKey && !el.disabled);
+      (next || tv.querySelector('[data-focus]:not(:disabled)'))?.focus({preventScroll: true});
+    }
+  }
+  function act(action) {
+    let focus = null;
+    state.toast = '';
+    if (action.startsWith('season:')) {
+      state.season = Number(action.split(':')[1]);
+      if (state.panel === 'seasons') { state.panel = null; focus = 'all-seasons'; }
+      else focus = action;
+    } else if (action === 'previous' || action === 'next') {
+      state.season = Math.max(1, Math.min(6, state.season + (action === 'next' ? 1 : -1)));
+      focus = (action === 'next' && state.season === 6) ? 'previous' : (action === 'previous' && state.season === 1) ? 'next' : action;
+    } else if (action === 'open-versions') { state.panel = 'versions'; focus = 'close'; }
+    else if (action === 'open-seasons') { state.panel = 'seasons'; focus = `season:${state.season}`; }
+    else if (action === 'close') { const old = state.panel; state.panel = null; focus = old === 'seasons' ? 'all-seasons' : 'versions'; }
+    else if (action === 'favourite') { state.favourite = !state.favourite; focus = 'favourite'; }
+    else if (action.startsWith('language:')) { state.language = action.split(':')[1]; focus = action; }
+    else if (action.startsWith('quality:')) { state.quality = action.split(':')[1]; focus = action; }
+    else if (action.startsWith('version:')) { state.version = action.split(':')[1]; focus = action; }
+    else if (action.startsWith('episode:')) { focus = action; state.toast = `Demo: Season ${state.season}, episode ${action.split(':')[1]} would play in ${actualVersion().title}.`; }
+    render(focus);
+  }
+  buttons.forEach(btn => btn.addEventListener('click', () => {
+    state.layout = btn.dataset.layout; state.panel = null; state.toast = '';
+    buttons.forEach(item => item.setAttribute('aria-pressed', String(item === btn)));
+    render();
+  }));
+  tv.addEventListener('click', event => { const el = event.target.closest('[data-action]'); if (el && !el.disabled) act(el.dataset.action); });
+  tv.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && state.panel) { event.preventDefault(); act('close'); return; }
+    if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+    const active = document.activeElement;
+    if (!active || !tv.contains(active)) return;
+    const scope = state.panel ? tv.querySelector('.drawer') : tv;
+    const items = [...scope.querySelectorAll('button:not(:disabled)')].filter(el => el.getClientRects().length);
+    const from = active.getBoundingClientRect();
+    const x = from.left + from.width / 2, y = from.top + from.height / 2;
+    const horizontal = event.key === 'ArrowLeft' || event.key === 'ArrowRight';
+    const sign = event.key === 'ArrowRight' || event.key === 'ArrowDown' ? 1 : -1;
+    const candidates = items.filter(el => el !== active).map(el => {
+      const r = el.getBoundingClientRect(), dx = r.left + r.width / 2 - x, dy = r.top + r.height / 2 - y;
+      const primary = (horizontal ? dx : dy) * sign, cross = Math.abs(horizontal ? dy : dx);
+      return { el, primary, cross, score: primary + cross * 2 };
+    }).filter(v => v.primary > 4).sort((a, b) => a.score - b.score);
+    if (candidates.length) { event.preventDefault(); candidates[0].el.focus(); candidates[0].el.scrollIntoView({block: 'nearest', inline: 'nearest'}); }
+  });
+  render();
+})();
+</script>
+</body>
+</html>

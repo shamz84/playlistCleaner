@@ -17,7 +17,7 @@
     <string name="nav_item_description">Open %1$s</string>
 
     <string name="exit_title">Exit app?</string>
-    <string name="exit_message">Playlist Player will close.</string>
+    <string name="exit_message">8TV Player will close.</string>
     <string name="exit_confirm">Exit</string>
 
     <!-- Shell: placeholder destinations -->
@@ -69,12 +69,16 @@
     <string name="onboarding_xtream_off">Off: only live channels are loaded.</string>
     <string name="onboarding_xtream_unavailable">Unavailable: this address isn\'t an Xtream account, so only live channels can be loaded.</string>
     <string name="onboarding_xtream_drive_note">If the playlist turns out not to be an Xtream account, this is turned off automatically.</string>
+    <string name="onboarding_epg_title">Use curated TV guide (EPG)</string>
+    <string name="onboarding_epg_on">On: the curated community guide is used instead of the provider\'s. It can be changed later in Settings.</string>
+    <string name="onboarding_epg_off">Off: the provider\'s own guide is used (Xtream accounts only).</string>
 
     <string name="onboarding_continue">Continue</string>
     <string name="onboarding_continue_disabled_description">Continue, unavailable until the source is valid</string>
 
     <!-- Onboarding progress -->
     <string name="onboarding_progress_title">Adding %1$s</string>
+    <string name="onboarding_please_wait">Please wait, loading your playlist. This can take a few minutes for large playlists.</string>
     <string name="onboarding_stage_playlist">Playlist</string>
     <string name="onboarding_stage_channels">Channels</string>
     <string name="onboarding_stage_catalog">Movies and TV shows</string>

@@ -5,6 +5,7 @@ import androidx.compose.runtime.remember
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.playlistplayer.feature.live.CatchupPlayerViewModel
 import app.playlistplayer.feature.live.CatchupRequest
+import app.playlistplayer.feature.live.ChannelRef
 import app.playlistplayer.feature.live.ExoPlayerDriver
 import app.playlistplayer.feature.live.LivePlayerViewModel
 import app.playlistplayer.feature.live.PlayerDriver
@@ -28,7 +29,7 @@ fun MobileChannelPlayerHost(
     guide: MobileGuideDependencies,
     playback: MobilePlaybackDependencies,
     onStartCatchup: (CatchupRequest) -> Unit,
-    onChannelChanged: (Int) -> Unit,
+    onChannelChanged: (ChannelRef) -> Unit,
     onExit: () -> Unit,
 ) {
     FullscreenLandscapeEffect() // held across the deferred first frame, so orientation does not flip back
@@ -60,4 +61,3 @@ fun MobileCatchupPlayerHost(
     }
     MobileCatchupPlayerScreen(viewModel = viewModel, player = playback.player, onExit = onExit)
 }
-

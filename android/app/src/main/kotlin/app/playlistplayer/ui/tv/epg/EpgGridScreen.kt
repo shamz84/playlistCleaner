@@ -72,8 +72,10 @@ import app.playlistplayer.ui.tv.components.TvButton
 import app.playlistplayer.ui.tv.components.TvEmptyState
 import app.playlistplayer.ui.tv.components.TvErrorState
 import app.playlistplayer.ui.tv.components.TvLoadingState
+import app.playlistplayer.ui.tv.theme.TvDebugColors
 import app.playlistplayer.ui.tv.theme.TvDensity
 import app.playlistplayer.ui.tv.theme.TvDimens
+import app.playlistplayer.ui.tv.theme.debugTint
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -239,7 +241,7 @@ private fun Grid(
         }
         Column {
             // Time ruler: group name over the channel column, slot times over the timeline.
-            Row(modifier = Modifier.height(TvDensity.RulerHeight), verticalAlignment = Alignment.CenterVertically) {
+            Row(modifier = Modifier.height(TvDensity.RulerHeight).debugTint(TvDebugColors.Ruler), verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = title.orEmpty(),
                     style = MaterialTheme.typography.labelSmall,
@@ -342,7 +344,7 @@ private fun GuideRow(
                 .testTag(EpgTags.channel(ordinal)),
             onClick = { viewModel.selectChannel(ordinal) },
         )
-        Box(modifier = Modifier.width(geometry.timelineWidth).fillMaxHeight()) {
+        Box(modifier = Modifier.width(geometry.timelineWidth).fillMaxHeight().debugTint(TvDebugColors.Timeline)) {
             if (row.noGuideData || !row.loaded) {
                 GuideCell(
                     title = stringResource(if (row.loaded) R.string.epg_no_guide_data else R.string.livetv_row_loading),
@@ -454,7 +456,7 @@ private fun ChannelCell(row: EpgRow, modifier: Modifier, onClick: () -> Unit) {
         modifier = modifier,
         shape = ClickableSurfaceDefaults.shape(TvDensity.CellShape),
         colors = ClickableSurfaceDefaults.colors(
-            containerColor = UiTokens.Surface,
+            containerColor = if (TvDebugColors.ENABLED) CHANNEL_DEBUG_CONTAINER else UiTokens.Surface,
             focusedContainerColor = UiTokens.SurfaceFocused,
             contentColor = UiTokens.OnBackground,
             focusedContentColor = UiTokens.OnBackground,
@@ -470,8 +472,10 @@ private fun ChannelCell(row: EpgRow, modifier: Modifier, onClick: () -> Unit) {
             Box(modifier = Modifier.size(TvDensity.LogoSize), contentAlignment = Alignment.Center) {
                 row.channel.logoUrl?.let { AsyncImage(model = it, contentDescription = null, contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize()) }
             }
-            Text(text = row.number.toString(), style = MaterialTheme.typography.labelMedium, color = UiTokens.OnSurfaceMuted)
-            Text(text = row.channel.name, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
+                Text(text = row.number.toString(), style = MaterialTheme.typography.labelSmall, color = UiTokens.OnSurfaceMuted, maxLines = 1)
+                Text(text = row.channel.name, style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
         }
     }
 }
@@ -488,7 +492,7 @@ private fun GuideCell(
 ) {
     val container = when (timing) {
         ProgrammeTiming.AIRING -> UiTokens.SurfaceVariant
-        ProgrammeTiming.PAST -> PAST_CELL
+        ProgrammeTiming.PAST -> UiTokens.GuidePast
         else -> UiTokens.Surface
     }
     val catchupDescription = stringResource(R.string.epg_catchup_icon_description)
@@ -578,6 +582,6 @@ private fun DetailsDialog(details: ProgrammeDetails, onPlay: () -> Unit, onDismi
     LaunchedEffect(details) { runCatching { focus.requestFocus() } }
 }
 
-private val PAST_CELL = Color(0xFF141D26)
+private val CHANNEL_DEBUG_CONTAINER = Color(0xFF0B5560)
 private const val CATCHUP_ICON = "↺" // ↺
 private const val TICK_MS = 60_000L

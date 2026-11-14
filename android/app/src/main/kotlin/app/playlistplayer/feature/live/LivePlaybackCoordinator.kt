@@ -10,6 +10,8 @@ import app.playlistplayer.core.player.url.StreamAccount
 import app.playlistplayer.core.player.url.StreamUrlBuilder
 import app.playlistplayer.feature.vod.AccountProvider
 import app.playlistplayer.feature.vod.VersionPreferencesProvider
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -79,15 +81,20 @@ class LivePlaybackCoordinator(
     private val playbackPreferences: PlaybackPreferencesProvider,
     private val versionPreferences: VersionPreferencesProvider,
     private val lastChannels: LastChannelStore,
+    private val warmScope: CoroutineScope? = null,
 ) : OtherVersionsResolver {
 
     private class Index(val finder: AlternativeFinder, val byOrdinal: Map<Int, LiveChannel>)
 
     private val mutex = Mutex()
+    private val indexBuildMutex = Mutex()
     private val indexes = HashMap<Long, Index>()
+    private val warming = HashSet<Long>()
+    private var indexRevision = 0L
 
     /** Drops the cached other-versions index (all playlists, or one). */
     suspend fun invalidate(playlistId: Long? = null) = mutex.withLock {
+        indexRevision++
         if (playlistId == null) indexes.clear() else indexes.remove(playlistId)
     }
 
@@ -117,8 +124,14 @@ class LivePlaybackCoordinator(
     private suspend fun plan(group: LiveChannel, selected: LiveChannel): LivePlanResult {
         if (!selected.isPlayable) return LivePlanResult.NotPlayable
         val prefs = versionPreferences.current()
-        val others = otherVersions(group, prefs)
-        val index = index(group.playlistId)
+        // Indexing a whole playlist can take many seconds on a TV box: with a warm scope the first
+        // tune plays the selected stream straight away and the index (failover, other versions)
+        // is built in the background for later tunes.
+        val cached = if (warmScope != null) mutex.withLock { indexes[group.playlistId] } else null
+        val fast = warmScope != null && cached == null
+        if (fast) warm(group.playlistId)
+        val index = cached ?: if (fast) Index(AlternativeFinder(emptyList()), emptyMap()) else index(group.playlistId)
+        val others = if (fast) emptyList() else otherVersions(group, prefs)
         val versions = rank(listOf(group) + others, index, prefs)
 
         val builder = SourceBuilder(group.playlistId)
@@ -154,12 +167,33 @@ class LivePlaybackCoordinator(
             }
     }
 
-    private suspend fun index(playlistId: Long): Index {
-        mutex.withLock { indexes[playlistId] }?.let { return it }
-        val all = channels.playlistChannels(playlistId).filter { it.playlistId == playlistId }
-        val built = Index(AlternativeFinder(all.map(::entryOf)), all.associateBy { it.ordinal })
-        mutex.withLock { indexes[playlistId] = built }
-        return built
+    private suspend fun warm(playlistId: Long) {
+        val scope = warmScope ?: return
+        if (!mutex.withLock { warming.add(playlistId) }) return
+        scope.launch {
+            try {
+                index(playlistId)
+            } finally {
+                mutex.withLock { warming.remove(playlistId) }
+            }
+        }
+    }
+
+    private suspend fun index(playlistId: Long): Index = indexBuildMutex.withLock {
+        var result: Index? = null
+        while (result == null) {
+            val (cached, revision) = mutex.withLock { indexes[playlistId] to indexRevision }
+            if (cached != null) {
+                result = cached
+                continue
+            }
+            val all = channels.playlistChannels(playlistId).filter { it.playlistId == playlistId }
+            val built = Index(AlternativeFinder(all.map(::entryOf)), all.associateBy { it.ordinal })
+            result = mutex.withLock {
+                if (revision == indexRevision) built.also { indexes[playlistId] = it } else null
+            }
+        }
+        result
     }
 
     private sealed interface Built {

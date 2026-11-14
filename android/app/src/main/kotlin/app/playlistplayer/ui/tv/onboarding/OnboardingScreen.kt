@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
@@ -66,6 +68,7 @@ object OnboardingTags {
     const val SOURCE_SWITCH = "onboarding.source"
     const val SOURCE_FIELD = "onboarding.field"
     const val XTREAM_TOGGLE = "onboarding.xtream"
+    const val EPG_TOGGLE = "onboarding.epg"
     const val CONTINUE = "onboarding.continue"
     const val ID_READBACK = "onboarding.readback"
     const val START_WATCHING = "onboarding.startWatching"
@@ -81,6 +84,7 @@ data class OnboardingActions(
     val onSubmit: () -> Unit,
     val onContinue: () -> Unit,
     val onCancelProgress: () -> Unit,
+    val onCuratedEpgToggled: (Boolean) -> Unit = {},
 )
 
 /**
@@ -119,6 +123,7 @@ fun OnboardingScreen(
                 onSubmit = viewModel::submit,
                 onContinue = { viewModel.continueToApp() },
                 onCancelProgress = { viewModel.onBack() },
+                onCuratedEpgToggled = viewModel::onCuratedEpgToggled,
             )
         },
     )
@@ -197,6 +202,7 @@ private fun OnboardingForm(state: OnboardingUiState, isFirstRun: Boolean, action
 
         // 4. Xtream toggle
         XtreamToggle(state, actions.onXtreamToggled)
+        CuratedEpgToggle(state, actions.onCuratedEpgToggled)
 
         // Error from the last attempt (the user stays on the form to fix the input).
         state.error?.let { error ->
@@ -393,6 +399,41 @@ private fun XtreamToggle(state: OnboardingUiState, onToggle: (Boolean) -> Unit) 
 }
 
 @Composable
+private fun CuratedEpgToggle(state: OnboardingUiState, onToggle: (Boolean) -> Unit) {
+    val title = stringResource(R.string.onboarding_epg_title)
+    val explanation = stringResource(if (state.useCuratedEpg) R.string.onboarding_epg_on else R.string.onboarding_epg_off)
+    Surface(
+        onClick = { onToggle(!state.useCuratedEpg) },
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag(OnboardingTags.EPG_TOGGLE)
+            .semantics(mergeDescendants = true) {
+                contentDescription = "$title. $explanation"
+                stateDescription = if (state.useCuratedEpg) "on" else "off"
+            },
+        shape = ClickableSurfaceDefaults.shape(TvDimens.Shape),
+        scale = ClickableSurfaceDefaults.scale(focusedScale = 1.03f),
+        border = ClickableSurfaceDefaults.border(focusedBorder = TvDimens.FocusBorder),
+        colors = ClickableSurfaceDefaults.colors(
+            containerColor = UiTokens.Surface,
+            focusedContainerColor = UiTokens.SurfaceFocused,
+        ),
+    ) {
+        Row(
+            modifier = Modifier.padding(UiTokens.SpaceM),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(UiTokens.SpaceM),
+        ) {
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(UiTokens.SpaceXs)) {
+                Text(title, style = MaterialTheme.typography.titleMedium, color = UiTokens.OnBackground)
+                Text(explanation, style = MaterialTheme.typography.bodySmall, color = UiTokens.OnSurfaceMuted)
+            }
+            Switch(checked = state.useCuratedEpg, onCheckedChange = null)
+        }
+    }
+}
+
+@Composable
 private fun OnboardingProgressView(state: OnboardingUiState, actions: OnboardingActions) {
     val startFocus = remember { FocusRequester() }
     val cancelFocus = remember { FocusRequester() }
@@ -408,6 +449,17 @@ private fun OnboardingProgressView(state: OnboardingUiState, actions: Onboarding
             style = MaterialTheme.typography.headlineLarge,
             color = UiTokens.OnBackground,
         )
+        Row(horizontalArrangement = Arrangement.spacedBy(UiTokens.SpaceM), verticalAlignment = Alignment.CenterVertically) {
+            if (!state.allStagesTerminal && state.error == null) {
+                CircularProgressIndicator(modifier = Modifier.size(32.dp), color = UiTokens.Accent, strokeWidth = 3.dp)
+                Text(
+                    text = stringResource(R.string.onboarding_please_wait),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = UiTokens.OnBackground,
+                    modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                )
+            }
+        }
         Column(verticalArrangement = Arrangement.spacedBy(UiTokens.SpaceM)) {
             OnboardingStage.entries.forEach { stage ->
                 StageRow(stage, state.stages[stage] ?: StageStatus.Pending)

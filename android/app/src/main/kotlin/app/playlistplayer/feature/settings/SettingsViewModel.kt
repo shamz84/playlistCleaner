@@ -3,7 +3,9 @@ package app.playlistplayer.feature.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.playlistplayer.core.player.url.LiveFormatPreference
+import app.playlistplayer.core.sync.epg.EpgOverrideSettings
 import app.playlistplayer.feature.onboarding.SourceInput
+import app.playlistplayer.feature.playlists.PlaylistActionResult
 import app.playlistplayer.feature.playlists.PlaylistRepository
 import app.playlistplayer.feature.playlists.PlaylistsViewModel
 import kotlinx.coroutines.CoroutineScope
@@ -230,6 +232,30 @@ class SettingsViewModel(
         }
     }
 
+    /** Sets the curated guide on every playlist that has no override yet; custom overrides are left alone. */
+    fun applyCuratedGuideToAll() {
+        val ids = _state.value.playlists.playlists.map { it.id }
+        scope.launch {
+            var applied = 0
+            for (id in ids) {
+                if (runCatchingNonCancel { deps.guide.overrideUrl(id) } != null) continue
+                if (runCatchingNonCancel { deps.guide.setOverride(id, EpgOverrideSettings.DEFAULT_URL) } == true) {
+                    applied++
+                    updateGuide(id) { it.copy(overrideUrl = EpgOverrideSettings.DEFAULT_URL) }
+                }
+            }
+            _state.update { it.copy(message = SettingsMessage.CuratedGuideApplied(applied)) }
+        }
+    }
+
+    /** Re-imports the playlist's guide now. */
+    fun refreshGuide(playlistId: Long) {
+        scope.launch {
+            val ok = runCatchingNonCancel { deps.playlists.refreshGuide(playlistId) } == PlaylistActionResult.Done
+            _state.update { it.copy(message = if (ok) SettingsMessage.GuideRefreshing(playlistId) else SettingsMessage.Failed) }
+        }
+    }
+
     /** Back to the provider guide. */
     fun clearOverride(playlistId: Long) {
         scope.launch {
@@ -252,6 +278,13 @@ class SettingsViewModel(
     fun setMatchFrameRate(enabled: Boolean) = launchPrefs { preferences.setMatchFrameRate(enabled) }
 
     fun setTunneling(enabled: Boolean) = launchPrefs { preferences.setTunneling(enabled) }
+
+    fun setShowClock(enabled: Boolean) = launchPrefs { preferences.setShowClock(enabled) }
+
+    fun setShowVideoInfo(enabled: Boolean) = launchPrefs { preferences.setShowVideoInfo(enabled) }
+    fun setShowVodDiagnostics(enabled: Boolean) = launchPrefs { preferences.setShowVodDiagnostics(enabled) }
+
+    fun setTheme(theme: AppTheme) = launchPrefs { preferences.setTheme(theme) }
 
     /** Preferred audio language of movies and episodes; null = device language. */
     fun setAudioLanguage(code: String?) = launchPrefs {
@@ -277,6 +310,16 @@ class SettingsViewModel(
     fun removeLanguage(code: String) = launchPrefs { preferences.removeLanguage(code) }
 
     fun moveLanguage(from: Int, to: Int) = launchPrefs { preferences.moveLanguage(from, to) }
+
+    /** Moves a playlist one place up (-1) or down (+1) in the order shown in Live TV. */
+    fun movePlaylist(playlistId: Long, delta: Int) {
+        val ids = orderedPlaylistIds(_state.value.playlists.playlists.map { it.id }, _state.value.preferences.playlistOrder).toMutableList()
+        val from = ids.indexOf(playlistId)
+        val to = from + delta
+        if (from < 0 || to !in ids.indices) return
+        ids.add(to, ids.removeAt(from))
+        launchPrefs { preferences.setPlaylistOrder(ids) }
+    }
 
     /** D-pad friendly reorder: one step towards the top. */
     fun moveLanguageUp(index: Int) = moveLanguage(index, index - 1)
@@ -468,3 +511,7 @@ private fun ParentalResult.toMessage(success: SettingsMessage): SettingsMessage 
     is ParentalResult.Rejected ->
         if (authorization == Authorization.ResetRequired) SettingsMessage.ResetRequired else SettingsMessage.PinRejected(authorization)
 }
+
+/** [ids] in the user's saved [order]; playlists missing from it keep their given order after the listed ones. */
+fun orderedPlaylistIds(ids: List<Long>, order: List<Long>): List<Long> =
+    ids.sortedBy { id -> order.indexOf(id).let { if (it < 0) Int.MAX_VALUE else it } }

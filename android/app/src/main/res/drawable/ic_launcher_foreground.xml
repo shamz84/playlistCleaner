@@ -1,11 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Placeholder launcher foreground: a play triangle inside the adaptive-icon safe zone. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <path
-        android:fillColor="#FFFFFFFF"
-        android:pathData="M44,36 L74,54 L44,72 Z" />
+    <group android:translateX="11" android:translateY="10" android:scaleX="0.68" android:scaleY="0.68">
+        <path
+            android:fillColor="@android:color/transparent"
+            android:strokeColor="#FF84BDFF"
+            android:strokeWidth="7"
+            android:strokeLineJoin="round"
+            android:pathData="M43,63 C22,54 24,33 43,33 C62,33 64,54 43,63 Z M43,63 C20,73 22,96 43,96 C64,96 66,73 43,63 Z" />
+        <path
+            android:fillColor="@android:color/transparent"
+            android:strokeColor="#FFF4F8FF"
+            android:strokeWidth="6"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M67,42 H84 M75.5,42 V83 M88,42 L98,83 L108,42" />
+        <path
+            android:fillColor="@android:color/transparent"
+            android:strokeColor="#FF527598"
+            android:strokeWidth="3"
+            android:strokeLineCap="round"
+            android:pathData="M25,108 H103" />
+    </group>
 </vector>

@@ -76,6 +76,12 @@
     <string name="settings_playback_match_frame_rate_description">Switch the display to the video\'s frame rate</string>
     <string name="settings_playback_tunneling">Tunneled playback</string>
     <string name="settings_playback_tunneling_description">Smoother video on supported devices</string>
+    <string name="settings_playback_show_clock">Show clock while watching</string>
+    <string name="settings_playback_show_clock_description">A small transparent clock in the top corner of the video</string>
+    <string name="settings_playback_show_video_info">Show live video information</string>
+    <string name="settings_playback_vod_diagnostics">Show on-demand playback diagnostics</string>
+    <string name="settings_playback_vod_diagnostics_description">Show buffer, dropped frames and decoder while watching on-demand video</string>
+    <string name="settings_playback_show_video_info_description">Show resolution and frame rate in the live channel banner when available</string>
     <string name="settings_playback_audio_language">Audio language</string>
     <string name="settings_playback_audio_language_description">For movies and episodes, when the stream has it</string>
     <string name="settings_playback_audio_device">Device language</string>
@@ -145,6 +151,11 @@
 
     <!-- App -->
     <string name="settings_app_refresh_interval">Refresh playlists every</string>
+    <string name="settings_app_theme">Colour theme</string>
+    <string name="settings_app_theme_midnight">Midnight Blue</string>
+    <string name="settings_app_theme_ember">Cinema Ember</string>
+    <string name="settings_app_theme_graphite">Graphite</string>
+    <string name="settings_app_theme_description">Choose the app’s appearance</string>
     <string name="settings_app_hours">%1$d h</string>
     <string name="settings_app_stale_warning">Warn when data is older than</string>
     <string name="settings_app_days">%1$d days</string>
@@ -179,6 +190,12 @@
     <string name="settings_msg_groups_saved">Group visibility saved</string>
     <string name="settings_msg_override_saved">Guide override saved. Importing the guide…</string>
     <string name="settings_msg_override_cleared">Back to the provider guide</string>
+    <string name="settings_msg_curated_applied">Curated guide applied to %1$d playlist(s)</string>
+    <string name="settings_guide_apply_curated">Use curated guide on all playlists</string>
+    <string name="settings_playlist_move_up">Move up</string>
+    <string name="settings_guide_refresh">Refresh guide</string>
+    <string name="settings_msg_guide_refreshing">Refreshing the guide in the background</string>
+    <string name="settings_playlist_move_down">Move down</string>
     <string name="settings_msg_override_not_saved">Not saved: %1$s</string>
     <string name="settings_msg_invalid_language">Enter a language code such as en or in-ta</string>
     <string name="settings_msg_hls_not_allowed">HLS is not allowed by your provider</string>

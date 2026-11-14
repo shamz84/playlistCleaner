@@ -105,6 +105,62 @@ data class SeekPreview(val targetMs: Long, val stepMs: Long)
 
 data class NextEpisodeCard(val label: String, val secondsRemaining: Int)
 
+enum class SkipKind { INTRO, RECAP, CREDITS }
+
+/** A "Skip intro" / "Skip credits" offer; [targetMs] is where it jumps to (the end of the item: play next or finish). */
+data class SkipPrompt(val kind: SkipKind, val targetMs: Long)
+
+/** A real skippable span from a marker service; [endMs] null runs to the end of the item. */
+data class SkipSpan(val kind: SkipKind, val startMs: Long, val endMs: Long?)
+
+/**
+ * Skip offers for on-demand items. IPTV providers carry no intro or credits markers, so the
+ * offers are position-based: "Skip intro" (episodes only) for a short window early in the
+ * episode, jumping [INTRO_SKIP_MS] ahead; "Skip credits" before the end of an item long enough
+ * to have credits, jumping to its end (which plays the next episode when there is one).
+ */
+object SkipSegments {
+    const val INTRO_WINDOW_START_MS: Long = 10_000
+    const val INTRO_WINDOW_END_MS: Long = 45_000
+    const val INTRO_SKIP_MS: Long = 85_000
+    const val CREDITS_LEAD_MS: Long = 240_000
+    const val MIN_DURATION_FOR_CREDITS_MS: Long = 10L * 60 * 1000
+    const val MIN_DURATION_FOR_INTRO_MS: Long = 15L * 60 * 1000
+
+    fun promptAt(positionMs: Long, durationMs: Long, isEpisode: Boolean): SkipPrompt? {
+        if (durationMs <= 0) return null
+        if (isEpisode && durationMs >= MIN_DURATION_FOR_INTRO_MS &&
+            positionMs in INTRO_WINDOW_START_MS until INTRO_WINDOW_END_MS
+        ) {
+            return SkipPrompt(SkipKind.INTRO, (positionMs + INTRO_SKIP_MS).coerceAtMost(durationMs))
+        }
+        // The next-episode card takes over once inCredits; the overlay hides this offer while it shows.
+        if (durationMs >= MIN_DURATION_FOR_CREDITS_MS && durationMs - positionMs <= CREDITS_LEAD_MS) {
+            return SkipPrompt(SkipKind.CREDITS, durationMs)
+        }
+        return null
+    }
+
+    /**
+     * The offer from real [spans]. Intro and recap are only offered from their markers; the
+     * position-based credits guess still applies when the markers carry no credits span.
+     */
+    fun promptFromSpans(spans: List<SkipSpan>, positionMs: Long, durationMs: Long, isEpisode: Boolean): SkipPrompt? {
+        if (durationMs <= 0) return null
+        spans.firstOrNull { span ->
+            val end = span.endMs ?: durationMs
+            positionMs >= span.startMs && positionMs < end - MIN_REMAINING_MS
+        }?.let { return SkipPrompt(it.kind, it.endMs ?: durationMs) }
+        if (spans.none { it.kind == SkipKind.CREDITS }) {
+            return promptAt(positionMs, durationMs, isEpisode)?.takeIf { it.kind == SkipKind.CREDITS }
+        }
+        return null
+    }
+
+    /** A span ending this close to the end of its window is not worth offering. */
+    const val MIN_REMAINING_MS: Long = 1_500
+}
+
 data class VodOverlayState(
     /** Waiting for Resume / Start over; playback has not started. */
     val resumePrompt: ResumePrompt? = null,
@@ -121,6 +177,8 @@ data class VodOverlayState(
     val advancing: Boolean = false,
     val tracks: TrackSelectionModel = TrackSelectionModel(),
     val trackPanelOpen: Boolean = false,
+    /** Skip offer for the current position, unless dismissed or already used. */
+    val skip: SkipPrompt? = null,
 )
 
 sealed interface OverlayEvent {
@@ -134,6 +192,7 @@ sealed interface OverlayEvent {
         val startPositionMs: Long = 0,
         val nextLabel: String? = null,
         val trackPreference: TrackPreference? = null,
+        val isEpisode: Boolean = false,
     ) : OverlayEvent
     data object ChooseResume : OverlayEvent
     data object ChooseStartOver : OverlayEvent
@@ -154,6 +213,12 @@ sealed interface OverlayEvent {
     data class SelectSubtitle(val id: String?) : OverlayEvent
     data object ShowControls : OverlayEvent
     data object HideControls : OverlayEvent
+
+    /** Take the current skip offer. */
+    data object SkipNow : OverlayEvent
+
+    /** Real skip spans for the open item (arrive after [Open]); they replace the position-based guesses. */
+    data class Markers(val spans: List<SkipSpan>) : OverlayEvent
 }
 
 sealed interface OverlayCommand {
@@ -185,6 +250,9 @@ class VodPlayerOverlayState(initial: VodOverlayState = VodOverlayState()) {
         private set
 
     private var nextLabel: String? = null
+    private var isEpisode = false
+    private var spans: List<SkipSpan> = emptyList()
+    private val usedSkips = mutableSetOf<SkipKind>()
     private var countdownStartedAt: Long? = null
 
     fun handle(event: OverlayEvent): List<OverlayCommand> {
@@ -192,6 +260,9 @@ class VodPlayerOverlayState(initial: VodOverlayState = VodOverlayState()) {
         return when (event) {
             is OverlayEvent.Open -> {
                 nextLabel = event.nextLabel
+                isEpisode = event.isEpisode
+                spans = emptyList()
+                usedSkips.clear()
                 countdownStartedAt = null
                 // A preference starts a fresh track model: the new item's tracks are chosen from it.
                 val tracks = event.trackPreference?.let { TrackSelectionModel(preference = it) } ?: s.tracks
@@ -261,7 +332,22 @@ class VodPlayerOverlayState(initial: VodOverlayState = VodOverlayState()) {
                 state = s.copy(controlsVisible = false, trackPanelOpen = false)
                 emptyList()
             }
+            OverlayEvent.SkipNow -> skipNow(s)
+            is OverlayEvent.Markers -> {
+                spans = event.spans
+                emptyList()
+            }
         }
+    }
+
+    private fun skipNow(s: VodOverlayState): List<OverlayCommand> {
+        val prompt = s.skip ?: return emptyList()
+        usedSkips += prompt.kind
+        state = s.copy(skip = null)
+        if (prompt.kind == SkipKind.CREDITS && nextLabel != null) return advance(state)
+        val target = clamp(prompt.targetMs, s.durationMs)
+        state = state.copy(positionMs = target)
+        return listOf(OverlayCommand.SeekTo(target))
     }
 
     private fun startFromPrompt(position: Long): List<OverlayCommand> {
@@ -272,6 +358,13 @@ class VodPlayerOverlayState(initial: VodOverlayState = VodOverlayState()) {
     private fun onProgress(s: VodOverlayState, e: OverlayEvent.Progress): List<OverlayCommand> {
         var next = s.copy(positionMs = e.positionMs, durationMs = e.durationMs, isPlaying = e.isPlaying)
         if (next.seek != null) next = next.copy(positionMs = s.positionMs) // keep the preview anchor
+        val candidate = if (spans.isEmpty()) {
+            SkipSegments.promptAt(e.positionMs, e.durationMs, isEpisode)
+        } else {
+            SkipSegments.promptFromSpans(spans, e.positionMs, e.durationMs, isEpisode)
+        }
+        val offer = candidate?.takeIf { it.kind !in usedSkips }
+        next = next.copy(skip = if (next.started && next.resumePrompt == null && next.nextEpisode == null) offer else null)
         state = next
         val label = nextLabel
         if (label != null && !next.nextCancelled && next.nextEpisode == null && !next.advancing && inCredits(e.positionMs, e.durationMs)) {

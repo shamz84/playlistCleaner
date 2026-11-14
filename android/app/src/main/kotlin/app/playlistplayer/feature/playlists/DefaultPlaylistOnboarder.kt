@@ -56,6 +56,7 @@ class DefaultPlaylistOnboarder(
     private val scheduler: PlaylistSyncScheduler,
     private val scope: CoroutineScope,
     private val logger: RedactingLogger = RedactingLogger.NONE,
+    private val saveEpgOverride: suspend (playlistId: Long, url: String) -> Unit = { _, _ -> },
 ) : PlaylistOnboarder {
 
     private val updates = MutableSharedFlow<OnboardingProgress>(extraBufferCapacity = 64)
@@ -63,7 +64,7 @@ class DefaultPlaylistOnboarder(
 
     override val progress: Flow<OnboardingProgress> = updates.asSharedFlow()
 
-    override suspend fun addPlaylist(name: String, source: SourceInput, xtreamEnabled: Boolean): OnboardingResult {
+    override suspend fun addPlaylist(name: String, source: SourceInput, xtreamEnabled: Boolean, epgOverrideUrl: String?): OnboardingResult {
         observation?.cancel()
         val reference = when (val check = source.toReference()) {
             is SourceCheck.Invalid -> return OnboardingResult.Failure(OnboardingError.InvalidInput)
@@ -77,6 +78,15 @@ class DefaultPlaylistOnboarder(
         } catch (e: Exception) {
             logger.e("Could not register the playlist", e)
             return fail(OnboardingError.Other)
+        }
+        if (epgOverrideUrl != null) {
+            try {
+                saveEpgOverride(playlistId, epgOverrideUrl)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                logger.w("Could not store the guide override for playlist $playlistId", e)
+            }
         }
 
         val outcome = try {
@@ -107,7 +117,7 @@ class DefaultPlaylistOnboarder(
         emit(OnboardingStage.Channels, StageStatus.Done, channelCount)
 
         val effectiveXtream = playlistStore.playlist(playlistId)?.xtreamEnabled == true
-        if (!effectiveXtream) {
+        if (!effectiveXtream && epgOverrideUrl == null) {
             emit(OnboardingStage.Catalog, StageStatus.Skipped)
             emit(OnboardingStage.Guide, StageStatus.Skipped)
             return OnboardingResult.Success(playlistId, xtreamEnabled = false)

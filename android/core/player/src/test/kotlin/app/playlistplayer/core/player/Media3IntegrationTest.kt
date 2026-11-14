@@ -80,4 +80,26 @@ class Media3IntegrationTest {
             .isFalse()
         control.onReleased(PlayerId.UNSET)
     }
+
+    @Test
+    fun profileLoadControl_stopsLoadingAtTheActualAllocatorByteLimit() {
+        val profile = LoadControlProfile.VOD.copy(targetBufferBytes = 2 * LoadControlProfile.MB)
+        val control = ProfileLoadControl(ResolvedLoadControlProfiles(LoadControlProfile.LIVE, profile))
+        control.mode = PlaybackMode.VOD
+        control.onPrepared(PlayerId.UNSET)
+        val timeline = FakeTimeline()
+        val parameters = LoadControl.Parameters(
+            PlayerId.UNSET, timeline, MediaSource.MediaPeriodId(timeline.getUidOfPeriod(0)),
+            0, 1_000_000, 1f, true, false, C.TIME_UNSET, C.TIME_UNSET,
+        )
+        val allocator = control.getAllocator(PlayerId.UNSET)
+        val allocations = mutableListOf<androidx.media3.exoplayer.upstream.Allocation>()
+        assertThat(control.shouldContinueLoading(parameters)).isTrue()
+        while (control.allocatedBufferBytes < profile.targetBufferBytes) allocations += allocator.allocate()
+        assertThat(control.shouldContinueLoading(parameters)).isFalse()
+        assertThat(control.shouldStartPlayback(parameters)).isTrue()
+        allocations.forEach(allocator::release)
+        assertThat(control.shouldContinueLoading(parameters)).isTrue()
+        control.onReleased(PlayerId.UNSET)
+    }
 }

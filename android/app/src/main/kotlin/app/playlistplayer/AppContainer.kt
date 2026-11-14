@@ -117,6 +117,9 @@ import app.playlistplayer.feature.vod.SeriesInfoLoader
 import app.playlistplayer.feature.vod.TitlePickStore
 import app.playlistplayer.feature.vod.PreferencesTrackPreferenceStore
 import app.playlistplayer.feature.vod.TrackPreferenceStore
+import app.playlistplayer.feature.vod.SkipSpanProvider
+import app.playlistplayer.feature.vod.SkipSpanRepository
+import app.playlistplayer.core.network.skip.IntroDbClient
 import app.playlistplayer.feature.vod.VersionPreferencesProvider
 import app.playlistplayer.feature.vod.VodCatalogRepository
 import app.playlistplayer.feature.vod.VodPlaylist
@@ -384,6 +387,7 @@ class AppContainer(context: Context, private val overrides: Overrides = Override
             scheduler = playlistSyncScheduler,
             scope = applicationScope,
             logger = logger.withTag("Onboarding"),
+            saveEpgOverride = { id, url -> secureStore.putEpgOverrideUrl(id, url) },
         )
     }
 
@@ -604,6 +608,9 @@ class AppContainer(context: Context, private val overrides: Overrides = Override
     /** Audio/subtitle language for movies and episodes (Settings → Playback; in-player choices update it). */
     val trackPreferenceStore: TrackPreferenceStore by lazy { PreferencesTrackPreferenceStore(preferencesRepository) }
 
+    /** Real intro/recap/credits spans from TheIntroDB, looked up by TMDB id (U-skip). */
+    val skipSpanRepository: SkipSpanProvider by lazy { SkipSpanRepository(IntroDbClient(okHttpClient)) }
+
     val liveChannelSource: LiveChannelSource by lazy { RoomLiveChannelSource(playlistStore, catalogStore, streamUrlVault, visibility) }
 
     val liveAccountStatusSource: LiveAccountStatusSource by lazy { CatalogLiveAccountStatusSource(catalogStore) }
@@ -615,10 +622,12 @@ class AppContainer(context: Context, private val overrides: Overrides = Override
     val programmeLookup: ProgrammeLookup = ProgrammeLookup { id -> epgStore.programme(id) }
 
     /** Live browse (playlists → groups → channels), parental-hidden groups removed. */
-    val liveBrowseSource: RoomLiveBrowseSource by lazy { RoomLiveBrowseSource(playlistStore, catalogStore, visibility) }
+    val liveBrowseSource: RoomLiveBrowseSource by lazy {
+        RoomLiveBrowseSource(playlistStore, catalogStore, visibility, preferencesRepository.preferences.map { it.playlistOrder }.distinctUntilChanged())
+    }
 
     val liveCoordinator: LivePlaybackCoordinator by lazy {
-        LivePlaybackCoordinator(liveChannelSource, accountProvider, liveAccountStatusSource, playbackPreferences, versionPreferences, lastChannelStore)
+        LivePlaybackCoordinator(liveChannelSource, accountProvider, liveAccountStatusSource, playbackPreferences, versionPreferences, lastChannelStore, applicationScope)
     }
 
     val catchupController: CatchupPlaybackController by lazy {
@@ -714,7 +723,10 @@ class AppContainer(context: Context, private val overrides: Overrides = Override
             }
         }
         applicationScope.launch {
-            merge(generationChanges(), visibilityChanges()).collect { liveCoordinator.invalidate() }
+            merge(generationChanges(), visibilityChanges()).collect {
+                channelHistory.clearPrevious()
+                liveCoordinator.invalidate()
+            }
         }
         // Tunneling applies to the existing player without re-creating it.
         applicationScope.launch {

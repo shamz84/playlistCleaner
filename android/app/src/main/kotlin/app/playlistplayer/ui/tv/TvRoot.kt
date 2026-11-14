@@ -67,6 +67,7 @@ import app.playlistplayer.ui.tv.player.LivePlayerScreen
 import app.playlistplayer.ui.tv.player.PlayerVideoSurface
 import app.playlistplayer.feature.live.isStreamActive
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import app.playlistplayer.ui.tv.search.SearchScreen
 import app.playlistplayer.ui.tv.settings.TvConfirmDialog
@@ -106,6 +107,7 @@ class TvRootDependencies(
     val guide: GuideDependencies? = null,
     val screens: ScreenDependencies? = null,
     val app: AppStateDependencies? = null,
+    val onReorderPlaylists: (List<Long>) -> Unit = {},
 )
 
 object TvRootTags {
@@ -191,6 +193,26 @@ private fun TvApp(dependencies: TvRootDependencies?, onAddPlaylist: () -> Unit) 
     /** Pops [entry] only if it is still on top (guards double exits, e.g. Back plus end of series). */
     fun close(entry: TvEntry) {
         if (stack.top?.id == entry.id) navigate(stack.pop())
+    }
+
+    // On a fresh launch, resume the last live channel full screen instead of waiting on the guide.
+    var resumeTried by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(dependencies) {
+        val guide = dependencies?.guide
+        if (resumeTried || guide == null || dependencies.playback == null) return@LaunchedEffect
+        resumeTried = true
+        val sections = dependencies.liveBrowseSource.sections().first { list -> list.any { it.groups.isNotEmpty() } }
+        for (section in sections) {
+            val last = try {
+                guide.coordinator.lastChannel(section.playlistId)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                null
+            } ?: continue
+            if (stack.top == null) push(TvScreen.LivePlayer(section.playlistId, last.ordinal))
+            break
+        }
     }
 
     val top = stack.top
@@ -313,6 +335,7 @@ private fun TvDestination(
                     // The app's single player: the preview is the stream already playing.
                     preview = { modifier -> PlayerVideoSurface(dependencies.playback.player.exoPlayer, modifier) },
                     onFullscreen = { ref -> playChannel(ref.playlistId, ref.ordinal) },
+                    onReorderPlaylists = dependencies.onReorderPlaylists,
                 )
             }
             // Without the guide wiring: the plain channel list.
@@ -431,6 +454,7 @@ private fun TvEntryContent(
                 progress = vod.progress,
                 saveScope = playback.saveScope,
                 trackPreferences = vod.trackPreferences,
+                skipSpans = vod.skipSpans,
                 onNextEpisode = screen.onNextEpisode,
                 onExit = {
                     screen.onClosed()

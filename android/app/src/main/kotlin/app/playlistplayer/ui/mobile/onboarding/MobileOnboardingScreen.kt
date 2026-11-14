@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
@@ -74,6 +76,7 @@ object MobileOnboardingTags {
     const val FIELD = "mobile.onboarding.field"
     const val PASTE = "mobile.onboarding.paste"
     const val XTREAM = "mobile.onboarding.xtream"
+    const val EPG = "mobile.onboarding.epg"
     const val CONTINUE = "mobile.onboarding.continue"
     const val READBACK = "mobile.onboarding.readback"
     const val START_WATCHING = "mobile.onboarding.startWatching"
@@ -151,6 +154,7 @@ private fun Form(state: OnboardingUiState, isFirstRun: Boolean, viewModel: Onboa
     }
 
     XtreamToggle(state, viewModel::onXtreamToggled)
+    CuratedEpgToggle(state, viewModel::onCuratedEpgToggled)
 
     state.error?.let { error ->
         Text(
@@ -328,8 +332,34 @@ private fun XtreamToggle(state: OnboardingUiState, onToggle: (Boolean) -> Unit) 
 }
 
 @Composable
+private fun CuratedEpgToggle(state: OnboardingUiState, onToggle: (Boolean) -> Unit) {
+    ListItem(
+        headlineContent = { Text(stringResource(R.string.onboarding_epg_title)) },
+        supportingContent = {
+            Text(stringResource(if (state.useCuratedEpg) R.string.onboarding_epg_on else R.string.onboarding_epg_off))
+        },
+        trailingContent = { Switch(checked = state.useCuratedEpg, onCheckedChange = null) },
+        colors = ListItemDefaults.colors(containerColor = UiTokens.Surface),
+        modifier = Modifier
+            .fillMaxWidth()
+            .toggleable(value = state.useCuratedEpg, role = Role.Switch, onValueChange = onToggle)
+            .testTag(MobileOnboardingTags.EPG),
+    )
+}
+
+@Composable
 private fun Progress(state: OnboardingUiState, viewModel: OnboardingViewModel) {
     Text(text = stringResource(R.string.onboarding_progress_title, state.effectiveName), style = MaterialTheme.typography.headlineMedium)
+    if (!state.allStagesTerminal && state.error == null) {
+        Row(horizontalArrangement = Arrangement.spacedBy(UiTokens.SpaceM), verticalAlignment = Alignment.CenterVertically) {
+            CircularProgressIndicator(modifier = Modifier.size(28.dp), strokeWidth = 3.dp)
+            Text(
+                text = stringResource(R.string.onboarding_please_wait),
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.weight(1f).semantics { liveRegion = LiveRegionMode.Polite },
+            )
+        }
+    }
     Column(verticalArrangement = Arrangement.spacedBy(UiTokens.SpaceS)) {
         OnboardingStage.entries.forEach { stage -> StageRow(stage, state.stages[stage] ?: StageStatus.Pending) }
     }

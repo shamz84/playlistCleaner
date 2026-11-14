@@ -324,6 +324,13 @@ class PlaylistRepository(
         scheduler.refreshAll()
     }
 
+    /** Re-imports the guide now (the catalog step only runs if it is due). */
+    suspend fun refreshGuide(playlistId: Long): PlaylistActionResult {
+        playlistStore.playlist(playlistId) ?: return PlaylistActionResult.NotFound
+        scheduler.syncCatalogAndGuide(playlistId, forceGuide = true)
+        return PlaylistActionResult.Done
+    }
+
     /** Applies the Settings refresh interval to the periodic "refresh all" work. */
     suspend fun setRefreshInterval(hours: Int) {
         scheduler.schedulePeriodic(hours.toLong())

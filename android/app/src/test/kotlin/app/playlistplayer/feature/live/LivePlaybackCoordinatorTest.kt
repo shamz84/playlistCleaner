@@ -7,6 +7,10 @@ import app.playlistplayer.core.player.url.LiveFormatPreference
 import app.playlistplayer.feature.settings.PlaybackPreferences
 import app.playlistplayer.feature.vod.VersionPreferencesProvider
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.async
+import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
@@ -124,5 +128,52 @@ class LivePlaybackCoordinatorTest {
         c.ready(hd)
         assertThat(source.playlistLoads).isEqualTo(2)
         assertThat(c.otherVersions(sd)).doesNotContain(otherPlaylist)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `concurrent guide and warm requests share one index build`() = runTest {
+        val gate = CompletableDeferred<Unit>()
+        var loads = 0
+        val slow = object : LiveChannelSource by source {
+            override suspend fun playlistChannels(playlistId: Long): List<LiveChannel> {
+                loads++
+                gate.await()
+                return source.playlistChannels(playlistId)
+            }
+        }
+        val coordinator = LivePlaybackCoordinator(slow, accounts, amsterdam, prefs, versionPreferences, lastChannels)
+        val first = async { coordinator.otherVersions(hd) }
+        val second = async { coordinator.otherVersions(fhd) }
+        runCurrent()
+        assertThat(loads).isEqualTo(1)
+        gate.complete(Unit)
+        assertThat(first.await()).contains(uhd)
+        assertThat(second.await()).contains(hd)
+        assertThat(loads).isEqualTo(1)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `invalidation during index build prevents stale results being cached`() = runTest {
+        val gate = CompletableDeferred<Unit>()
+        var loads = 0
+        val slow = object : LiveChannelSource by source {
+            override suspend fun playlistChannels(playlistId: Long): List<LiveChannel> {
+                val snapshot = source.playlistChannels(playlistId)
+                loads++
+                if (loads == 1) gate.await()
+                return snapshot
+            }
+        }
+        val coordinator = LivePlaybackCoordinator(slow, accounts, amsterdam, prefs, versionPreferences, lastChannels)
+        val pending = async { coordinator.otherVersions(hd) }
+        runCurrent()
+        source.all.remove(uhd)
+        coordinator.invalidate(1)
+        gate.complete(Unit)
+        assertThat(pending.await()).doesNotContain(uhd)
+        assertThat(loads).isEqualTo(2)
+        assertThat(coordinator.otherVersions(hd)).doesNotContain(uhd)
     }
 }

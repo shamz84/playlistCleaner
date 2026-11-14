@@ -453,6 +453,7 @@ private fun FullscreenEntry(
                 progress = vodDeps.progress,
                 saveScope = playback.saveScope,
                 trackPreferences = vodDeps.trackPreferences,
+                skipSpans = vodDeps.skipSpans,
                 onNextEpisode = screen.onNextEpisode,
                 onExit = {
                     screen.onClosed()
@@ -469,7 +470,11 @@ private fun FullscreenEntry(
                 guide = guide,
                 playback = playback,
                 onStartCatchup = { request -> push(MobileScreen.CatchupPlayer(request)) },
-                onChannelChanged = { ordinal -> if (ordinal != screen.ordinal) onChannelChanged(screen.copy(ordinal = ordinal)) },
+                onChannelChanged = { channel ->
+                    if (channel.playlistId != screen.playlistId || channel.ordinal != screen.ordinal) {
+                        onChannelChanged(screen.copy(playlistId = channel.playlistId, ordinal = channel.ordinal))
+                    }
+                },
                 onExit = onClose,
             )
         }

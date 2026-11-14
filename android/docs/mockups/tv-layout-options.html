@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>TV layout options</title>
+<style>
+*{box-sizing:border-box;margin:0}
+body{background:#111;color:#eee;font:14px system-ui,sans-serif;padding:24px}
+h1{font-size:22px;margin-bottom:6px}p.n{color:#aaa;margin-bottom:24px;max-width:900px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(620px,1fr));gap:28px}
+h2{font-size:16px;margin-bottom:4px;color:#7cc4ff}.d{color:#aaa;font-size:12px;margin-bottom:8px;min-height:32px}
+.tv{aspect-ratio:16/9;background:#2b3340;border:3px solid #000;border-radius:6px;display:flex;overflow:hidden;position:relative;font-size:10px}
+.rail{width:6%;background:#1d242e;display:flex;flex-direction:column;align-items:center;gap:10px;padding-top:10px;color:#9ab}
+.rail i{font-style:normal;font-size:12px}
+.col{background:#252d38;padding:6px;display:flex;flex-direction:column;gap:3px;overflow:hidden}
+.col div{padding:3px 5px;border-radius:3px;color:#cde}
+.col .on{background:#2f9bf0;color:#fff}.col .pl{color:#fff;font-weight:600}
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+.top{display:flex;gap:8px;padding:6px;height:30%}
+.prev{background:#0a0d11;border-radius:4px;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;color:#456}
+.info{flex:1;color:#cde}.info b{display:block;font-size:12px;color:#fff}
+.time{display:flex;padding:2px 6px 2px 0;color:#7cc4ff}.time span{flex:1}
+.rows{flex:1;display:flex;flex-direction:column;gap:2px;padding:0 4px 4px 0;overflow:hidden}
+.row{display:flex;gap:2px;flex:1;min-height:0}
+.ch{width:24%;background:#323b48;padding:2px 5px;display:flex;align-items:center;gap:4px;color:#fff}
+.p{background:#3b4656;padding:2px 5px;display:flex;align-items:center;color:#dde;overflow:hidden;white-space:nowrap}
+.p.on{background:#2f9bf0;color:#fff}.p.l{flex:3}.p.m{flex:2}.p.s{flex:1}
+.chips{display:flex;gap:4px;padding:5px 6px;overflow:hidden}
+.chips span{padding:2px 8px;border-radius:10px;background:#3b4656;color:#cde;white-space:nowrap}
+.chips span.on{background:#2f9bf0;color:#fff}
+.over{position:absolute;left:0;top:0;bottom:0;width:34%;background:rgba(20,26,34,.96);display:flex;box-shadow:6px 0 20px #000}
+</style></head><body>
+<h1>Live TV layout options (left-hand side)</h1>
+<p class="n">Static mock-ups, not the app. Goal: no wasted space on the left, TiviMate-style. In every option the playlists can be shown in the order you choose (reorderable in Settings, and Move up/down on the playlist header in Live TV). Option A is closest to your last TiviMate photo.</p>
+<div class="grid">
+
+<div><h2>A. TiviMate classic (closest to your photo)</h2><div class="d">Thin icon rail, playlist + group tree, then preview/details and guide. Everything visible at once; the tree scrolls.</div>
+<div class="tv"><div class="rail"><i>tv</i><i>⌕</i><i>▭</i><i>▤</i><i>▶</i><i>⚙</i></div>
+<div class="col" style="width:22%"><div class="pl">All playlists ⌄</div><div class="pl">8k 2 organised ⌄</div><div class="pl">8k organised ⌃</div><div>Favorites</div><div>All channels</div><div class="on">🇬🇧 TV Guide (UK)</div><div>24/7 TV Shows</div><div>24/7 Kids</div><div>Movie Networks</div><div>Kids</div><div>News</div></div>
+<div class="main"><div class="top"><div class="prev">preview</div><div class="info"><b>BBC Weekend News</b>22:00–22:25 · 6 min<br>National and international news…</div></div>
+<div class="time"><span style="width:24%;flex:none">Sun 8 Nov 22:19</span><span>22:00</span><span>22:30</span><span>23:00</span></div>
+<div class="rows"><div class="row"><div class="ch">1 ### NATIONAL</div><div class="p l">▼▼▼▼▼▼▼</div></div><div class="row"><div class="ch">2 BBC One London</div><div class="p m on">BBC Weekend News</div><div class="p l">Match of the Day</div></div><div class="row"><div class="ch">3 BBC One (Backup)</div><div class="p m">BBC News</div><div class="p l">Match of the Day</div></div><div class="row"><div class="ch">4 BBC Two</div><div class="p m">Later with Jools</div><div class="p m">Tinker Tailor</div></div><div class="row"><div class="ch">5 ITV London</div><div class="p s">ITV</div><div class="p l">Long Lost Family</div></div></div></div></div></div>
+
+<div><h2>B. Icon rail + slide-in groups</h2><div class="d">Rail is 6% wide. Groups hide until you press Left; the guide uses almost the full width. Most space for the guide.</div>
+<div class="tv"><div class="rail"><i>tv</i><i>⌕</i><i>▭</i><i>▤</i><i>⚙</i></div>
+<div class="main"><div class="top" style="height:34%"><div class="prev" style="height:100%">preview</div><div class="info"><b>BBC Weekend News</b>22:00–22:25 · 🇬🇧 TV Guide (UK) · 8k organised<br>National and international news, followed by weather…</div></div>
+<div class="time"><span style="width:20%;flex:none">22:19</span><span>22:00</span><span>22:30</span><span>23:00</span><span>23:30</span></div>
+<div class="rows"><div class="row"><div class="ch" style="width:20%">1 NATIONAL</div><div class="p l">▼▼▼▼</div></div><div class="row"><div class="ch" style="width:20%">2 BBC One</div><div class="p m on">BBC Weekend News</div><div class="p l">Match of the Day</div></div><div class="row"><div class="ch" style="width:20%">3 BBC Two</div><div class="p m">Later with Jools</div><div class="p l">Tinker Tailor</div></div><div class="row"><div class="ch" style="width:20%">4 ITV London</div><div class="p s">News</div><div class="p l">Long Lost Family</div></div><div class="row"><div class="ch" style="width:20%">5 Channel 4</div><div class="p l">F1 Highlights</div></div></div></div></div></div>
+
+<div><h2>C. Chips across the top (maximum guide)</h2><div class="d">No group column: playlists and groups are chips along the top. Fewest pixels spent on navigation, but long group lists need scrolling.</div>
+<div class="tv"><div class="rail"><i>tv</i><i>⌕</i><i>▭</i><i>▤</i><i>⚙</i></div>
+<div class="main"><div class="chips"><span class="on">8k organised ⌄</span><span>Favorites</span><span>All</span><span class="on">🇬🇧 TV Guide (UK) 166</span><span>24/7 TV Shows 442</span><span>Kids 56</span><span>News 32</span><span>Indian 312</span></div>
+<div class="top" style="height:26%"><div class="prev" style="height:100%">preview</div><div class="info"><b>BBC Weekend News</b>22:00–22:25</div></div>
+<div class="rows" style="margin-top:6px"><div class="row"><div class="ch" style="width:18%">1 NATIONAL</div><div class="p l">▼▼▼▼</div></div><div class="row"><div class="ch" style="width:18%">2 BBC One</div><div class="p m on">Weekend News</div><div class="p l">Match of the Day</div></div><div class="row"><div class="ch" style="width:18%">3 BBC Two</div><div class="p l">Later with Jools</div><div class="p m">Tinker</div></div><div class="row"><div class="ch" style="width:18%">4 ITV</div><div class="p s">News</div><div class="p l">Long Lost Family</div></div><div class="row"><div class="ch" style="width:18%">5 Channel 4</div><div class="p l">F1</div></div><div class="row"><div class="ch" style="width:18%">6 Channel 5</div><div class="p l">NFL on 5</div></div></div></div></div></div>
+
+<div><h2>D. No rail, overlay menu (auto-hide)</h2><div class="d">Nothing on the left normally. Left/Back opens one overlay with menu, playlists and groups, which closes after you pick. Guide is full screen.</div>
+<div class="tv"><div class="main"><div class="top"><div class="prev">preview</div><div class="info"><b>BBC Weekend News</b>22:00–22:25 · 6 min<br>National and international news…</div></div>
+<div class="rows" style="padding-left:4px"><div class="row"><div class="ch" style="width:16%">1 NATIONAL</div><div class="p l">▼▼▼▼</div></div><div class="row"><div class="ch" style="width:16%">2 BBC One</div><div class="p m on">Weekend News</div><div class="p l">Match of the Day</div></div><div class="row"><div class="ch" style="width:16%">3 BBC Two</div><div class="p l">Later with Jools</div></div><div class="row"><div class="ch" style="width:16%">4 ITV</div><div class="p l">Long Lost Family</div></div><div class="row"><div class="ch" style="width:16%">5 Channel 4</div><div class="p l">F1</div></div></div></div>
+<div class="over"><div class="rail" style="background:#161c24"><i>tv</i><i>⌕</i><i>▭</i><i>▤</i><i>⚙</i></div><div class="col" style="background:transparent;flex:1"><div class="pl">8k organised ⌃</div><div>Favorites</div><div class="on">🇬🇧 TV Guide (UK)</div><div>24/7 TV Shows</div><div>Kids</div><div class="pl">8k 2 organised ⌄</div></div></div></div></div>
+
+<div><h2>E. Three columns: groups | channel list | preview</h2><div class="d">Classic list view, tidied: narrow rail, groups, channel list with now/next, big preview on the right. The guide grid opens as a separate view.</div>
+<div class="tv"><div class="rail"><i>tv</i><i>⌕</i><i>▭</i><i>▤</i><i>⚙</i></div>
+<div class="col" style="width:20%"><div class="pl">8k organised ⌃</div><div>Favorites</div><div class="on">🇬🇧 TV Guide (UK)</div><div>24/7 TV Shows</div><div>Kids</div><div>News</div><div>Indian</div></div>
+<div class="col" style="width:32%;background:#2b3340"><div class="on">2 BBC One London<br>Weekend News</div><div>3 BBC One (Backup)<br>BBC News</div><div>4 BBC Two<br>Later with Jools</div><div>5 ITV London<br>ITV News</div><div>6 Channel 4<br>F1 Highlights</div></div>
+<div class="main" style="padding:8px"><div class="prev" style="width:100%">preview</div><div class="info" style="margin-top:6px"><b>BBC Weekend News</b>22:00–22:25<br>Next: Match of the Day<br><br>OK fullscreen · Menu options · ★ favourite</div></div></div></div>
+
+<div><h2>F. Compact tree + docked preview (hybrid)</h2><div class="d">Icon rail, a narrow tree in your chosen playlist order, and the preview docked top-right so the guide gets the full height.</div>
+<div class="tv"><div class="rail"><i>tv</i><i>⌕</i><i>▭</i><i>▤</i><i>⚙</i></div>
+<div class="col" style="width:17%"><div class="pl">▲ 8k organised</div><div>Favorites</div><div class="on">TV Guide (UK)</div><div>24/7 TV</div><div>Kids</div><div class="pl">▼ 8k 2 organised</div><div class="pl">▼ Backup list</div></div>
+<div class="main"><div class="top" style="height:26%;flex-direction:row-reverse"><div class="prev" style="height:100%">preview</div><div class="info"><b>BBC Weekend News</b>22:00–22:25 · 6 min<br>National and international news…</div></div>
+<div class="time"><span style="width:22%;flex:none">22:19</span><span>22:00</span><span>22:30</span><span>23:00</span></div>
+<div class="rows"><div class="row"><div class="ch" style="width:22%">2 BBC One</div><div class="p m on">Weekend News</div><div class="p l">Match of the Day</div></div><div class="row"><div class="ch" style="width:22%">3 BBC Two</div><div class="p l">Later with Jools</div></div><div class="row"><div class="ch" style="width:22%">4 ITV</div><div class="p l">Long Lost Family</div></div><div class="row"><div class="ch" style="width:22%">5 Channel 4</div><div class="p l">F1 Highlights</div></div><div class="row"><div class="ch" style="width:22%">6 Channel 5</div><div class="p l">NFL on 5</div></div><div class="row"><div class="ch" style="width:22%">7 Friends</div><div class="p l">Friends</div></div></div></div></div></div>
+
+</div></body></html>

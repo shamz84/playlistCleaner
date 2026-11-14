@@ -20,10 +20,13 @@ class PreferencesTest {
         assertThat(prefs.playback.liveFormat).isEqualTo(LiveFormatPreference.TS)
         assertThat(prefs.playback.matchFrameRate).isFalse()
         assertThat(prefs.playback.tunneling).isFalse()
+        assertThat(prefs.playback.showVideoInfo).isFalse()
+        assertThat(prefs.playback.showVodDiagnostics).isFalse()
         assertThat(prefs.playback.catchupOffsetHours).isEqualTo(0)
         assertThat(prefs.playback.catchupUrlStyle).isEqualTo(CatchupUrlStyle.PATH)
         assertThat(prefs.sync.refreshIntervalHours).isEqualTo(6)
         assertThat(prefs.sync.staleWarningDays).isEqualTo(7)
+        assertThat(prefs.theme).isEqualTo(AppTheme.MIDNIGHT_BLUE)
     }
 
     @Test
@@ -34,10 +37,14 @@ class PreferencesTest {
                 liveFormat = LiveFormatPreference.HLS,
                 matchFrameRate = true,
                 tunneling = true,
+                showVideoInfo = true,
+                showVodDiagnostics = true,
                 catchupOffsetHours = -12,
                 catchupUrlStyle = CatchupUrlStyle.PHP,
             ),
             sync = SyncPreferences(refreshIntervalHours = 24, staleWarningDays = 30),
+            playlistOrder = listOf(3L, 1L, 2L),
+            theme = AppTheme.CINEMA_EMBER,
         )
         assertThat(PreferencesCodec.decode(PreferencesCodec.encode(prefs))).isEqualTo(prefs)
         assertThat(PreferencesCodec.decode(PreferencesCodec.encode(AppPreferences()))).isEqualTo(AppPreferences())
@@ -46,6 +53,17 @@ class PreferencesTest {
     @Test
     fun `empty map decodes to defaults`() {
         assertThat(PreferencesCodec.decode(emptyMap())).isEqualTo(AppPreferences())
+        assertThat(PreferencesCodec.decode(mapOf(PreferencesCodec.KEY_THEME to "invalid")).theme).isEqualTo(AppTheme.MIDNIGHT_BLUE)
+    }
+
+    @Test
+    fun `theme cycle includes graphite and codec preserves all choices`() {
+        assertThat(AppTheme.entries.map { it.next() }).containsExactly(
+            AppTheme.CINEMA_EMBER, AppTheme.GRAPHITE, AppTheme.MIDNIGHT_BLUE,
+        ).inOrder()
+        AppTheme.entries.forEach { theme ->
+            assertThat(PreferencesCodec.decode(PreferencesCodec.encode(AppPreferences(theme = theme))).theme).isEqualTo(theme)
+        }
     }
 
     @Test

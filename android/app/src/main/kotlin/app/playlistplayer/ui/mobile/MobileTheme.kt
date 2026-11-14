@@ -9,10 +9,11 @@ import app.playlistplayer.ui.common.UiTokens
 /** Material3 theme of the phone tree, mapped from the shared [UiTokens] (dark only, like TV). */
 @Composable
 fun MobileTheme(content: @Composable () -> Unit) {
-    MaterialTheme(colorScheme = MobileColors, content = content)
+    MaterialTheme(colorScheme = mobileColors(), content = content)
 }
 
-private val MobileColors = darkColorScheme(
+@Composable
+private fun mobileColors() = darkColorScheme(
     primary = UiTokens.Accent,
     onPrimary = UiTokens.OnAccent,
     primaryContainer = UiTokens.SurfaceFocused,

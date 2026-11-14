@@ -168,11 +168,10 @@ private fun SectionHeader(section: PlaylistSection, collapsed: Boolean, onToggle
 }
 
 @Composable
-private fun GroupRow(group: GroupItem, selected: Boolean, onOpen: () -> Unit) {
+internal fun GroupRow(group: GroupItem, selected: Boolean, onOpen: () -> Unit) {
     val description = stringResource(R.string.live_group_item_description, group.name, group.channelCount)
     ListItem(
         headlineContent = { Text(group.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-        trailingContent = { Text(group.channelCount.toString(), style = MaterialTheme.typography.labelMedium) },
         colors = ListItemDefaults.colors(containerColor = if (selected) UiTokens.SurfaceFocused else UiTokens.Background),
         modifier = Modifier
             .clickable(role = Role.Button, onClick = onOpen)

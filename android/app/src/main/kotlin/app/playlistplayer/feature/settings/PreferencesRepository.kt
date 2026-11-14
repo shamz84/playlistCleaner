@@ -153,6 +153,19 @@ class PreferencesRepository(private val storage: PreferencesStorage) {
 
     suspend fun setTunneling(enabled: Boolean) = update { it.copy(playback = it.playback.copy(tunneling = enabled)) }
 
+    suspend fun setShowClock(enabled: Boolean) = update { it.copy(playback = it.playback.copy(showClock = enabled)) }
+
+    suspend fun setShowVideoInfo(enabled: Boolean) = update { it.copy(playback = it.playback.copy(showVideoInfo = enabled)) }
+
+    suspend fun setShowVodDiagnostics(enabled: Boolean) = update { it.copy(playback = it.playback.copy(showVodDiagnostics = enabled)) }
+
+    suspend fun setTheme(theme: AppTheme) = update { it.copy(theme = theme) }
+
+    suspend fun setVideoScaling(scaling: VideoScaling) = update { it.copy(playback = it.playback.copy(videoScaling = scaling)) }
+
+    /** Sets the order playlists are listed in Live TV (ids; playlists not listed follow in the order added). */
+    suspend fun setPlaylistOrder(order: List<Long>) = update { it.copy(playlistOrder = order.distinct()) }
+
     /** Clamped into [PlaybackPreferences.CATCHUP_OFFSET_RANGE]; returns the applied value. */
     suspend fun setCatchupOffsetHours(hours: Int): Int {
         val applied = hours.coerceIn(PlaybackPreferences.CATCHUP_OFFSET_RANGE)

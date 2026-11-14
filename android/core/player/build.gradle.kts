@@ -14,6 +14,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        isCoreLibraryDesugaringEnabled = true
     }
 
     testOptions {
@@ -27,6 +28,7 @@ android {
 }
 
 dependencies {
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
     api(project(":core:model"))
     // DeviceCapabilitiesProbe returns consolidation's DeviceCapabilities; PlayableSource carries QualityTier.
     api(project(":core:consolidation"))

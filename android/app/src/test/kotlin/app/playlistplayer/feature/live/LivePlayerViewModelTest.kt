@@ -288,7 +288,9 @@ class LivePlayerViewModelTest {
         vm.channelUp()
         advanceUntilIdle()
         assertThat(vm.state.value.hasLastChannel).isTrue()
-        assertThat(history.state.value).isEqualTo(ChannelHistoryState(ChannelRef(1, 11), ChannelRef(1, 10)))
+        assertThat(history.state.value.current).isEqualTo(ChannelRef(1, 11))
+        assertThat(history.state.value.previous).isEqualTo(ChannelRef(1, 10))
+        assertThat(history.state.value.recent.map { it.ref }).containsExactly(ChannelRef(1, 11), ChannelRef(1, 10)).inOrder()
 
         vm.lastChannel()
         advanceUntilIdle()
@@ -305,6 +307,28 @@ class LivePlayerViewModelTest {
         assertThat(playingOrdinal()).isEqualTo("live:1:11")
         assertThat(other.state.value.channel).isEqualTo(two)
         assertThat(other.state.value.number).isEqualTo(2)
+        assertThat(other.state.value.recentChannels.map { it.ref }).contains(ChannelRef(1, uhd.ordinal))
+        other.tuneRecent(ChannelRef(1, uhd.ordinal))
+        advanceUntilIdle()
+        assertThat(other.state.value.channel).isEqualTo(uhd)
+        assertThat(playingOrdinal()).isEqualTo("live:1:${uhd.ordinal}")
+    }
+
+    @Test
+    fun `recent channel can switch playlists and uses the new group`() = runTest(main.dispatcher) {
+        val other = source.add(LiveChannel(2, 10, 7, "Other playlist", streamId = 301))
+        val following = source.add(LiveChannel(2, 11, 7, "Next channel", streamId = 302))
+        val vm = viewModel()
+        advanceUntilIdle()
+        vm.tuneRecent(ChannelRef(other.playlistId, other.ordinal))
+        advanceUntilIdle()
+        assertThat(vm.state.value.channel).isEqualTo(other)
+        assertThat(playingOrdinal()).isEqualTo("live:2:10")
+        assertThat(vm.state.value.recentChannels.map { it.ref }).contains(ChannelRef(1, hd.ordinal))
+        vm.channelUp()
+        advanceUntilIdle()
+        assertThat(vm.state.value.channel).isEqualTo(following)
+        assertThat(playingOrdinal()).isEqualTo("live:2:11")
     }
 
     @Test

@@ -171,13 +171,19 @@ class EpgGridViewModel(
             return
         }
         publish(now)
+        if (rowBlock > 0) onVisibleRows(visibleFirst, visibleLast)
     }
 
     /** Loads the programmes of [blocks] for the window `[from, to)` and marks them loaded. */
     private suspend fun fetch(blocks: Collection<Int>, from: Long, to: Long) {
-        val loaded = HashMap(programmes)
+        val wanted = blocks.toSet()
+        val keepOrdinals = if (rowBlock > 0) wanted.flatMap { block ->
+            playable.subList(block * rowBlock, minOf(playable.size, (block + 1) * rowBlock)).map { it.ordinal }
+        }.toSet() else programmes.keys
+        val loaded = HashMap(programmes.filterKeys { it in keepOrdinals })
+        val completed = loadedBlocks.intersect(wanted).toMutableSet()
         for (block in blocks) {
-            if (block in loadedBlocks) continue
+            if (block in completed) continue
             val rows = if (rowBlock <= 0) {
                 grid.gridForGroup(group.playlistId, group.groupOrdinal, from, to)
             } else {
@@ -187,8 +193,10 @@ class EpgGridViewModel(
                     .filter { it.channelOrdinal in ordinals }
             }
             rows.groupBy({ it.channelOrdinal }, { it.programme }).forEach { (ordinal, list) -> loaded[ordinal] = list }
-            loadedBlocks += block
+            completed += block
         }
+        loadedBlocks.clear()
+        loadedBlocks.addAll(completed)
         programmes = loaded
     }
 
@@ -198,9 +206,9 @@ class EpgGridViewModel(
     private fun neededBlocks(): Set<Int> {
         if (rowBlock <= 0 || playable.isEmpty()) return setOf(0)
         val focusIndex = focus?.let { f -> playable.indexOfFirst { it.ordinal == f.channelOrdinal } }?.takeIf { it >= 0 }
-        val first = (minOf(visibleFirst, focusIndex ?: visibleFirst) - rowBlock / 2).coerceAtLeast(0)
-        val last = (maxOf(visibleLast, focusIndex ?: visibleLast) + rowBlock / 2).coerceIn(0, playable.size - 1)
-        return (blockOf(first)..blockOf(last)).toSet()
+        val first = (visibleFirst - rowBlock / 2).coerceIn(0, playable.size - 1)
+        val last = (visibleLast + rowBlock / 2).coerceIn(first, playable.size - 1)
+        return (blockOf(first)..blockOf(last)).toSet() + listOfNotNull(focusIndex?.let(::blockOf))
     }
 
     /**
@@ -211,13 +219,13 @@ class EpgGridViewModel(
         visibleFirst = firstIndex.coerceAtLeast(0)
         visibleLast = lastIndex.coerceAtLeast(visibleFirst)
         if (rowBlock <= 0 || playable.isEmpty() || mutableState.value.loading || rowsJob?.isActive == true) return
-        val missing = neededBlocks() - loadedBlocks
-        if (missing.isEmpty()) return
+        val needed = neededBlocks()
+        if (needed == loadedBlocks) return
         val from = windowStart
         val to = windowStart + windowMillis
         rowsJob = viewModelScope.launch {
             try {
-                fetch(missing, from, to)
+                fetch(needed, from, to)
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {

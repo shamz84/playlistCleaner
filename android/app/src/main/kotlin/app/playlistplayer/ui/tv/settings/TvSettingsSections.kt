@@ -204,6 +204,10 @@ internal fun LazyListScope.guideSection(state: SettingsUiState, viewModel: Setti
     }
     if (state.playlists.isEmpty) {
         item(key = "guide-empty") { TvMutedText(stringResource(R.string.settings_playlists_empty)) }
+    } else {
+        item(key = "guide-apply-curated") {
+            TvButton(text = stringResource(R.string.settings_guide_apply_curated), onClick = viewModel::applyCuratedGuideToAll)
+        }
     }
     items(state.playlists.playlists, key = { "guide-${it.id}" }) { summary ->
         TvGuideCard(summary, state.guide[summary.id] ?: GuideUiState(summary.id), viewModel)
@@ -230,6 +234,7 @@ private fun TvGuideCard(summary: PlaylistSummary, guide: GuideUiState, viewModel
             if (guide.status?.overrideSet == true) {
                 TvButton(text = stringResource(R.string.settings_guide_clear), onClick = { viewModel.clearOverride(summary.id) })
             }
+            TvButton(text = stringResource(R.string.settings_guide_refresh), onClick = { viewModel.refreshGuide(summary.id) })
         }
     }
     if (editing && guide.overrideLoaded) {
@@ -256,7 +261,7 @@ private fun TvOverrideDialog(guide: GuideUiState, onTest: (String) -> Unit, onSa
         onSave = onSave,
         onCancel = onCancel,
         extraActions = { value ->
-            TvButton(text = stringResource(R.string.settings_guide_test), onClick = { onTest(value) }, enabled = value.isNotBlank() && guide.test != OverrideTestState.Running)
+            TvButton(text = stringResource(R.string.settings_guide_test), onClick = { if (guide.test != OverrideTestState.Running) onTest(value) }, enabled = value.isNotBlank())
         },
     )
 }
@@ -280,6 +285,30 @@ internal fun LazyListScope.playbackSection(state: SettingsUiState, viewModel: Se
             supporting = stringResource(R.string.settings_playback_match_frame_rate_description),
             checked = playback.matchFrameRate,
             onToggle = viewModel::setMatchFrameRate,
+        )
+    }
+    item(key = "show-clock") {
+        TvToggleRow(
+            title = stringResource(R.string.settings_playback_show_clock),
+            supporting = stringResource(R.string.settings_playback_show_clock_description),
+            checked = playback.showClock,
+            onToggle = viewModel::setShowClock,
+        )
+    }
+    item(key = "show-video-info") {
+        TvToggleRow(
+            title = stringResource(R.string.settings_playback_show_video_info),
+            supporting = stringResource(R.string.settings_playback_show_video_info_description),
+            checked = playback.showVideoInfo,
+            onToggle = viewModel::setShowVideoInfo,
+        )
+    }
+    item(key = "vod-diagnostics") {
+        TvToggleRow(
+            title = stringResource(R.string.settings_playback_vod_diagnostics),
+            supporting = stringResource(R.string.settings_playback_vod_diagnostics_description),
+            checked = playback.showVodDiagnostics,
+            onToggle = viewModel::setShowVodDiagnostics,
         )
     }
     item(key = "tunneling") {
@@ -558,6 +587,17 @@ internal fun TvGroupVisibilityDialog(
 
 internal fun LazyListScope.appSection(state: SettingsUiState, viewModel: SettingsViewModel) {
     val sync = state.preferences.sync
+    item(key = "theme") {
+        val theme = state.preferences.theme
+        TvSettingRow(
+            title = stringResource(R.string.settings_app_theme),
+            value = stringResource(SettingsTexts.theme(theme)),
+            supporting = stringResource(R.string.settings_app_theme_description),
+            onClick = {
+                viewModel.setTheme(theme.next())
+            },
+        )
+    }
     item(key = "refresh-interval") {
         TvStepperRow(
             title = stringResource(R.string.settings_app_refresh_interval),

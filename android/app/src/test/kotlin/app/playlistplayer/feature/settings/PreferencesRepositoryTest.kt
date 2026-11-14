@@ -28,18 +28,21 @@ class PreferencesRepositoryTest {
         repo.setLiveFormat(LiveFormatPreference.HLS)
         repo.setMatchFrameRate(true)
         repo.setTunneling(true)
+        repo.setShowVodDiagnostics(true)
         repo.setCatchupOffsetHours(-2)
         repo.setCatchupUrlStyle(CatchupUrlStyle.PHP)
         repo.setRefreshIntervalHours(12)
         repo.setStaleWarningDays(3)
+        repo.setTheme(AppTheme.GRAPHITE)
 
         val reopened = PreferencesRepository(SecretSlotPreferencesStorage(slots)).current()
         assertThat(reopened.content.languages).containsExactly("hi", "en").inOrder()
         assertThat(reopened.content.quality).isEqualTo(QualityPreference.FHD)
         assertThat(reopened.playback).isEqualTo(
-            PlaybackPreferences(LiveFormatPreference.HLS, matchFrameRate = true, tunneling = true, catchupOffsetHours = -2, catchupUrlStyle = CatchupUrlStyle.PHP),
+            PlaybackPreferences(LiveFormatPreference.HLS, matchFrameRate = true, tunneling = true, catchupOffsetHours = -2, catchupUrlStyle = CatchupUrlStyle.PHP, showVodDiagnostics = true),
         )
         assertThat(reopened.sync).isEqualTo(SyncPreferences(refreshIntervalHours = 12, staleWarningDays = 3))
+        assertThat(reopened.theme).isEqualTo(AppTheme.GRAPHITE)
     }
 
     @Test

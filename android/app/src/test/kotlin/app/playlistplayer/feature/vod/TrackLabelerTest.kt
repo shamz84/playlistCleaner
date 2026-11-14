@@ -41,6 +41,33 @@ class TrackLabelerTest {
     }
 
     @Test
+    fun languageIsRecoveredFromANameOrAFullNameInTheLanguageField() {
+        val options = labels(
+            RawTrack("0:0", TrackType.TEXT, "english"),
+            RawTrack("0:1", TrackType.TEXT, null, label = "Eng - SRT"),
+            RawTrack("0:2", TrackType.TEXT, "und", label = "Deutsch [Forced]", forced = true),
+            RawTrack("0:3", TrackType.TEXT, null, label = "Track 4"),
+        )
+        assertThat(options.map { it.label }).containsExactly(
+            "English",
+            "English · Eng - SRT",
+            "German · Deutsch [Forced]",
+            "Track 4",
+        ).inOrder()
+        assertThat(options.map { it.language }).containsExactly("en", "en", "de", null).inOrder()
+    }
+
+    @Test
+    fun subtitleFormatDistinguishesTracksWithoutALanguage() {
+        val options = labels(
+            RawTrack("0:0", TrackType.TEXT, null, sampleMimeType = "application/x-subrip"),
+            RawTrack("0:1", TrackType.TEXT, "und", sampleMimeType = "application/pgs"),
+            RawTrack("0:2", TrackType.TEXT, "en", sampleMimeType = "application/x-subrip"),
+        )
+        assertThat(options.map { it.label }).containsExactly("Subtitles 1 · SRT", "Subtitles 2 · PGS", "English").inOrder()
+    }
+
+    @Test
     fun streamTrackNamesAreUsedWhenTheyAddInformation() {
         val options = labels(
             RawTrack("0:0", TrackType.AUDIO, "en", label = "Commentary", channelCount = 2),

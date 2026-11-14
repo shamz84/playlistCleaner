@@ -73,7 +73,9 @@ import app.playlistplayer.ui.tv.live.GroupRail
 import app.playlistplayer.ui.tv.live.NumberEntryOverlay
 import app.playlistplayer.ui.tv.live.digitFor
 import app.playlistplayer.ui.tv.player.ProgressBar
+import app.playlistplayer.ui.tv.theme.TvDebugColors
 import app.playlistplayer.ui.tv.theme.TvDensity
+import app.playlistplayer.ui.tv.theme.debugTint
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.delay
 
@@ -113,8 +115,12 @@ fun LiveTvScreen(
     modifier: Modifier = Modifier,
     preview: (@Composable (Modifier) -> Unit)? = null,
     onFullscreen: (ChannelRef) -> Unit = {},
+    onReorderPlaylists: (List<Long>) -> Unit = {},
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    var showOrder by remember { mutableStateOf(false) }
+    var showRecent by remember { mutableStateOf(false) }
+    val history by guide.history.state.collectAsStateWithLifecycle()
     val groupsFocus = remember { FocusRequester() }
     var gridHasFocus by remember { mutableStateOf(false) }
     /** Starts pending: the grid takes focus once loaded each time the screen is shown. */
@@ -207,6 +213,10 @@ fun LiveTvScreen(
                         handle(numberEntry.commit(playableCount))
                         true
                     }
+                    code == AndroidKeyEvent.KEYCODE_MENU -> {
+                        showRecent = true
+                        true
+                    }
                     code == AndroidKeyEvent.KEYCODE_LAST_CHANNEL && state.lastChannel != null -> {
                         state.lastChannel?.let(onFullscreen)
                         true
@@ -216,12 +226,41 @@ fun LiveTvScreen(
             },
     ) {
         TvUiState(state = state.sections, modifier = Modifier.fillMaxSize().padding(TvDensity.ScreenPadding)) { sections ->
-            Column(modifier = Modifier.fillMaxSize().padding(TvDensity.ScreenPadding), verticalArrangement = Arrangement.spacedBy(UiTokens.SpaceS)) {
+            Row(modifier = Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(UiTokens.SpaceS)) {
+            // TiviMate-style: the compact playlist/group tree is always visible beside the guide.
+            GroupRail(
+                sections = sections,
+                selected = group,
+                onFocusGroup = {},
+                onOpenGroup = { key ->
+                    viewModel.selectGroup(key)
+                    closePanel()
+                },
+                compact = true,
+                modifier = Modifier
+                    .width(TvDensity.GroupsPanelWidth)
+                    .fillMaxHeight()
+                    .background(UiTokens.GuideTree, TvDensity.CellShape)
+                    .debugTint(TvDebugColors.Tree)
+                    .padding(horizontal = UiTokens.SpaceXs, vertical = UiTokens.SpaceS)
+                    .testTag(LiveTvTags.GROUPS_PANEL)
+                    .focusRequester(groupsFocus)
+                    .focusRestorer()
+                    .onPreviewKeyEvent { event ->
+                        if (event.type == KeyEventType.KeyDown && event.nativeKeyEvent.keyCode == AndroidKeyEvent.KEYCODE_DPAD_RIGHT) {
+                            closePanel()
+                            true
+                        } else {
+                            false
+                        }
+                    },
+            )
+            Column(modifier = Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(UiTokens.SpaceS)) {
                 Row(
                     modifier = Modifier.fillMaxWidth().fillMaxHeight(TvDensity.DetailsFraction),
                     horizontalArrangement = Arrangement.spacedBy(UiTokens.SpaceM),
                 ) {
-                    Column(modifier = Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.SpaceBetween) {
+                    Column(modifier = Modifier.weight(1f).fillMaxHeight().debugTint(TvDebugColors.Details), verticalArrangement = Arrangement.SpaceBetween) {
                         DetailsPane(viewModel, guide.clock, Modifier.weight(1f, fill = false))
                         if (grid != null) key(group) { EpgDayRow(grid) }
                     }
@@ -229,7 +268,7 @@ fun LiveTvScreen(
                         viewModel = viewModel,
                         preview = preview,
                         onFullscreen = onFullscreen,
-                        modifier = Modifier.fillMaxHeight().aspectRatio(16f / 9f, matchHeightConstraintsFirst = true),
+                        modifier = Modifier.fillMaxHeight().aspectRatio(16f / 9f, matchHeightConstraintsFirst = true).debugTint(TvDebugColors.Preview),
                     )
                 }
                 Box(
@@ -261,35 +300,22 @@ fun LiveTvScreen(
                     }
                 }
             }
-            AnimatedVisibility(
-                visible = state.groupsPanelOpen,
-                enter = slideInHorizontally { -it },
-                exit = slideOutHorizontally { -it },
-            ) {
-                GroupRail(
-                    sections = sections,
-                    selected = group,
-                    onFocusGroup = {},
-                    onOpenGroup = { key ->
-                        viewModel.selectGroup(key)
-                        gridFocusRequest++
-                    },
-                    modifier = Modifier
-                        .width(TvDensity.GroupsPanelWidth)
-                        .fillMaxHeight()
-                        .background(PANEL_BACKGROUND)
-                        .padding(horizontal = UiTokens.SpaceS, vertical = UiTokens.SpaceM)
-                        .testTag(LiveTvTags.GROUPS_PANEL)
-                        .focusRequester(groupsFocus)
-                        .focusRestorer()
-                        .onPreviewKeyEvent { event ->
-                            if (event.type == KeyEventType.KeyDown && event.nativeKeyEvent.keyCode == AndroidKeyEvent.KEYCODE_DPAD_RIGHT) {
-                                closePanel()
-                                true
-                            } else {
-                                false
-                            }
-                        },
+            }
+        }
+        (state.sections as? UiState.Content)?.value?.let { sections ->
+            if (showRecent) {
+                RecentChannelsDialog(
+                    recent = history.recent,
+                    onPlay = onFullscreen,
+                    onOrderPlaylists = if (sections.size > 1) ({ showOrder = true }) else null,
+                    onDismiss = { showRecent = false },
+                )
+            }
+            if (showOrder) {
+                PlaylistOrderDialog(
+                    playlists = sections.map { OrderablePlaylist(it.playlistId, it.name) },
+                    onSave = onReorderPlaylists,
+                    onDismiss = { showOrder = false },
                 )
             }
         }
@@ -398,5 +424,4 @@ private fun Logo(url: String?, modifier: Modifier) {
     AsyncImage(model = url, contentDescription = null, contentScale = ContentScale.Fit, modifier = modifier)
 }
 
-private val PANEL_BACKGROUND = Color(0xF2101820)
 private const val PANEL_FOCUS_DELAY_MS = 50L

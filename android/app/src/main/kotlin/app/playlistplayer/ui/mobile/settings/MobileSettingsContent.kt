@@ -61,6 +61,7 @@ import app.playlistplayer.feature.settings.SettingsText
 import app.playlistplayer.feature.settings.SettingsTexts
 import app.playlistplayer.feature.settings.SettingsUiState
 import app.playlistplayer.feature.settings.SettingsViewModel
+import app.playlistplayer.feature.settings.orderedPlaylistIds
 import app.playlistplayer.feature.vod.TrackLanguageCatalog
 import app.playlistplayer.ui.common.UiTokens
 import app.playlistplayer.ui.mobile.GlyphIcon
@@ -191,7 +192,12 @@ private fun LazyListScope.playlists(state: SettingsUiState, viewModel: SettingsV
     } else if (state.playlists.isEmpty) {
         item(key = "empty") { Column(Modifier.padding(MobileDimens.ScreenPadding)) { Muted(stringResource(R.string.settings_playlists_empty)) } }
     }
-    items(state.playlists.playlists, key = { "p-${it.id}" }) { PlaylistCard(it, it.id in state.playlists.busy, viewModel) }
+    items(playlistsInOrder(state), key = { "p-${it.id}" }) { PlaylistCard(it, it.id in state.playlists.busy, viewModel) }
+}
+
+private fun playlistsInOrder(state: SettingsUiState): List<PlaylistSummary> {
+    val byId = state.playlists.playlists.associateBy { it.id }
+    return orderedPlaylistIds(byId.keys.toList(), state.preferences.playlistOrder).mapNotNull(byId::get)
 }
 
 @Composable
@@ -226,6 +232,10 @@ private fun PlaylistCard(summary: PlaylistSummary, busy: Boolean, viewModel: Set
                     onCheckedChange = { viewModel.setXtreamEnabled(summary.id, it) },
                     enabled = !busy && (summary.xtreamAvailable || summary.xtreamEnabled),
                 )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(UiTokens.SpaceXs)) {
+                TextButton(onClick = { viewModel.movePlaylist(summary.id, -1) }) { Text(stringResource(R.string.settings_playlist_move_up)) }
+                TextButton(onClick = { viewModel.movePlaylist(summary.id, 1) }) { Text(stringResource(R.string.settings_playlist_move_down)) }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(UiTokens.SpaceXs)) {
                 TextButton(onClick = { viewModel.refreshPlaylist(summary.id) }, enabled = !busy) { Text(stringResource(R.string.settings_playlist_refresh)) }
@@ -333,6 +343,9 @@ private fun LazyListScope.guide(state: SettingsUiState, viewModel: SettingsViewM
             onIncrease = { viewModel.setCatchupOffsetHours(offset + 1) },
         )
     }
+    item(key = "apply-curated") {
+        OutlinedButton(onClick = viewModel::applyCuratedGuideToAll) { Text(stringResource(R.string.settings_guide_apply_curated)) }
+    }
     items(state.playlists.playlists, key = { "g-${it.id}" }) { summary ->
         GuideRow(summary, state.guide[summary.id] ?: GuideUiState(summary.id), viewModel)
     }
@@ -345,10 +358,13 @@ private fun GuideRow(summary: PlaylistSummary, guide: GuideUiState, viewModel: S
     ListItem(
         headlineContent = { Text(summary.name) },
         supportingContent = { Text(lines.joinToString("\n")) },
-        trailingContent = if (guide.status?.overrideSet == true) {
-            { TextButton(onClick = { viewModel.clearOverride(summary.id) }) { Text(stringResource(R.string.settings_guide_clear)) } }
-        } else {
-            null
+        trailingContent = {
+            Row {
+                TextButton(onClick = { viewModel.refreshGuide(summary.id) }) { Text(stringResource(R.string.settings_guide_refresh)) }
+                if (guide.status?.overrideSet == true) {
+                    TextButton(onClick = { viewModel.clearOverride(summary.id) }) { Text(stringResource(R.string.settings_guide_clear)) }
+                }
+            }
         },
         modifier = Modifier.clickable(role = Role.Button) {
             viewModel.openGuide(summary.id)
@@ -400,6 +416,30 @@ private fun LazyListScope.playback(state: SettingsUiState, viewModel: SettingsVi
             playback.matchFrameRate,
             viewModel::setMatchFrameRate,
             stringResource(R.string.settings_playback_match_frame_rate_description),
+        )
+    }
+    item(key = "clock") {
+        ToggleRow(
+            stringResource(R.string.settings_playback_show_clock),
+            playback.showClock,
+            viewModel::setShowClock,
+            stringResource(R.string.settings_playback_show_clock_description),
+        )
+    }
+    item(key = "video-info") {
+        ToggleRow(
+            stringResource(R.string.settings_playback_show_video_info),
+            playback.showVideoInfo,
+            viewModel::setShowVideoInfo,
+            stringResource(R.string.settings_playback_show_video_info_description),
+        )
+    }
+    item(key = "vod-diagnostics") {
+        ToggleRow(
+            stringResource(R.string.settings_playback_vod_diagnostics),
+            playback.showVodDiagnostics,
+            viewModel::setShowVodDiagnostics,
+            stringResource(R.string.settings_playback_vod_diagnostics_description),
         )
     }
     item(key = "tunnel") {
@@ -675,6 +715,17 @@ private fun AddLanguageDialog(existing: List<String>, onAdd: (String) -> Unit, o
 
 private fun LazyListScope.app(state: SettingsUiState, viewModel: SettingsViewModel) {
     val sync = state.preferences.sync
+    item(key = "theme") {
+        val theme = state.preferences.theme
+        ClickRow(
+            title = stringResource(R.string.settings_app_theme),
+            value = stringResource(SettingsTexts.theme(theme)),
+            supporting = stringResource(R.string.settings_app_theme_description),
+            onClick = {
+                viewModel.setTheme(theme.next())
+            },
+        )
+    }
     item(key = "refresh") {
         StepperRow(
             title = stringResource(R.string.settings_app_refresh_interval),

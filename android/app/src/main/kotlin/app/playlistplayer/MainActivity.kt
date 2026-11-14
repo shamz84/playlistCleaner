@@ -5,14 +5,30 @@ import android.os.Handler
 import android.os.Looper
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.produceState
+import androidx.compose.ui.Modifier
+import app.playlistplayer.feature.live.isStreamActive
+import app.playlistplayer.ui.common.ClockOverlay
+import app.playlistplayer.ui.common.LiveVideoInfo
+import app.playlistplayer.ui.common.LocalLiveVideoInfo
+import app.playlistplayer.ui.common.LocalVodDiagnostics
+import app.playlistplayer.ui.common.LocalAppPalette
+import app.playlistplayer.ui.common.paletteFor
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import app.playlistplayer.core.player.DisplayModeSwitcher
 import app.playlistplayer.core.player.PlaybackState
+import app.playlistplayer.feature.settings.AppPreferences
+import app.playlistplayer.ui.common.LocalVideoScaling
+import app.playlistplayer.ui.common.VideoScalingControl
 import app.playlistplayer.ui.mobile.MobileLoading
 import app.playlistplayer.ui.mobile.MobileRoot
 import app.playlistplayer.ui.mobile.MobileTheme
@@ -56,9 +72,32 @@ class MainActivity : ComponentActivity() {
                 return@setContent
             }
             val dependencies = remember { container.uiDependencies() }
-            when (formFactor) {
-                FormFactor.Tv -> TvRoot(dependencies.tv)
-                FormFactor.Mobile -> MobileRoot(dependencies.mobile)
+            val preferences by container.preferencesRepository.preferences.collectAsState(initial = AppPreferences())
+            val scope = rememberCoroutineScope()
+            val scaling = preferences.playback.videoScaling
+            val scalingControl = remember(scaling) {
+            VideoScalingControl(scaling, { choice -> scope.launch { container.preferencesRepository.setVideoScaling(choice) } }) {
+                scope.launch { container.preferencesRepository.setVideoScaling(scaling.next()) }
+            }
+            }
+            val controller = remember { container.playback.controller() }
+            val videoFormat by controller.videoFormat.collectAsState()
+            CompositionLocalProvider(
+                LocalVideoScaling provides scalingControl,
+                LocalLiveVideoInfo provides LiveVideoInfo(preferences.playback.showVideoInfo, videoFormat),
+                LocalVodDiagnostics provides preferences.playback.showVodDiagnostics,
+                LocalAppPalette provides paletteFor(preferences.theme),
+            ) {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    when (formFactor) {
+                        FormFactor.Tv -> TvRoot(dependencies.tv)
+                        FormFactor.Mobile -> MobileRoot(dependencies.mobile)
+                    }
+                    val streaming by produceState(false) {
+                        controller.state.collect { value = it.isStreamActive() }
+                    }
+                    if (preferences.playback.showClock && streaming) ClockOverlay()
+                }
             }
         }
         startDisplayModeSwitching()

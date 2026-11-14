@@ -22,6 +22,13 @@ data class SettingsText(@StringRes val res: Int, val args: List<Any> = emptyList
 
 /** Shared Settings wording (TV and phone). Dates use the device locale. */
 object SettingsTexts {
+    @StringRes
+    fun theme(theme: AppTheme): Int = when (theme) {
+        AppTheme.MIDNIGHT_BLUE -> R.string.settings_app_theme_midnight
+        AppTheme.CINEMA_EMBER -> R.string.settings_app_theme_ember
+        AppTheme.GRAPHITE -> R.string.settings_app_theme_graphite
+    }
+
     fun dateTime(millis: Long): String = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(millis))
 
     fun date(millis: Long): String = DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(millis))
@@ -165,6 +172,8 @@ object SettingsTexts {
         SettingsMessage.ResetRequired -> SettingsText(R.string.settings_pin_reset_required)
         is SettingsMessage.OverrideSaved -> SettingsText(R.string.settings_msg_override_saved)
         is SettingsMessage.OverrideCleared -> SettingsText(R.string.settings_msg_override_cleared)
+        is SettingsMessage.CuratedGuideApplied -> SettingsText(R.string.settings_msg_curated_applied, message.count)
+        is SettingsMessage.GuideRefreshing -> SettingsText(R.string.settings_msg_guide_refreshing)
         is SettingsMessage.OverrideNotSaved -> SettingsText(R.string.settings_msg_override_not_saved, testResult(message.result))
         SettingsMessage.InvalidLanguage -> SettingsText(R.string.settings_msg_invalid_language)
         SettingsMessage.HlsNotAllowed -> SettingsText(R.string.settings_msg_hls_not_allowed)
@@ -174,13 +183,13 @@ object SettingsTexts {
     }
 
     /** Preset steps for the App section steppers (D-pad friendly). */
-    val REFRESH_PRESETS_HOURS: List<Int> = listOf(1, 2, 3, 6, 12, 24, 48, 72, 168)
+    val REFRESH_PRESETS_HOURS: List<Int> = listOf(2, 4, 6, 12)
     val STALE_PRESETS_DAYS: List<Int> = listOf(1, 2, 3, 7, 14, 30, 60, 90)
 
     /** The next preset above/below [current] (direction +1/-1), or [current] at the end. */
     fun step(presets: List<Int>, current: Int, direction: Int): Int = if (direction > 0) {
-        presets.firstOrNull { it > current } ?: current
+        presets.firstOrNull { it > current } ?: presets.last()
     } else {
-        presets.lastOrNull { it < current } ?: current
+        presets.lastOrNull { it < current } ?: presets.first()
     }
 }

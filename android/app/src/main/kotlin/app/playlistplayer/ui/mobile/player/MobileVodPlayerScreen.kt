@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
@@ -50,10 +51,15 @@ import app.playlistplayer.R
 import app.playlistplayer.core.player.ConfiguredPlayer
 import app.playlistplayer.core.player.ExoPlaybackController
 import app.playlistplayer.core.player.PlaybackState
+import app.playlistplayer.core.consolidation.VodKind
+import app.playlistplayer.feature.vod.SkipKind
+import app.playlistplayer.ui.common.LocalVideoScaling
+import app.playlistplayer.ui.common.VideoScalingLabels
 import app.playlistplayer.feature.vod.OverlayCommand
 import app.playlistplayer.feature.vod.OverlayEvent
 import app.playlistplayer.feature.vod.PlaybackProgressRepository
 import app.playlistplayer.feature.vod.PlaybackRequest
+import app.playlistplayer.feature.vod.SkipSpanProvider
 import app.playlistplayer.feature.vod.InMemoryTrackPreferenceStore
 import app.playlistplayer.feature.vod.SeekDirection
 import app.playlistplayer.feature.vod.TrackPreferenceStore
@@ -103,8 +109,10 @@ fun MobileVodPlayerScreen(
     modifier: Modifier = Modifier,
     onVersionPicked: (versionId: String) -> Unit = {},
     trackPreferences: TrackPreferenceStore = InMemoryTrackPreferenceStore(),
+    skipSpans: SkipSpanProvider? = null,
 ) {
     FullscreenLandscapeEffect()
+    val videoScaling = LocalVideoScaling.current
     val exo = player.exoPlayer
     val scope = rememberCoroutineScope()
     val overlay = remember { VodPlayerOverlayState() }
@@ -193,7 +201,11 @@ fun MobileVodPlayerScreen(
         // The next episode keeps this session's preference (including a choice made in the sheet).
         val preference = overlay.state.tracks.preference ?: trackPreferences.currentOrDefault()
         Media3Tracks.startWithPreference(exo, preference)
-        dispatch(OverlayEvent.Open(current.resumeOfferMs, current.startPositionMs ?: 0L, current.nextEpisodeLabel, preference))
+        dispatch(OverlayEvent.Open(current.resumeOfferMs, current.startPositionMs ?: 0L, current.nextEpisodeLabel, preference, isEpisode = current.kind == VodKind.SERIES))
+        skipSpans?.let { provider ->
+            val spans = provider.spans(current)
+            if (spans.isNotEmpty()) dispatch(OverlayEvent.Markers(spans))
+        }
     }
 
     // Position polling: overlay progress, countdown and the 10 s progress save.
@@ -291,6 +303,11 @@ fun MobileVodPlayerScreen(
                 },
         )
 
+        app.playlistplayer.ui.common.VodDiagnosticsOverlay(
+            controller,
+            Modifier.align(Alignment.TopStart).safeDrawingPadding().padding(12.dp),
+        )
+
         Column(modifier = Modifier.align(Alignment.TopCenter).safeDrawingPadding().padding(top = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             PlayerStatus(uiState)
             seekFeedback?.let { Text(it, color = Color.White, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(8.dp)) }
@@ -310,8 +327,28 @@ fun MobileVodPlayerScreen(
                 onScrubDone = ::commitScrub,
                 onTracks = { dispatch(OverlayEvent.ToggleTrackPanel) },
                 onVersions = { versionsOpen = true },
+                onPicture = { videoScaling.cycle(); interactions++ },
                 modifier = Modifier.fillMaxSize(),
             )
+        }
+
+        s.skip?.let { prompt ->
+            Button(
+                onClick = { dispatch(OverlayEvent.SkipNow) },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .safeDrawingPadding()
+                    .padding(end = 24.dp, bottom = if (s.controlsVisible || !isPlayingNow) 72.dp else 24.dp)
+                    .sizeIn(minHeight = 48.dp),
+            ) { Text(
+                stringResource(
+                    when (prompt.kind) {
+                        SkipKind.INTRO -> R.string.vod_skip_intro
+                        SkipKind.RECAP -> R.string.vod_skip_recap
+                        SkipKind.CREDITS -> R.string.vod_skip_credits
+                    },
+                ),
+            ) }
         }
 
         s.resumePrompt?.let { prompt ->
@@ -394,11 +431,12 @@ private fun Controls(
     onScrubDone: () -> Unit,
     onTracks: () -> Unit,
     onVersions: () -> Unit,
+    onPicture: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val shown = scrubMs ?: state.seek?.targetMs ?: state.positionMs
     Box(modifier = modifier.testTag(MobileVodPlayerTags.CONTROLS)) {
-        // Top bar: close, title, versions, tracks.
+        // Top bar: close, title, versions, tracks, picture format.
         Row(
             modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth().background(Scrim).safeDrawingPadding().padding(horizontal = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -407,6 +445,7 @@ private fun Controls(
             Text(title, color = Color.White, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
             if (hasVersions) PlayerIconButton("⧉", stringResource(R.string.vod_versions), onVersions)
             if (state.tracks.hasChoices) PlayerIconButton("💬", stringResource(R.string.vod_tracks), onTracks)
+            PlayerIconButton("⛶", stringResource(R.string.vod_picture_format, stringResource(VideoScalingLabels.label(LocalVideoScaling.current.scaling))), onPicture)
         }
         // Centre: seek back, play / pause, seek forward (gesture-free equivalents for accessibility).
         if (state.started) {

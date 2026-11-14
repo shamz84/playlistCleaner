@@ -40,4 +40,9 @@ class EpgOverrideSettings(
     suspend fun overrideUrl(playlistId: Long): String? = secureStore.epgOverrideUrl(playlistId)
 
     enum class Result { Saved, InvalidUrl }
+
+    companion object {
+        /** Curated community guide offered (and on by default) when adding a playlist; it wins over the provider guide. */
+        const val DEFAULT_URL = "https://github.com/ferteque/Curated-M3U-Repository/raw/refs/heads/main/epg6.xml.gz"
+    }
 }

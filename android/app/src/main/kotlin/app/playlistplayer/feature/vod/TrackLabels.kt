@@ -53,6 +53,30 @@ object TrackLanguage {
         }
     }
 
+    /** English language names ("english", "français") to codes, for streams that put a name in the language field. */
+    private val namesToIso2: Map<String, String> by lazy {
+        buildMap {
+            for (code in Locale.getISOLanguages()) {
+                val locale = Locale.forLanguageTag(code)
+                for (display in listOf(Locale.ENGLISH, locale)) {
+                    val name = locale.getDisplayLanguage(display).lowercase(Locale.ROOT)
+                    if (name.length > 3 && name.all { it.isLetter() }) putIfAbsent(name, LEGACY[code] ?: code)
+                }
+            }
+        }
+    }
+
+    /**
+     * A language found in a track's name when the stream carries no language tag: a language name
+     * anywhere ("English SDH", "Deutsch [Forced]") or a three-letter code as the first word
+     * ("Eng - SRT"). Null when nothing recognisable is there.
+     */
+    fun fromName(name: String?): String? {
+        val words = name?.lowercase(Locale.ROOT)?.split(Regex("[^\\p{L}]+"))?.filter { it.isNotEmpty() } ?: return null
+        words.firstNotNullOfOrNull { namesToIso2[it] }?.let { return it }
+        return words.firstOrNull()?.takeIf { it.length == 3 }?.let { BIBLIOGRAPHIC[it] ?: iso3ToIso2[it] }
+    }
+
     /**
      * Lower-case BCP 47 tag with a two-letter primary subtag where one exists (`eng` → `en`,
      * `fre` → `fr`, `pt_BR` → `pt-br`), or null for missing / undetermined languages (`und`).
@@ -64,6 +88,7 @@ object TrackLanguage {
         if (primary.isEmpty() || primary in UNDETERMINED) return null
         val mapped = when (primary.length) {
             3 -> BIBLIOGRAPHIC[primary] ?: iso3ToIso2[primary] ?: primary
+            in 4..Int.MAX_VALUE -> namesToIso2[primary] ?: primary
             else -> LEGACY[primary] ?: primary
         }
         return (listOf(mapped) + parts.drop(1)).joinToString("-")
@@ -120,21 +145,25 @@ object TrackLabeler {
                 id = raw.id,
                 type = raw.type,
                 label = if (count > 1) "$label ($count)" else label,
-                language = TrackLanguage.normalize(raw.language),
+                language = languageOf(raw),
                 selected = raw.selected,
                 forced = raw.forced,
             )
         }
     }
 
+    private fun languageOf(raw: RawTrack): String? =
+        TrackLanguage.normalize(raw.language) ?: TrackLanguage.fromName(raw.label)
+
     private fun label(raw: RawTrack, position: Int, displayLocale: Locale): String {
-        val language = TrackLanguage.displayName(raw.language, displayLocale)
+        val tag = languageOf(raw)
+        val language = TrackLanguage.displayName(tag, displayLocale)
         val name = raw.label?.trim()?.takeIf { it.isNotEmpty() }
         val parts = mutableListOf<String>()
         when {
             language != null -> {
                 parts += language
-                if (name != null && addsInformation(name, language, raw.language)) parts += name
+                if (name != null && addsInformation(name, language, raw.language ?: tag)) parts += name
             }
             name != null -> parts += name
             else -> parts += "${if (raw.type == TrackType.AUDIO) AUDIO else SUBTITLES} $position"
@@ -154,10 +183,23 @@ object TrackLabeler {
     private fun hints(raw: RawTrack): List<String> = when (raw.type) {
         TrackType.AUDIO -> listOfNotNull(channels(raw.channelCount), surroundCodec(raw.sampleMimeType, raw.codecs))
         TrackType.TEXT -> listOfNotNull(
+            // Without a language the format is the only thing that tells tracks apart.
+            if (languageOf(raw) == null) subtitleFormat(raw.sampleMimeType) else null,
             FORCED.takeIf { raw.forced },
             SDH.takeIf { raw.sdh },
             CC.takeIf { raw.sampleMimeType == "application/cea-608" || raw.sampleMimeType == "application/cea-708" },
         )
+    }
+
+    private fun subtitleFormat(mime: String?): String? = when (mime?.lowercase(Locale.ROOT)) {
+        "application/x-subrip" -> "SRT"
+        "text/x-ssa" -> "ASS"
+        "text/vtt" -> "WebVTT"
+        "application/pgs" -> "PGS"
+        "application/vobsub", "application/dvbsubs" -> "Image"
+        "application/ttml+xml" -> "TTML"
+        "application/x-quicktime-tx3g", "application/x-mp4-vtt" -> "Text"
+        else -> null
     }
 
     private fun channels(count: Int): String? = when {

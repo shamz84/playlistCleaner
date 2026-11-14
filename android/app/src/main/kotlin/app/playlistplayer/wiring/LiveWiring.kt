@@ -65,6 +65,7 @@ class RoomLiveChannelSource(
 ) : LiveChannelSource {
     override suspend fun channel(playlistId: Long, ordinal: Int): LiveChannel? {
         val channel = playlistStore.channel(playlistId, ordinal) ?: return null
+        if (visibility().isLiveGroupHidden(playlistId, channel.groupOrdinal, channel.groupTitle)) return null
         return channel.toLive(catalogStore.channelWithLiveInfo(playlistId, ordinal))
     }
 
@@ -95,6 +96,7 @@ class RoomLiveBrowseSource(
     private val playlistStore: PlaylistStore,
     private val catalogStore: CatalogStore,
     private val visibility: () -> ContentVisibility,
+    private val playlistOrder: Flow<List<Long>> = flowOf(emptyList()),
 ) : LiveBrowseSource {
     private fun changes(): Flow<Unit> = visibility().changes.onStart { emit(Unit) }
 
@@ -106,6 +108,10 @@ class RoomLiveBrowseSource(
                 } else {
                     combine(playlists.map { p -> playlistStore.observeGroups(p.id).map { groups -> p to groups } }) { it.toList() }
                 }
+            }
+            .combine(playlistOrder) { list, order ->
+                val rank = order.withIndex().associate { it.value to it.index }
+                list.sortedBy { (playlist, _) -> rank[playlist.id] ?: Int.MAX_VALUE } // stable: unlisted keep creation order
             }
             .combine(changes()) { list, _ ->
                 val rules = visibility()

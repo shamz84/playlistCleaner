@@ -46,6 +46,14 @@ import app.playlistplayer.feature.live.LiveStartError
 import app.playlistplayer.ui.tv.player.indicatorText
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material3.IconButton
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import app.playlistplayer.feature.live.ChannelRef
+import app.playlistplayer.ui.common.RecentChannelLogo
+import app.playlistplayer.ui.common.liveVideoInfoLabel
 import app.playlistplayer.ui.mobile.vod.OptionsSheet
 import app.playlistplayer.ui.mobile.vod.SheetOption
 import kotlinx.coroutines.delay
@@ -75,7 +83,7 @@ fun MobileChannelPlayerScreen(
     viewModel: LivePlayerViewModel,
     player: ConfiguredPlayer,
     onStartCatchup: (CatchupRequest) -> Unit,
-    onChannelChanged: (Int) -> Unit,
+    onChannelChanged: (ChannelRef) -> Unit,
     onExit: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -103,7 +111,9 @@ fun MobileChannelPlayerScreen(
             viewModel.tick()
         }
     }
-    LaunchedEffect(state.channel?.ordinal) { state.channel?.ordinal?.let { channelChanged(it) } }
+    LaunchedEffect(state.channel?.playlistId, state.channel?.ordinal) {
+        state.channel?.let { channelChanged(ChannelRef(it.playlistId, it.ordinal)) }
+    }
 
     DisposableEffect(viewModel, exo) {
         val listener = object : Player.Listener {
@@ -174,6 +184,7 @@ fun MobileChannelPlayerScreen(
                     viewModel.lastChannel()
                     viewModel.showOverlay()
                 },
+                onRecentChannel = viewModel::tuneRecent,
                 modifier = Modifier.fillMaxSize(),
             )
         }
@@ -241,6 +252,7 @@ private fun ChannelOverlay(
     onNext: () -> Unit,
     onRestart: () -> Unit,
     onLastChannel: () -> Unit,
+    onRecentChannel: (ChannelRef) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Box(modifier = modifier.testTag(MobileChannelPlayerTags.CONTROLS)) {
@@ -266,6 +278,9 @@ private fun ChannelOverlay(
                             color = Color.White,
                             modifier = Modifier.background(Color(0x60FFFFFF), MaterialTheme.shapes.small).padding(horizontal = 6.dp, vertical = 2.dp),
                         )
+                    }
+                    liveVideoInfoLabel()?.let {
+                        Text(it, color = Color.White, style = MaterialTheme.typography.labelSmall)
                     }
                 }
                 val versionLabel = state.currentVersionLabel
@@ -301,6 +316,19 @@ private fun ChannelOverlay(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
+                }
+            }
+            if (state.recentChannels.isNotEmpty()) {
+                Row(modifier = Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    state.recentChannels.forEach { recent ->
+                        val description = stringResource(R.string.livetv_recent_channel, recent.name)
+                        IconButton(
+                            onClick = { onRecentChannel(recent.ref) },
+                            modifier = Modifier.semantics { contentDescription = description },
+                        ) {
+                            RecentChannelLogo(recent.name, recent.logoUrl, Modifier.size(36.dp))
+                        }
+                    }
                 }
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {

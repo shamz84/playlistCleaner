@@ -78,6 +78,7 @@ data class LivePlayerUiState(
     val awaitingFirstFrame: Boolean = false,
     /** A previous channel exists: the "Last channel" shortcut is offered (R39). */
     val hasLastChannel: Boolean = false,
+    val recentChannels: List<RecentChannel> = emptyList(),
 ) {
     val hasOtherVersions: Boolean get() = versions.size > 1
 
@@ -148,7 +149,9 @@ class LivePlayerViewModel(
     init {
         viewModelScope.launch { driver.state.collect(::onPlaybackState) }
         viewModelScope.launch {
-            history.state.collect { h -> mutableState.update { it.copy(hasLastChannel = h.previous != null) } }
+            history.state.collect { h ->
+                mutableState.update { it.copy(hasLastChannel = h.previous != null, recentChannels = h.recent.filterNot { channel -> channel.ref == h.current }) }
+            }
         }
     }
 
@@ -207,7 +210,7 @@ class LivePlayerViewModel(
     private fun tune(channel: LiveChannel, adopt: Boolean = false) {
         tuneJob?.cancel()
         plan = null
-        history.record(ChannelRef(channel.playlistId, channel.ordinal))
+        history.record(ChannelRef(channel.playlistId, channel.ordinal), channel.name, channel.logoUrl)
         tuneJob = viewModelScope.launch {
             mutableState.update {
                 it.copy(
@@ -258,6 +261,10 @@ class LivePlayerViewModel(
     /** "Last channel" (R39): tunes the previous channel of the session (any group or playlist). */
     fun lastChannel() {
         val target = history.lastChannel ?: return
+        tuneRecent(target)
+    }
+
+    fun tuneRecent(target: ChannelRef) {
         if (!started) return
         group.firstOrNull { it.playlistId == target.playlistId && it.ordinal == target.ordinal }?.let {
             tune(it)
@@ -265,7 +272,11 @@ class LivePlayerViewModel(
         }
         tuneJob?.cancel()
         tuneJob = viewModelScope.launch {
-            val channel = channels.channel(target.playlistId, target.ordinal) ?: return@launch
+            val channel = channels.channel(target.playlistId, target.ordinal)
+            if (channel == null) {
+                mutableState.update { it.copy(startError = LiveStartError.NOT_FOUND) }
+                return@launch
+            }
             loadGroup(channel)
             tune(channel)
         }

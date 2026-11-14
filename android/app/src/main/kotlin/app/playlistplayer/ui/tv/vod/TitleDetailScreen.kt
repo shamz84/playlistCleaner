@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
@@ -29,6 +28,7 @@ import androidx.tv.material3.Text
 import app.playlistplayer.R
 import app.playlistplayer.feature.vod.PlayError
 import app.playlistplayer.feature.vod.PlaybackRequest
+import app.playlistplayer.feature.vod.TitleDetailUiState
 import app.playlistplayer.feature.vod.TitleDetailViewModel
 import app.playlistplayer.feature.vod.VersionRow
 import coil3.compose.AsyncImage
@@ -36,13 +36,35 @@ import kotlinx.coroutines.launch
 import app.playlistplayer.ui.common.badge
 import app.playlistplayer.ui.common.formatClock
 import app.playlistplayer.ui.common.languageLabel
-import app.playlistplayer.ui.common.qualityLabel
 
-/** Movie detail: backdrop, plot, filter chips, version list, Play / Resume, favourite. */
+/** Movie detail: backdrop, plot, Play / Resume, favourite and a versions panel. */
 @Composable
 fun TitleDetailScreen(viewModel: TitleDetailViewModel, onPlay: (PlaybackRequest) -> Unit, modifier: Modifier = Modifier) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
+    TitleDetailContent(
+        state = state,
+        onPlay = { resume -> scope.launch { viewModel.playbackRequest(resume)?.let(onPlay) } },
+        onFavourite = viewModel::toggleFavourite,
+        onRetryDetails = viewModel::retryDetails,
+        onLanguage = viewModel::selectLanguage,
+        onQuality = viewModel::selectQuality,
+        onVersion = viewModel::selectVersion,
+        modifier = modifier,
+    )
+}
+
+@Composable
+internal fun TitleDetailContent(
+    state: TitleDetailUiState,
+    onPlay: (Boolean) -> Unit,
+    onFavourite: () -> Unit,
+    onRetryDetails: () -> Unit,
+    onLanguage: (String) -> Unit,
+    onQuality: (String) -> Unit,
+    onVersion: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     when {
         state.loading -> CenteredMessage(stringResource(R.string.vod_loading), modifier)
         state.notFound -> CenteredMessage(stringResource(R.string.vod_title_not_found), modifier)
@@ -54,7 +76,7 @@ fun TitleDetailScreen(viewModel: TitleDetailViewModel, onPlay: (PlaybackRequest)
             ) {
                 item {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(text = state.title, style = MaterialTheme.typography.displaySmall)
+                        Text(text = state.title, color = DetailTextColor, style = MaterialTheme.typography.displaySmall)
                         Text(
                             text = listOfNotNull(
                                 state.year?.toString(),
@@ -63,52 +85,63 @@ fun TitleDetailScreen(viewModel: TitleDetailViewModel, onPlay: (PlaybackRequest)
                                 state.rating?.let { String.format(java.util.Locale.ROOT, "%.1f", it) },
                                 if (state.watched) stringResource(R.string.vod_watched) else null,
                             ).joinToString("  ·  "),
+                            color = DetailTextColor,
                             style = MaterialTheme.typography.bodyMedium,
                         )
                         when {
-                            state.plot != null -> Text(text = state.plot.orEmpty(), style = MaterialTheme.typography.bodyLarge, maxLines = 5, overflow = TextOverflow.Ellipsis)
+                            state.plot != null -> Text(text = state.plot.orEmpty(), color = DetailTextColor, style = MaterialTheme.typography.bodyLarge, maxLines = 5, overflow = TextOverflow.Ellipsis)
                             state.detailsFailed -> Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                Text(stringResource(R.string.vod_details_failed))
-                                OutlinedButton(onClick = viewModel::retryDetails) { Text(stringResource(R.string.vod_retry)) }
+                                Text(stringResource(R.string.vod_details_failed), color = DetailTextColor)
+                                OutlinedButton(onClick = onRetryDetails) { Text(stringResource(R.string.vod_retry)) }
                             }
                         }
-                        state.cast?.let { Text(text = it, style = MaterialTheme.typography.bodySmall, maxLines = 2, overflow = TextOverflow.Ellipsis) }
+                        state.cast?.let { Text(text = it, color = DetailTextColor, style = MaterialTheme.typography.bodySmall, maxLines = 2, overflow = TextOverflow.Ellipsis) }
                     }
                 }
                 item {
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         if (state.resumePositionMs != null) {
-                            Button(onClick = { scope.launch { viewModel.playbackRequest(resume = true)?.let(onPlay) } }) {
-                                Text(stringResource(R.string.vod_resume) + "  " + formatClock(state.resumePositionMs ?: 0))
+                            Button(onClick = { onPlay(true) }) {
+                                Text(stringResource(R.string.vod_resume) + "  " + formatClock(state.resumePositionMs))
                             }
-                            OutlinedButton(onClick = { scope.launch { viewModel.playbackRequest(resume = false)?.let(onPlay) } }) {
+                            OutlinedButton(onClick = { onPlay(false) }) {
                                 Text(stringResource(R.string.vod_start_over))
                             }
                         } else {
-                            Button(onClick = { scope.launch { viewModel.playbackRequest(resume = false)?.let(onPlay) } }) {
+                            Button(onClick = { onPlay(false) }) {
                                 Text(stringResource(R.string.vod_play))
                             }
                         }
-                        OutlinedButton(onClick = viewModel::toggleFavourite) {
+                        OutlinedButton(onClick = onFavourite) {
                             Text(stringResource(if (state.isFavourite) R.string.vod_favourite_remove else R.string.vod_favourite_add))
                         }
+                        VersionsAndFilters(
+                            state.languageChips, state.qualityChips, state.versions, state.loading,
+                            onLanguage, onQuality, onVersion,
+                        )
+                    }
+                }
+                state.versions.firstOrNull { it.id == state.selectedVersionId }?.let { selected ->
+                    item {
+                        Text(
+                            text = stringResource(R.string.vod_selected_version, selected.label),
+                            color = DetailTextColor,
+                            style = MaterialTheme.typography.bodyMedium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
                     }
                 }
                 state.playError?.let { error ->
                     item { Text(text = playErrorText(error), color = MaterialTheme.colorScheme.error) }
                 }
-                item {
-                    ChipRow(stringResource(R.string.vod_filter_language), state.languageChips, { languageLabel(it) }, viewModel::selectLanguage)
-                }
-                item {
-                    ChipRow(stringResource(R.string.vod_filter_quality), state.qualityChips, { qualityLabel(it) }, viewModel::selectQuality)
-                }
-                item { Text(text = stringResource(R.string.vod_versions), style = MaterialTheme.typography.titleMedium) }
-                items(state.versions, key = { it.id }) { row -> VersionListItem(row, onClick = { viewModel.selectVersion(row.id) }) }
             }
         }
     }
 }
+
+internal val DetailTextColor = Color.White
+internal val DetailBackdropScrim = listOf(Color(0xF0000000), Color(0xE0000000), Color(0xD4000000))
 
 @Composable
 internal fun Backdrop(url: String?) {
@@ -117,7 +150,7 @@ internal fun Backdrop(url: String?) {
         AsyncImage(model = url, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
         Box(
             modifier = Modifier.fillMaxSize().background(
-                Brush.horizontalGradient(listOf(Color(0xF0000000), Color(0xC0000000), Color(0x40000000))),
+                Brush.horizontalGradient(DetailBackdropScrim),
             ),
         )
     }

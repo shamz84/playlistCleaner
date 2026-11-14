@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.runtime.Composable
@@ -20,6 +22,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -33,9 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.tv.material3.MaterialTheme
-import androidx.tv.material3.NavigationDrawer
-import androidx.tv.material3.NavigationDrawerItem
-import androidx.tv.material3.NavigationDrawerItemDefaults
+import androidx.tv.material3.ClickableSurfaceDefaults
 import androidx.tv.material3.Surface
 import androidx.tv.material3.SurfaceDefaults
 import androidx.tv.material3.Text
@@ -43,8 +44,13 @@ import app.playlistplayer.R
 import app.playlistplayer.feature.shell.Destination
 import app.playlistplayer.feature.shell.ShellViewModel
 import app.playlistplayer.ui.common.UiTokens
+import app.playlistplayer.ui.common.NavigationIcon
 import app.playlistplayer.ui.tv.components.TvButton
+import app.playlistplayer.ui.tv.theme.TvDebugColors
 import app.playlistplayer.ui.tv.theme.TvDimens
+import app.playlistplayer.ui.tv.theme.debugTint
+
+private val RAIL_WIDTH = 52.dp
 
 object ShellTags {
     const val RAIL = "shell.rail"
@@ -61,16 +67,6 @@ fun Destination.labelRes(): Int = when (this) {
     Destination.Series -> R.string.nav_series
     Destination.Search -> R.string.nav_search
     Destination.Settings -> R.string.nav_settings
-}
-
-/** Rail glyphs (no icon library dependency; plain Unicode symbols render on Fire OS). */
-private fun Destination.glyph(): String = when (this) {
-    Destination.LiveTv -> "▶"
-    Destination.Home -> "⌂"
-    Destination.Movies -> "🎬"
-    Destination.Series -> "🎞"
-    Destination.Search -> "🔍"
-    Destination.Settings -> "⚙"
 }
 
 /**
@@ -109,46 +105,49 @@ fun TvShell(
     }
 
     val railDescription = stringResource(R.string.nav_rail_description)
-    NavigationDrawer(
-        modifier = modifier.fillMaxSize().background(UiTokens.Background),
-        drawerContent = {
-            Column(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .padding(start = UiTokens.SpaceL, end = UiTokens.SpaceS)
-                    .padding(vertical = UiTokens.OverscanVertical)
-                    .testTag(ShellTags.RAIL)
-                    .semantics { contentDescription = railDescription }
-                    .selectableGroup(),
-                verticalArrangement = Arrangement.spacedBy(UiTokens.SpaceS, Alignment.CenterVertically),
-            ) {
-                Destination.entries.forEach { destination ->
-                    val label = stringResource(destination.labelRes())
-                    val description = stringResource(R.string.nav_item_description, label)
-                    NavigationDrawerItem(
-                        selected = state.current == destination,
-                        onClick = { viewModel.select(destination) },
-                        leadingContent = { Text(destination.glyph(), style = MaterialTheme.typography.titleMedium) },
-                        modifier = Modifier
-                            .focusRequester(railRequesters.getValue(destination))
-                            .onFocusChanged { if (it.isFocused) viewModel.onRailItemFocused(destination) }
-                            .testTag(ShellTags.railItem(destination))
-                            .semantics { contentDescription = description },
-                        scale = NavigationDrawerItemDefaults.scale(focusedScale = UiTokens.FocusScale),
-                        border = NavigationDrawerItemDefaults.border(
-                            focusedBorder = TvDimens.FocusBorder,
-                            focusedSelectedBorder = TvDimens.FocusBorder,
-                        ),
-                    ) {
-                        Text(label)
+    Row(modifier = modifier.fillMaxSize().background(UiTokens.Background)) {
+        Column(
+            modifier = Modifier
+                .fillMaxHeight()
+                .width(RAIL_WIDTH)
+                .debugTint(TvDebugColors.Rail)
+                .padding(horizontal = 4.dp)
+                .testTag(ShellTags.RAIL)
+                .semantics { contentDescription = railDescription }
+                .selectableGroup(),
+            verticalArrangement = Arrangement.spacedBy(UiTokens.SpaceS, Alignment.CenterVertically),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Destination.entries.forEach { destination ->
+                val label = stringResource(destination.labelRes())
+                val description = stringResource(R.string.nav_item_description, label)
+                val selected = state.current == destination
+                Surface(
+                    onClick = { viewModel.select(destination) },
+                    modifier = Modifier
+                        .size(44.dp)
+                        .focusRequester(railRequesters.getValue(destination))
+                        .onFocusChanged { if (it.isFocused) viewModel.onRailItemFocused(destination) }
+                        .testTag(ShellTags.railItem(destination))
+                        .semantics { contentDescription = description },
+                    shape = ClickableSurfaceDefaults.shape(TvDimens.Shape),
+                    scale = ClickableSurfaceDefaults.scale(focusedScale = UiTokens.FocusScale),
+                    border = ClickableSurfaceDefaults.border(focusedBorder = TvDimens.FocusBorder),
+                    colors = ClickableSurfaceDefaults.colors(
+                        containerColor = if (selected) UiTokens.SurfaceVariant else Color.Transparent,
+                        focusedContainerColor = UiTokens.SurfaceFocused,
+                    ),
+                ) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        NavigationIcon(destination, tint = if (selected) UiTokens.Accent else UiTokens.OnBackground)
                     }
                 }
             }
-        },
-    ) {
+        }
         Box(
             modifier = Modifier
-                .fillMaxSize()
+                .weight(1f)
+                .fillMaxHeight()
                 .focusRequester(contentRequester)
                 .focusRestorer()
                 .focusGroup()

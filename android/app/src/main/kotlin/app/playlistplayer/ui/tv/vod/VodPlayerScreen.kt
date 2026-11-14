@@ -53,10 +53,17 @@ import app.playlistplayer.R
 import app.playlistplayer.core.player.ConfiguredPlayer
 import app.playlistplayer.core.player.ExoPlaybackController
 import app.playlistplayer.core.player.PlaybackState
+import app.playlistplayer.core.consolidation.VodKind
+import app.playlistplayer.feature.vod.SkipKind
+import app.playlistplayer.ui.common.LocalVideoScaling
+import app.playlistplayer.feature.settings.VideoScaling
+import app.playlistplayer.ui.common.VideoScalingControl
+import app.playlistplayer.ui.common.VideoScalingLabels
 import app.playlistplayer.feature.vod.OverlayCommand
 import app.playlistplayer.feature.vod.OverlayEvent
 import app.playlistplayer.feature.vod.PlaybackProgressRepository
 import app.playlistplayer.feature.vod.PlaybackRequest
+import app.playlistplayer.feature.vod.SkipSpanProvider
 import app.playlistplayer.feature.vod.SeekDirection
 import app.playlistplayer.feature.vod.InMemoryTrackPreferenceStore
 import app.playlistplayer.feature.vod.TrackOption
@@ -92,6 +99,7 @@ fun VodPlayerScreen(
     onExit: () -> Unit,
     modifier: Modifier = Modifier,
     trackPreferences: TrackPreferenceStore = InMemoryTrackPreferenceStore(),
+    skipSpans: SkipSpanProvider? = null,
 ) {
     val exo = player.exoPlayer
     val scope = rememberCoroutineScope()
@@ -153,8 +161,12 @@ fun VodPlayerScreen(
         // The next episode keeps this session's preference (including a choice made in the panel).
         val preference = overlay.state.tracks.preference ?: trackPreferences.currentOrDefault()
         Media3Tracks.startWithPreference(exo, preference)
-        dispatch(OverlayEvent.Open(current.resumeOfferMs, current.startPositionMs ?: 0L, current.nextEpisodeLabel, preference))
+        dispatch(OverlayEvent.Open(current.resumeOfferMs, current.startPositionMs ?: 0L, current.nextEpisodeLabel, preference, isEpisode = current.kind == VodKind.SERIES))
         rootFocus.requestFocus()
+        skipSpans?.let { provider ->
+            val spans = provider.spans(current)
+            if (spans.isNotEmpty()) dispatch(OverlayEvent.Markers(spans))
+        }
     }
 
     // Position polling: overlay progress, countdown and the 10 s progress save.
@@ -224,11 +236,13 @@ fun VodPlayerScreen(
                     }
                     AndroidKeyEvent.KEYCODE_DPAD_CENTER, AndroidKeyEvent.KEYCODE_ENTER, AndroidKeyEvent.KEYCODE_MEDIA_PLAY_PAUSE,
                     AndroidKeyEvent.KEYCODE_MEDIA_PLAY, AndroidKeyEvent.KEYCODE_MEDIA_PAUSE -> {
-                        if (event.type == KeyEventType.KeyUp) dispatch(OverlayEvent.PlayPause)
+                        val isSelectKey = native.keyCode == AndroidKeyEvent.KEYCODE_DPAD_CENTER || native.keyCode == AndroidKeyEvent.KEYCODE_ENTER
+                        // While a skip offer shows (and the controls are hidden) OK takes it; Down then OK pauses.
+                        if (event.type == KeyEventType.KeyUp) dispatch(if (isSelectKey && s.skip != null && !s.controlsVisible) OverlayEvent.SkipNow else OverlayEvent.PlayPause)
                         true
                     }
                     AndroidKeyEvent.KEYCODE_DPAD_UP, AndroidKeyEvent.KEYCODE_MENU -> {
-                        if (event.type == KeyEventType.KeyUp && s.tracks.hasChoices) dispatch(OverlayEvent.ToggleTrackPanel)
+                        if (event.type == KeyEventType.KeyUp) dispatch(OverlayEvent.ToggleTrackPanel)
                         true
                     }
                     AndroidKeyEvent.KEYCODE_DPAD_DOWN -> {
@@ -240,6 +254,7 @@ fun VodPlayerScreen(
             },
     ) {
         VideoSurface(exo, Modifier.fillMaxSize())
+        app.playlistplayer.ui.common.VodDiagnosticsOverlay(controller, Modifier.align(Alignment.TopStart).padding(24.dp))
 
         uiState.indicator?.let { indicator ->
             Text(text = indicator.text, color = Color.White, modifier = Modifier.align(Alignment.TopCenter).padding(24.dp))
@@ -269,12 +284,32 @@ fun VodPlayerScreen(
             )
         }
 
+        s.skip?.let { prompt ->
+            Text(
+                text = stringResource(
+                    when (prompt.kind) {
+                        SkipKind.INTRO -> R.string.vod_skip_intro_tv
+                        SkipKind.RECAP -> R.string.vod_skip_recap_tv
+                        SkipKind.CREDITS -> R.string.vod_skip_credits_tv
+                    },
+                ),
+                color = Color.White,
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 48.dp, bottom = if (s.controlsVisible || !s.isPlaying) 160.dp else 48.dp)
+                    .background(Color(0xE0101010))
+                    .padding(horizontal = 24.dp, vertical = 12.dp),
+            )
+        }
+
         if (s.trackPanelOpen) {
             TrackPanel(
                 audio = s.tracks.audio,
                 subtitles = s.tracks.subtitles,
                 onAudio = { dispatch(OverlayEvent.SelectAudio(it)) },
                 onSubtitle = { dispatch(OverlayEvent.SelectSubtitle(it)) },
+                scaling = LocalVideoScaling.current,
                 modifier = Modifier.align(Alignment.CenterEnd),
             )
         }
@@ -294,14 +329,7 @@ fun VodPlayerScreen(
 
 @Composable
 private fun VideoSurface(exoPlayer: ExoPlayer, modifier: Modifier) {
-    // SurfaceView (not TextureView): correct HDR output and frame timing, as in the U6 harness.
-    val surface = remember { mutableStateOf<SurfaceView?>(null) }
-    AndroidView(factory = { context -> SurfaceView(context).also { surface.value = it } }, modifier = modifier)
-    val view = surface.value
-    DisposableEffect(exoPlayer, view) {
-        if (view != null) exoPlayer.setVideoSurfaceView(view)
-        onDispose { if (view != null) exoPlayer.clearVideoSurfaceView(view) }
-    }
+    app.playlistplayer.ui.common.ScaledVideoSurface(exoPlayer, modifier)
 }
 
 @Composable
@@ -382,6 +410,7 @@ private fun TrackPanel(
     subtitles: List<TrackOption>,
     onAudio: (String) -> Unit,
     onSubtitle: (String?) -> Unit,
+    scaling: VideoScalingControl,
     modifier: Modifier,
 ) {
     val focus = remember { FocusRequester() }
@@ -391,6 +420,14 @@ private fun TrackPanel(
         modifier = modifier.width(360.dp).fillMaxSize().background(Color(0xE0101010)).padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
+        item { Text(text = stringResource(R.string.vod_picture_title), style = MaterialTheme.typography.titleMedium, color = Color.White) }
+        items(VideoScaling.entries, key = { "p:${it.name}" }) { option ->
+            ListItem(
+                selected = option == scaling.scaling,
+                onClick = { scaling.select(option) },
+                headlineContent = { Text(stringResource(VideoScalingLabels.label(option))) },
+            )
+        }
         item { Text(text = stringResource(R.string.vod_audio), style = MaterialTheme.typography.titleMedium, color = Color.White) }
         items(audio, key = { "a:${it.id}" }) { track ->
             ListItem(
@@ -411,6 +448,9 @@ private fun TrackPanel(
         }
         items(subtitles, key = { "t:${it.id}" }) { track ->
             ListItem(selected = track.selected, onClick = { onSubtitle(track.id) }, headlineContent = { Text(track.label) })
+        }
+        if (subtitles.isEmpty()) {
+            item { Text(text = stringResource(R.string.vod_subtitles_none), style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.7f)) }
         }
     }
     LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }

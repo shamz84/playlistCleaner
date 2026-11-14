@@ -33,16 +33,6 @@ internal fun Destination.mobileLabelRes(): Int = when (this) {
     Destination.Settings -> R.string.nav_settings
 }
 
-/** Navigation glyphs (plain Unicode, no icon library dependency; same set as the TV rail). */
-internal fun Destination.glyph(): String = when (this) {
-    Destination.LiveTv -> "▶"
-    Destination.Home -> "⌂"
-    Destination.Movies -> "🎬"
-    Destination.Series -> "🎞"
-    Destination.Search -> "🔍"
-    Destination.Settings -> "⚙"
-}
-
 /** A glyph used as an icon. Decorative: the enclosing control carries the content description. */
 @Composable
 internal fun GlyphIcon(glyph: String, modifier: Modifier = Modifier) {

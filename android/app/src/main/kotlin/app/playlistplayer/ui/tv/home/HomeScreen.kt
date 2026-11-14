@@ -161,7 +161,6 @@ private fun GroupCard(group: GroupItem, onClick: () -> Unit) {
     ) {
         Column(modifier = Modifier.padding(UiTokens.SpaceM), verticalArrangement = Arrangement.spacedBy(UiTokens.SpaceXs)) {
             Text(text = group.name, style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            Text(text = count, style = MaterialTheme.typography.bodySmall, color = UiTokens.OnSurfaceMuted)
         }
     }
 }

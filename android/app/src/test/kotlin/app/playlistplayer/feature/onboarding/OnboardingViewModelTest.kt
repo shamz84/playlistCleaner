@@ -18,12 +18,14 @@ class OnboardingViewModelTest {
         val progressFlow = MutableSharedFlow<OnboardingProgress>(extraBufferCapacity = 32)
         override val progress = progressFlow
         val calls = mutableListOf<Triple<String, SourceInput, Boolean>>()
+        val epgUrls = mutableListOf<String?>()
         var result = CompletableDeferred<OnboardingResult>()
         var throwOnAdd: Exception? = null
         var cancelled = false
 
-        override suspend fun addPlaylist(name: String, source: SourceInput, xtreamEnabled: Boolean): OnboardingResult {
+        override suspend fun addPlaylist(name: String, source: SourceInput, xtreamEnabled: Boolean, epgOverrideUrl: String?): OnboardingResult {
             calls += Triple(name, source, xtreamEnabled)
+            epgUrls += epgOverrideUrl
             throwOnAdd?.let { throw it }
             try {
                 return result.await()
@@ -54,6 +56,22 @@ class OnboardingViewModelTest {
     }
 
     // --- Defaults ---
+
+    @Test
+    fun `curated guide is on by default and sent as the override, off sends none`() = runTest {
+        newViewModel().also { assertThat(it.state.value.useCuratedEpg).isTrue() }
+        submittedDriveViewModel()
+        assertThat(onboarder.epgUrls.single()).isEqualTo(app.playlistplayer.core.sync.epg.EpgOverrideSettings.DEFAULT_URL)
+
+        val off = newViewModel().apply {
+            onDriveTextChanged(id)
+            onCuratedEpgToggled(false)
+            submit()
+        }
+        runCurrent()
+        assertThat(off.state.value.useCuratedEpg).isFalse()
+        assertThat(onboarder.epgUrls.last()).isNull()
+    }
 
     @Test
     fun `defaults are My playlist, Drive source, Xtream on, nothing to submit`() = runTest {

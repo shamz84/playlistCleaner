@@ -139,19 +139,29 @@ enum class PlaybackMode { LIVE, VOD }
  * every lifecycle call; decisions go to the active one. Switch [mode] only while the player is
  * stopped, before preparing the next item.
  */
-class ProfileLoadControl(profiles: ResolvedLoadControlProfiles) : LoadControl {
+class ProfileLoadControl(private val profiles: ResolvedLoadControlProfiles) : LoadControl {
 
     private val allocator = DefaultAllocator(true, C.DEFAULT_BUFFER_SEGMENT_SIZE)
+    val allocatedBufferBytes: Int get() = allocator.totalBytesAllocated
     private val live = profiles.live.toDefaultLoadControl(allocator)
     private val vod = profiles.vod.toDefaultLoadControl(allocator)
 
     @Volatile
     var mode: PlaybackMode = PlaybackMode.LIVE
+        set(value) {
+            field = value
+            stoppedBySize = false
+        }
+
+    @Volatile
+    private var stoppedBySize = false
 
     private val active: DefaultLoadControl get() = if (mode == PlaybackMode.LIVE) live else vod
     private val inactive: DefaultLoadControl get() = if (mode == PlaybackMode.LIVE) vod else live
+    private val profile: LoadControlProfile get() = if (mode == PlaybackMode.LIVE) profiles.live else profiles.vod
 
     override fun onPrepared(playerId: PlayerId) {
+        stoppedBySize = false
         live.onPrepared(playerId)
         vod.onPrepared(playerId)
     }
@@ -167,11 +177,13 @@ class ProfileLoadControl(profiles: ResolvedLoadControlProfiles) : LoadControl {
     }
 
     override fun onStopped(playerId: PlayerId) {
+        stoppedBySize = false
         live.onStopped(playerId)
         vod.onStopped(playerId)
     }
 
     override fun onReleased(playerId: PlayerId) {
+        stoppedBySize = false
         live.onReleased(playerId)
         vod.onReleased(playerId)
     }
@@ -182,9 +194,32 @@ class ProfileLoadControl(profiles: ResolvedLoadControlProfiles) : LoadControl {
 
     override fun retainBackBufferFromKeyframe(playerId: PlayerId): Boolean = active.retainBackBufferFromKeyframe(playerId)
 
-    override fun shouldContinueLoading(parameters: LoadControl.Parameters): Boolean = active.shouldContinueLoading(parameters)
+    override fun shouldContinueLoading(parameters: LoadControl.Parameters): Boolean {
+        val selected = profile
+        if (!selected.prioritizeTimeOverSizeThresholds) {
+            // Media3's delegate counts only allocations made through its own per-player wrapper.
+            // This load control shares the raw allocator between profiles, so enforce its byte
+            // target against the allocator actually used by the player.
+            if (allocator.totalBytesAllocated >= selected.targetBufferBytes) {
+                stoppedBySize = true
+                return false
+            }
+            if (stoppedBySize) {
+                val minimumMs = if (parameters.playbackSpeed > 1f) {
+                    minOf(selected.minBufferMs * parameters.playbackSpeed, selected.maxBufferMs.toFloat())
+                } else {
+                    selected.minBufferMs.toFloat()
+                }
+                if (parameters.bufferedDurationUs >= maxOf(minimumMs, 500f) * 1_000L) return false
+                stoppedBySize = false
+            }
+        }
+        return active.shouldContinueLoading(parameters)
+    }
 
-    override fun shouldStartPlayback(parameters: LoadControl.Parameters): Boolean = active.shouldStartPlayback(parameters)
+    override fun shouldStartPlayback(parameters: LoadControl.Parameters): Boolean =
+        (!profile.prioritizeTimeOverSizeThresholds && allocator.totalBytesAllocated >= profile.targetBufferBytes) ||
+            active.shouldStartPlayback(parameters)
 
     override fun shouldContinuePreloading(
         playerId: PlayerId,

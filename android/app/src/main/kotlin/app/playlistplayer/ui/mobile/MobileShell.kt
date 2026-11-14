@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationRail
@@ -22,6 +23,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import app.playlistplayer.R
 import app.playlistplayer.feature.shell.Destination
+import app.playlistplayer.ui.common.NavigationIcon
 import app.playlistplayer.ui.mobile.navigation.BottomDestinations
 import app.playlistplayer.ui.mobile.navigation.MobileNavigationType
 
@@ -69,7 +71,7 @@ internal fun MobileShell(
                     IconButton(
                         onClick = { onSelect(Destination.Settings) },
                         modifier = Modifier.testTag(MobileShellTags.SETTINGS).semantics { contentDescription = settingsDescription },
-                    ) { GlyphIcon(Destination.Settings.glyph()) }
+                    ) { NavigationIcon(Destination.Settings, LocalContentColor.current) }
                 }
             },
             modifier = Modifier.testTag(MobileShellTags.TOP_BAR),
@@ -87,7 +89,7 @@ internal fun MobileShell(
                         NavigationBarItem(
                             selected = current == destination,
                             onClick = { onSelect(destination) },
-                            icon = { GlyphIcon(destination.glyph()) },
+                            icon = { NavigationIcon(destination, LocalContentColor.current) },
                             label = { Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                             modifier = Modifier.testTag(MobileShellTags.item(destination)),
                         )
@@ -105,7 +107,7 @@ internal fun MobileShell(
                     NavigationRailItem(
                         selected = current == destination,
                         onClick = { onSelect(destination) },
-                        icon = { GlyphIcon(destination.glyph()) },
+                        icon = { NavigationIcon(destination, LocalContentColor.current) },
                         label = { Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                         modifier = Modifier.testTag(MobileShellTags.item(destination)),
                     )

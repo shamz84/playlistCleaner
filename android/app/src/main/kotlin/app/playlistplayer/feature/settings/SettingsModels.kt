@@ -75,6 +75,10 @@ sealed interface SettingsMessage {
     data class OverrideSaved(val playlistId: Long) : SettingsMessage
     data class OverrideCleared(val playlistId: Long) : SettingsMessage
 
+    data class CuratedGuideApplied(val count: Int) : SettingsMessage
+
+    data class GuideRefreshing(val playlistId: Long) : SettingsMessage
+
     /** The test before saving failed; nothing was saved. */
     data class OverrideNotSaved(val playlistId: Long, val result: OverrideTestResult) : SettingsMessage
 
