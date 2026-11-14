@@ -113,6 +113,32 @@ Users may also hold more than one provider or playlist. They need to add them si
 - Pipeline emitting machine-readable variant/quality metadata to replace app-side heuristics.
 - Optional FFmpeg audio extension for codecs the device cannot decode or pass through (local build plus licence review).
 - Remote config or crash reporting (must not leak stream URLs when added).
+- Sharing favourites and watched status between devices on the same network. Options below, recorded 2026-11-14; no option chosen.
+
+#### Cross-device sync of favourites and watched status (options, not started)
+
+Current state: personal data lives only in each device's Room tables (`favourite`, `playback_progress`, `title_pick`, `last_channel`, `recent_channel`, `title_override` in `android/core/database/src/main/kotlin/app/playlistplayer/core/database/entity/UserDataEntities.kt`). Rows are keyed by the local auto-increment `playlistId`, which differs per device. Channel keys `s:<streamId>` are stable across devices for Xtream; `o:<ordinal>` keys (plain M3U) are not stable if the playlist order changes. Merged `VodTitle.key` values match when both devices index the same playlist version.
+
+| Option | How | Pros | Cons |
+|---|---|---|---|
+| 1. Export / import | Settings action shows a QR / 6-digit code; the other device pulls a one-off snapshot over the LAN. | Smallest build; no server or background work. | One-off copy; watched state drifts again. |
+| 2. Peer-to-peer LAN sync | Each app advertises via Android NSD (mDNS, available on API 25) and runs a small embedded HTTP server; paired devices exchange changes since last sync on start, resume and after changes. | No extra hardware. | Both devices must be running; Fire TV kills background apps, so sync happens only while open. Embedded server, pairing and N-way merge make it the largest build. |
+| 3. Home sync service | Small container next to the pipeline's existing Docker deployment; devices push and pull deltas on start, resume and after changes. | Always available; server is the authority, so merging is simplest; a sleeping stick catches up on next launch; fits the repo's Docker target. | Needs an always-on host (NAS, Pi or PC). |
+| 4. Google Drive appDataFolder | Sync a small JSON file in Drive's hidden app folder. | Works off-LAN too. | Needs Google OAuth sign-in on Fire TV (awkward); not LAN-only. |
+
+Foundations any option needs:
+- Stable cross-device playlist key: a hash (for example SHA-256) of the SecureStore source reference (Drive file id / M3U URL). Never send the raw value; it is a secret.
+- Tombstones: removing a favourite currently deletes the row, so other devices never learn of it. Keep a deleted flag plus timestamp.
+- Last-write-wins per row: `playback_progress` and `title_pick` already have `updatedAt`; `favourite` only has `addedAt` and needs `updatedAt`. Fire Sticks use network time, so clock skew is acceptable.
+- Scope: sync favourites, progress/watched and version picks. Keep last channel and recent channels per device. `title_override` is optional.
+- Pairing before any exchange. Payloads carry only the keys above, never credentials or URLs.
+- Profiles: deriving the key from each user's own Drive file means one person's devices sync together and stay separate from other household members. This fits `replace_credentials_multi.py` per-user playlists.
+
+Recommendation at the time of writing: option 3 if an always-on host exists, otherwise option 2. Option 1 could ship first as a stepping stone, because options 2 and 3 need the same tombstones and stable playlist key.
+
+Open questions for the user:
+- Is there an always-on machine on the network that can run a container?
+- Should favourites be shared only between one person's devices, or across different users' playlists?
 
 ---
 

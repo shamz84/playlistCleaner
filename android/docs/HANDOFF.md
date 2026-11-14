@@ -83,7 +83,8 @@ Updated: 2026-11-14
 3. U14 remainder: time-to-picture and quality comparison with TiviMate on the same stream/device, buffer/startup tuning, Baseline Profiles and release device matrix. First-tune background index warm-up is implemented but not measured; video-quality difference remains undiagnosed. Signed release packaging is complete, not device-accepted.
 4. Older device checks: D-pad focus restoration, PIN pad, 4K HEVC/HDR output, tunneling and frame-rate switching, catch-up landing within ±1 min, rotation on phone.
 5. Candidate skip/picture follow-ups, not yet implemented: visible TheIntroDB credit, Settings toggle for skip prompts and a Picture entry, persistent span cache, IntroDB (IMDb) fallback, and controls for changing picture format during live playback. Verify external-service terms/rate limits before adding integrations.
-6. Push the branch and open a PR when ready.
+6. Cross-device sync of favourites and watched status: options recorded in the plan under Scope Boundaries > Deferred to Follow-Up Work (export/import, peer-to-peer LAN, home sync service, Drive appDataFolder). Waiting on the user's choice: is there an always-on host, and should data be shared per person or household-wide?
+7. Push the branch and open a PR when ready.
 
 ## Known issues
 
