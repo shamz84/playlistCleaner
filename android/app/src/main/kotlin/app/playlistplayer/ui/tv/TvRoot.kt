@@ -245,7 +245,10 @@ private fun TvApp(dependencies: TvRootDependencies?, onAddPlaylist: () -> Unit) 
                         dependencies,
                         push = ::push,
                         replaceTop = { navigate(stack.replaceTop(it)) },
-                        onClose = { close(top) },
+                        onClose = {
+                            if (top.screen is TvScreen.LivePlayer) shell.select(Destination.LiveTv)
+                            close(top)
+                        },
                         // Back from the live player to Live TV: the stream keeps playing in the preview.
                         keepLivePlaying = { stack.top == null && shell.state.value.current == Destination.LiveTv },
                     )
@@ -321,6 +324,7 @@ private fun TvDestination(
                         streamActive = dependencies.playback.controller.state.map { it.isStreamActive() }.distinctUntilChanged(),
                     )
                 }
+                LaunchedEffect(liveTv) { liveTv.closeGroupsPanel() }
                 LaunchedEffect(pendingGroup) {
                     pendingGroup?.let {
                         liveTv.selectGroup(it)

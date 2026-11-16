@@ -28,6 +28,7 @@ import app.playlistplayer.feature.settings.VideoScaling
 class VideoScalingControl(val scaling: VideoScaling, val select: (VideoScaling) -> Unit, val cycle: () -> Unit)
 
 val LocalVideoScaling = compositionLocalOf { VideoScalingControl(VideoScaling.FIT, {}, {}) }
+val LocalLiveVideoScaling = compositionLocalOf { VideoScalingControl(VideoScaling.FIT, {}, {}) }
 
 /** Size of the video picture inside a [containerWidth] x [containerHeight] box for [scaling]. */
 internal fun scaledVideoSize(
@@ -55,8 +56,7 @@ internal fun scaledVideoSize(
  * frame is decoded it fills [modifier]. Zoom crops to the box, so callers should pass bounded sizes.
  */
 @Composable
-fun ScaledVideoSurface(exoPlayer: ExoPlayer, modifier: Modifier = Modifier) {
-    val scaling = LocalVideoScaling.current.scaling
+fun ScaledVideoSurface(exoPlayer: ExoPlayer, modifier: Modifier = Modifier, scaling: VideoScaling = LocalVideoScaling.current.scaling) {
     var aspect by remember(exoPlayer) { mutableFloatStateOf(aspectOf(exoPlayer.videoSize)) }
     val surface = remember { mutableStateOf<SurfaceView?>(null) }
     val subtitles = remember { mutableStateOf<SubtitleView?>(null) }

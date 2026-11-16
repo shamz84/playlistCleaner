@@ -49,7 +49,7 @@ import java.util.Locale
  */
 @Composable
 internal fun PlayerVideoSurface(exoPlayer: ExoPlayer, modifier: Modifier = Modifier) {
-    app.playlistplayer.ui.common.ScaledVideoSurface(exoPlayer, modifier)
+    app.playlistplayer.ui.common.ScaledVideoSurface(exoPlayer, modifier, app.playlistplayer.ui.common.LocalLiveVideoScaling.current.scaling)
 }
 
 @Composable
@@ -151,4 +151,3 @@ internal fun ProgressBar(fraction: Float, modifier: Modifier = Modifier, availab
         Box(modifier = Modifier.fillMaxWidth(fraction.coerceIn(0f, 1f)).height(4.dp).background(UiTokens.Accent))
     }
 }
-

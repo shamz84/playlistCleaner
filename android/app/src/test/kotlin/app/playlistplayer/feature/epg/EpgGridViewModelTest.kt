@@ -251,7 +251,7 @@ class EpgGridViewModelTest {
     }
 
     @Test
-    fun `focus returns to the programme that opened the player`() = runTest(main.dispatcher) {
+    fun `return opens current time while keeping the channel`() = runTest(main.dispatcher) {
         val vm = viewModel()
         val events = events(vm)
         advanceUntilIdle()
@@ -260,22 +260,58 @@ class EpgGridViewModelTest {
         vm.chooseWatchLive()
         assertThat(events.single()).isEqualTo(EpgEvent.WatchLive(two))
 
-        // Back from the player: the screen is recreated and asks the ViewModel for the focus.
-        now += 10 * 60_000
+        // Browse into the future, then return after the current 30-minute slot changes.
+        vm.pageForward()
+        advanceUntilIdle()
+        assertThat(vm.state.value.showNowLine).isFalse()
+        now += 25 * 60_000
         vm.onReturn()
         advanceUntilIdle()
         assertThat(vm.focusedCell.value?.channelOrdinal).isEqualTo(11)
         assertThat(vm.focusedCell.value?.programmeId).isEqualTo(5)
-        assertThat(vm.state.value.windowStartMillis).isEqualTo(utc("2026-10-29T19:30:00Z"))
+        assertThat(vm.state.value.windowStartMillis).isEqualTo(utc("2026-10-29T20:00:00Z"))
+        assertThat(vm.state.value.showNowLine).isTrue()
+        assertThat(vm.state.value.nowResetVersion).isEqualTo(1)
+    }
 
-        // Paging away and back keeps the row, then the programme.
-        vm.pageForward()
+    @Test
+    fun `reopening or choosing now clears an old programme even in the current window`() = runTest(main.dispatcher) {
+        val vm = viewModel()
         advanceUntilIdle()
-        assertThat(vm.focusedCell.value?.channelOrdinal).isEqualTo(11)
+        vm.onFocus(10, 3)
+        vm.jumpToNow()
+        advanceUntilIdle()
+        assertThat(vm.focusedCell.value).isEqualTo(EpgFocus(10, 2, now))
         vm.pageBack()
         advanceUntilIdle()
-        assertThat(vm.focusedCell.value?.channelOrdinal).isEqualTo(11)
-        assertThat(vm.focusedCell.value?.programmeId).isEqualTo(5)
+        assertThat(vm.state.value.showNowLine).isFalse()
+        vm.tick()
+        assertThat(vm.state.value.showNowLine).isFalse()
+        vm.onReturn()
+        advanceUntilIdle()
+        assertThat(vm.state.value.windowStartMillis).isEqualTo(utc("2026-10-29T19:30:00Z"))
+        assertThat(vm.focusedCell.value).isEqualTo(EpgFocus(10, 2, now))
+        assertThat(vm.state.value.nowResetVersion).isEqualTo(2)
+    }
+
+    @Test
+    fun `stale focus during a slow return cannot restore a future programme`() = runTest(main.dispatcher) {
+        val gate = CompletableDeferred<Unit>()
+        var calls = 0
+        val slowGrid = EpgGridSource { playlist, group, from, to ->
+            if (calls++ == 1) gate.await()
+            grid.gridForGroup(playlist, group, from, to)
+        }
+        val vm = EpgGridViewModel(GroupKey(1, 2), channels, slowGrid, resolver, clock = { now }, zone = zone)
+        advanceUntilIdle()
+        vm.onFocus(10, 3)
+        vm.onReturn()
+        runCurrent()
+        vm.onFocus(10, 3)
+        gate.complete(Unit)
+        advanceUntilIdle()
+        assertThat(vm.focusedCell.value).isEqualTo(EpgFocus(10, 2, now))
+        assertThat(vm.focusedProgramme.value?.title).isEqualTo("The Celebrity Traitors")
     }
 
     @Test

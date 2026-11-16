@@ -1038,6 +1038,17 @@ This addendum records work requested after the original units. **Implemented** m
 
 ---
 
+## Session addendum — guide and playback refinements (2026-11-16)
+
+- **TV Live TV guide:** selected balanced layout A; categories are hidden initially to give the guide more space. Back from full-screen returns to the guide with the existing stream in the preview; Back again opens the animated category tree, pushing the guide right. Selecting a category, Back or Right closes the tree. Menu retains recent-channel and playlist-order access.
+- **Picture format:** Settings → Playback offers independently persisted Live TV/catch-up and on-demand settings on TV and phone. Normal, Full, 4:3, 16:9, 2.35:1 and Zoom remain available. Existing installs inherit the earlier shared setting for both until changed. On-demand player controls continue to change the on-demand setting.
+- **TV on-demand controls:** Up/Menu opens Picture, Audio and Subtitles categories; each opens its own choices, with Back returning to the categories. The playback information bar and options panel hide after 30 seconds without input, including while paused; key input resets the timer. Resume, next-episode and error prompts remain available.
+- **EPG return:** reopening the TV or mobile guide, switching back to a previously browsed group, or selecting Now returns the timeline to the current time and selects the current programme on the retained channel. Past and future browsing remain available manually.
+- **Release and install:** signed optimized release 0.1.8 / code 9, minSdk 25, targetSdk 36, assembled with release vital lint; v2 signature matches 0.1.7 and alignment was verified. The APK was installed in place on four Fire Sticks and each installed version was checked. Installation is not feature acceptance.
+- **Verification remaining:** focused settings, guide, TV/mobile navigation, VOD menu and timing tests passed. Test the updated remote focus, category animation, shared preview continuity, current-time guide, picture settings and VOD timeout on devices, including older hardware and phones. Full release lint was not rerun; the earlier lint findings and the broader acceptance/performance work remain open. No full-suite pass is claimed.
+
+---
+
 ## System-Wide Impact
 
 - **Interaction graph:** the pipeline's Drive overwrite is now a production dependency of the app. Any change to `upload_to_gdrive.py` that creates a new file instead of updating breaks every installed app's file ID.

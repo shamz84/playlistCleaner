@@ -135,7 +135,7 @@ fun MobileGuideGrid(
     val watchLive by rememberUpdatedState(onWatchLive)
 
     LaunchedEffect(viewModel) {
-        // Shown again (e.g. back from the player): refresh now, keeping the window and focus.
+        // Shown again (e.g. back from the player): return to now on the remembered channel.
         if (viewModel.state.value.rows.isNotEmpty()) viewModel.onReturn()
         viewModel.events.collect { event ->
             when (event) {
@@ -237,15 +237,19 @@ private fun Grid(state: EpgGridUiState, viewModel: EpgGridViewModel, modifier: M
     val scroll = rememberScrollState()
     val listState = rememberLazyListState()
     var shownStart by rememberSaveable { mutableStateOf<Long?>(null) }
+    var shownResetVersion by remember { mutableStateOf(state.nowResetVersion) }
 
-    LaunchedEffect(state.windowStartMillis) {
+    LaunchedEffect(state.windowStartMillis, state.nowResetVersion) {
         val windowMillis = state.windowEndMillis - state.windowStartMillis
-        when (GuidePaging.anchorAfter(shownStart, state.windowStartMillis, windowMillis)) {
+        val anchor = if (shownResetVersion != state.nowResetVersion) ScrollAnchor.START
+            else GuidePaging.anchorAfter(shownStart, state.windowStartMillis, windowMillis)
+        when (anchor) {
             ScrollAnchor.KEEP -> Unit
             ScrollAnchor.START -> scroll.scrollTo(0)
             ScrollAnchor.END -> scroll.scrollTo(scroll.maxValue)
         }
         shownStart = state.windowStartMillis
+        shownResetVersion = state.nowResetVersion
     }
 
     val gridDescription = stringResource(R.string.mobile_guide_grid_description)

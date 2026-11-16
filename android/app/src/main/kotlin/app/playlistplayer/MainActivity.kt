@@ -28,6 +28,7 @@ import app.playlistplayer.core.player.DisplayModeSwitcher
 import app.playlistplayer.core.player.PlaybackState
 import app.playlistplayer.feature.settings.AppPreferences
 import app.playlistplayer.ui.common.LocalVideoScaling
+import app.playlistplayer.ui.common.LocalLiveVideoScaling
 import app.playlistplayer.ui.common.VideoScalingControl
 import app.playlistplayer.ui.mobile.MobileLoading
 import app.playlistplayer.ui.mobile.MobileRoot
@@ -76,14 +77,21 @@ class MainActivity : ComponentActivity() {
             val scope = rememberCoroutineScope()
             val scaling = preferences.playback.videoScaling
             val scalingControl = remember(scaling) {
-            VideoScalingControl(scaling, { choice -> scope.launch { container.preferencesRepository.setVideoScaling(choice) } }) {
-                scope.launch { container.preferencesRepository.setVideoScaling(scaling.next()) }
+                VideoScalingControl(scaling, { choice -> scope.launch { container.preferencesRepository.setVideoScaling(choice) } }) {
+                    scope.launch { container.preferencesRepository.setVideoScaling(scaling.next()) }
+                }
             }
+            val liveScaling = preferences.playback.liveVideoScaling
+            val liveScalingControl = remember(liveScaling) {
+                VideoScalingControl(liveScaling, { choice -> scope.launch { container.preferencesRepository.setLiveVideoScaling(choice) } }) {
+                    scope.launch { container.preferencesRepository.setLiveVideoScaling(liveScaling.next()) }
+                }
             }
             val controller = remember { container.playback.controller() }
             val videoFormat by controller.videoFormat.collectAsState()
             CompositionLocalProvider(
                 LocalVideoScaling provides scalingControl,
+                LocalLiveVideoScaling provides liveScalingControl,
                 LocalLiveVideoInfo provides LiveVideoInfo(preferences.playback.showVideoInfo, videoFormat),
                 LocalVodDiagnostics provides preferences.playback.showVodDiagnostics,
                 LocalAppPalette provides paletteFor(preferences.theme),

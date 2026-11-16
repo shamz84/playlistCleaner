@@ -92,6 +92,8 @@ data class EpgGridUiState(
     val nowMillis: Long = 0,
     val windowStartMillis: Long = 0,
     val windowEndMillis: Long = 0,
+    /** Increments when reopening the guide resets its timeline to now. */
+    val nowResetVersion: Long = 0,
     val slotMillis: Long = EpgGridViewModel.SLOT_MILLIS,
     /** Start of every 30-minute slot in the window (column headers). */
     val slots: List<Long> = emptyList(),

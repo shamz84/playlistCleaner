@@ -1,5 +1,7 @@
 package app.playlistplayer.ui.tv.livetv
 
+import androidx.activity.OnBackPressedDispatcher
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.hasAnyAncestor
@@ -7,6 +9,8 @@ import androidx.compose.ui.test.hasAnyDescendant
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
@@ -62,10 +66,12 @@ class LiveTvScreenTest {
     private val history = MutableStateFlow(ChannelHistoryState())
     private val streamActive = MutableStateFlow(false)
     private val fullscreen = mutableListOf<ChannelRef>()
+    private lateinit var back: OnBackPressedDispatcher
 
     private fun show(): LiveTvViewModel {
         val vm = LiveTvViewModel(Sections(f.sections), { null }, text, history = history, streamActive = streamActive)
         compose.setContent {
+            back = checkNotNull(LocalOnBackPressedDispatcherOwner.current).onBackPressedDispatcher
             TvTheme {
                 LiveTvScreen(
                     vm,
@@ -104,18 +110,43 @@ class LiveTvScreenTest {
     }
 
     @Test
-    fun `the group tree is always visible and selecting a group shows its grid`() {
+    fun `the group tree opens on demand and selecting a group shows its grid`() {
         val vm = show()
-        assertThat(exists(hasTestTag(LiveTvTags.GROUPS_PANEL))).isTrue()
+        assertThat(exists(hasTestTag(LiveTvTags.GROUPS_PANEL))).isFalse()
         vm.openGroupsPanel()
         compose.waitForIdle()
         assertThat(exists(hasTestTag(LiveTvTags.GROUPS_PANEL))).isTrue()
         clickText("Kids")
         assertThat(vm.state.value.groupsPanelOpen).isFalse()
+        assertThat(exists(hasTestTag(LiveTvTags.GROUPS_PANEL))).isFalse()
         assertThat(vm.state.value.selectedGroup).isEqualTo(GroupKey(2, 0))
         assertThat(exists(hasText("Family · Kids"))).isTrue()
         assertThat(exists(hasText("This group has no channels."))).isTrue()
         assertThat(exists(hasTestTag(EpgTags.channel(f.bbcOne.ordinal)))).isFalse()
+    }
+
+    @Test
+    fun `back opens a panel that pushes the guide and back closes it`() {
+        val vm = show()
+        history.value = ChannelHistoryState(ChannelRef(f.bbcTwo.playlistId, f.bbcTwo.ordinal))
+        streamActive.value = true
+        compose.waitForIdle()
+        assertThat(exists(hasTestTag(FAKE_VIDEO))).isTrue()
+        val fullBounds = compose.onNodeWithTag(LiveTvTags.GRID_PANE).getUnclippedBoundsInRoot()
+        val fullWidth = (fullBounds.right - fullBounds.left).value
+        compose.runOnIdle { back.onBackPressed() }
+        compose.waitForIdle()
+        assertThat(vm.state.value.groupsPanelOpen).isTrue()
+        assertThat(exists(hasTestTag(FAKE_VIDEO))).isTrue()
+        val narrowedBounds = compose.onNodeWithTag(LiveTvTags.GRID_PANE).getUnclippedBoundsInRoot()
+        val narrowedWidth = (narrowedBounds.right - narrowedBounds.left).value
+        assertThat(narrowedWidth).isLessThan(fullWidth)
+        compose.runOnIdle { back.onBackPressed() }
+        compose.waitForIdle()
+        assertThat(vm.state.value.groupsPanelOpen).isFalse()
+        assertThat(exists(hasTestTag(FAKE_VIDEO))).isTrue()
+        val closedBounds = compose.onNodeWithTag(LiveTvTags.GRID_PANE).getUnclippedBoundsInRoot()
+        assertThat((closedBounds.right - closedBounds.left).value).isWithin(1f).of(fullWidth)
     }
 
     @Test

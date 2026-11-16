@@ -81,8 +81,8 @@ internal fun FullscreenLandscapeEffect() {
  * if the surface is recreated, so rotation never re-prepares the stream.
  */
 @Composable
-internal fun VideoSurface(exoPlayer: ExoPlayer, modifier: Modifier = Modifier) {
-    app.playlistplayer.ui.common.ScaledVideoSurface(exoPlayer, modifier)
+internal fun VideoSurface(exoPlayer: ExoPlayer, modifier: Modifier = Modifier, scaling: app.playlistplayer.feature.settings.VideoScaling = app.playlistplayer.ui.common.LocalLiveVideoScaling.current.scaling) {
+    app.playlistplayer.ui.common.ScaledVideoSurface(exoPlayer, modifier, scaling)
 }
 
 /** A round control over the video with a glyph and a mandatory content description (≥ 48 dp). */

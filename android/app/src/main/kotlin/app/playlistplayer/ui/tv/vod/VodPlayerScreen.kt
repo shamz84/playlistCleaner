@@ -19,10 +19,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -36,6 +38,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -119,6 +122,9 @@ fun VodPlayerScreen(
     KeepScreenOn(ScreenWakePolicy.isActive(playbackState, paused = !playRequested))
     val uiState by controller.uiState.collectAsStateWithLifecycle()
     val rootFocus = remember { FocusRequester() }
+    var menuPage by remember { mutableStateOf<TrackMenuPage?>(null) }
+    var menuFocus by remember { mutableStateOf(TrackMenuPage.PICTURE) }
+    var lastInteraction by remember { mutableLongStateOf(0L) }
 
     fun durationOf(): Long = exo.duration.takeIf { it != C.TIME_UNSET && it > 0 } ?: 0L
 
@@ -207,8 +213,30 @@ fun VodPlayerScreen(
         }
     }
 
+    VodControlsAutoHide(
+        enabled = (overlayState.controlsVisible || overlayState.trackPanelOpen) &&
+            overlayState.seek == null && overlayState.resumePrompt == null &&
+            overlayState.nextEpisode == null && uiState.error == null,
+        interaction = lastInteraction,
+    ) {
+        dispatch(OverlayEvent.HideControls)
+        menuPage = null
+        rootFocus.requestFocus()
+    }
+
     BackHandler {
-        if (overlayState.trackPanelOpen) dispatch(OverlayEvent.ToggleTrackPanel) else exit()
+        lastInteraction++
+        when {
+            overlayState.trackPanelOpen && menuPage != null -> {
+                menuFocus = checkNotNull(menuPage)
+                menuPage = null
+            }
+            overlayState.trackPanelOpen -> {
+                dispatch(OverlayEvent.ToggleTrackPanel)
+                rootFocus.requestFocus()
+            }
+            else -> exit()
+        }
     }
 
     Box(
@@ -218,6 +246,7 @@ fun VodPlayerScreen(
             .focusRequester(rootFocus)
             .focusable()
             .onPreviewKeyEvent { event ->
+                if (event.type == KeyEventType.KeyDown) lastInteraction++
                 val s = overlayState
                 // Prompt, next-episode card and track panel own the D-pad while visible.
                 if (s.resumePrompt != null || s.nextEpisode != null || s.trackPanelOpen || uiState.error != null) return@onPreviewKeyEvent false
@@ -242,7 +271,11 @@ fun VodPlayerScreen(
                         true
                     }
                     AndroidKeyEvent.KEYCODE_DPAD_UP, AndroidKeyEvent.KEYCODE_MENU -> {
-                        if (event.type == KeyEventType.KeyUp) dispatch(OverlayEvent.ToggleTrackPanel)
+                        if (event.type == KeyEventType.KeyUp) {
+                            menuPage = null
+                            menuFocus = TrackMenuPage.PICTURE
+                            dispatch(OverlayEvent.ToggleTrackPanel)
+                        }
                         true
                     }
                     AndroidKeyEvent.KEYCODE_DPAD_DOWN -> {
@@ -261,7 +294,7 @@ fun VodPlayerScreen(
         }
 
         val s = overlayState
-        if (s.controlsVisible || s.seek != null || !s.isPlaying) {
+        if (s.controlsVisible || s.seek != null) {
             ControlsBar(current.label, s, Modifier.align(Alignment.BottomCenter))
         }
 
@@ -297,7 +330,7 @@ fun VodPlayerScreen(
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .padding(end = 48.dp, bottom = if (s.controlsVisible || !s.isPlaying) 160.dp else 48.dp)
+                    .padding(end = 48.dp, bottom = if (s.controlsVisible || s.seek != null) 160.dp else 48.dp)
                     .background(Color(0xE0101010))
                     .padding(horizontal = 24.dp, vertical = 12.dp),
             )
@@ -310,6 +343,10 @@ fun VodPlayerScreen(
                 onAudio = { dispatch(OverlayEvent.SelectAudio(it)) },
                 onSubtitle = { dispatch(OverlayEvent.SelectSubtitle(it)) },
                 scaling = LocalVideoScaling.current,
+                page = menuPage,
+                menuFocus = menuFocus,
+                onPage = { menuPage = it; menuFocus = it; lastInteraction++ },
+                onInteraction = { lastInteraction++ },
                 modifier = Modifier.align(Alignment.CenterEnd),
             )
         }
@@ -342,16 +379,12 @@ private fun ControlsBar(label: String, s: VodOverlayState, modifier: Modifier) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(24.dp)) {
             Text(text = label, style = MaterialTheme.typography.titleMedium, color = Color.White, modifier = Modifier.weight(1f))
             // The track panel opens with Up / Menu; show what is playing and how to change it.
-            if (s.tracks.hasChoices) {
-                val audio = s.tracks.audio.firstOrNull { it.selected }?.label
-                val subtitles = s.tracks.subtitles.firstOrNull { it.selected }?.label ?: stringResource(R.string.vod_subtitles_off)
-                Text(
-                    text = stringResource(R.string.vod_tracks_hint, listOfNotNull(audio, subtitles).joinToString(" / ")),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.White,
-                    maxLines = 1,
-                )
-            }
+            Text(
+                text = stringResource(R.string.vod_options_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.White,
+                maxLines = 1,
+            )
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             if (!s.isPlaying && s.started) Text(text = stringResource(R.string.vod_paused), color = Color.White)
@@ -404,56 +437,116 @@ private fun NextEpisodeCardView(label: String, secondsRemaining: Int, onPlayNow:
     LaunchedEffect(Unit) { focus.requestFocus() }
 }
 
+internal enum class TrackMenuPage(val titleRes: Int) {
+    PICTURE(R.string.vod_picture_title),
+    AUDIO(R.string.vod_audio),
+    SUBTITLES(R.string.vod_subtitles),
+}
+
 @Composable
-private fun TrackPanel(
+internal fun VodControlsAutoHide(enabled: Boolean, interaction: Long, onTimeout: () -> Unit) {
+    val timeout by rememberUpdatedState(onTimeout)
+    LaunchedEffect(enabled, interaction) {
+        if (enabled) awaitVodControlsTimeout { timeout() }
+    }
+}
+
+internal suspend fun awaitVodControlsTimeout(onTimeout: () -> Unit) {
+    delay(VOD_CONTROLS_TIMEOUT_MS)
+    onTimeout()
+}
+
+@Composable
+internal fun TrackPanel(
     audio: List<TrackOption>,
     subtitles: List<TrackOption>,
     onAudio: (String) -> Unit,
     onSubtitle: (String?) -> Unit,
     scaling: VideoScalingControl,
+    page: TrackMenuPage?,
+    menuFocus: TrackMenuPage,
+    onPage: (TrackMenuPage) -> Unit,
+    onInteraction: () -> Unit,
     modifier: Modifier,
 ) {
-    val focus = remember { FocusRequester() }
-    // Opens on the playing audio track (D-pad: Up/Down moves, Centre picks, Back closes).
-    val focusedAudioId = remember { (audio.firstOrNull { it.selected } ?: audio.firstOrNull())?.id }
+    val focus = remember(page) { FocusRequester() }
+    val focusedAudioId = (audio.firstOrNull { it.selected } ?: audio.firstOrNull())?.id
+    val focusedSubtitleId = subtitles.firstOrNull { it.selected }?.id
+    val listState = rememberLazyListState()
+    val focusIndex = when (page) {
+        null -> TrackMenuPage.entries.indexOf(menuFocus)
+        TrackMenuPage.PICTURE -> 1 + VideoScaling.entries.indexOf(scaling.scaling)
+        TrackMenuPage.AUDIO -> if (focusedAudioId == null) 1 else 1 + audio.indexOfFirst { it.id == focusedAudioId }
+        TrackMenuPage.SUBTITLES -> if (focusedSubtitleId == null) 1 else 2 + subtitles.indexOfFirst { it.id == focusedSubtitleId }
+    }
     LazyColumn(
-        modifier = modifier.width(360.dp).fillMaxSize().background(Color(0xE0101010)).padding(24.dp),
+        modifier = modifier.width(360.dp).fillMaxSize().background(Color(0xE0101010)).padding(24.dp).testTag("vod.options"),
+        state = listState,
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        item { Text(text = stringResource(R.string.vod_picture_title), style = MaterialTheme.typography.titleMedium, color = Color.White) }
-        items(VideoScaling.entries, key = { "p:${it.name}" }) { option ->
-            ListItem(
-                selected = option == scaling.scaling,
-                onClick = { scaling.select(option) },
-                headlineContent = { Text(stringResource(VideoScalingLabels.label(option))) },
-            )
-        }
-        item { Text(text = stringResource(R.string.vod_audio), style = MaterialTheme.typography.titleMedium, color = Color.White) }
-        items(audio, key = { "a:${it.id}" }) { track ->
-            ListItem(
-                selected = track.selected,
-                onClick = { onAudio(track.id) },
-                modifier = if (track.id == focusedAudioId) Modifier.focusRequester(focus) else Modifier,
-                headlineContent = { Text(track.label) },
-            )
-        }
-        item { Text(text = stringResource(R.string.vod_subtitles), style = MaterialTheme.typography.titleMedium, color = Color.White) }
-        item {
-            ListItem(
-                selected = subtitles.none { it.selected },
-                onClick = { onSubtitle(null) },
-                modifier = if (audio.isEmpty()) Modifier.focusRequester(focus) else Modifier,
-                headlineContent = { Text(stringResource(R.string.vod_subtitles_off)) },
-            )
-        }
-        items(subtitles, key = { "t:${it.id}" }) { track ->
-            ListItem(selected = track.selected, onClick = { onSubtitle(track.id) }, headlineContent = { Text(track.label) })
-        }
-        if (subtitles.isEmpty()) {
-            item { Text(text = stringResource(R.string.vod_subtitles_none), style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.7f)) }
+        when (page) {
+            null -> items(TrackMenuPage.entries, key = { it.name }) { entry ->
+                ListItem(
+                    selected = false,
+                    onClick = { onPage(entry) },
+                    modifier = if (entry == menuFocus) Modifier.focusRequester(focus) else Modifier,
+                    headlineContent = { Text(stringResource(entry.titleRes)) },
+                )
+            }
+            TrackMenuPage.PICTURE -> {
+                item { Text(stringResource(page.titleRes), style = MaterialTheme.typography.titleMedium, color = Color.White) }
+                items(VideoScaling.entries, key = { "p:${it.name}" }) { option ->
+                    ListItem(
+                        selected = option == scaling.scaling,
+                        onClick = { onInteraction(); scaling.select(option) },
+                        modifier = if (option == scaling.scaling) Modifier.focusRequester(focus) else Modifier,
+                        headlineContent = { Text(stringResource(VideoScalingLabels.label(option))) },
+                    )
+                }
+            }
+            TrackMenuPage.AUDIO -> {
+                item { Text(stringResource(page.titleRes), style = MaterialTheme.typography.titleMedium, color = Color.White) }
+                if (audio.isEmpty()) {
+                    item { Text(stringResource(R.string.vod_audio_none), color = Color.White, modifier = Modifier.focusRequester(focus).focusable()) }
+                }
+                items(audio, key = { "a:${it.id}" }) { track ->
+                    ListItem(
+                        selected = track.selected,
+                        onClick = { onInteraction(); onAudio(track.id) },
+                        modifier = if (track.id == focusedAudioId) Modifier.focusRequester(focus) else Modifier,
+                        headlineContent = { Text(track.label) },
+                    )
+                }
+            }
+            TrackMenuPage.SUBTITLES -> {
+                item { Text(stringResource(page.titleRes), style = MaterialTheme.typography.titleMedium, color = Color.White) }
+                item {
+                    ListItem(
+                        selected = focusedSubtitleId == null,
+                        onClick = { onInteraction(); onSubtitle(null) },
+                        modifier = if (focusedSubtitleId == null) Modifier.focusRequester(focus) else Modifier,
+                        headlineContent = { Text(stringResource(R.string.vod_subtitles_off)) },
+                    )
+                }
+                items(subtitles, key = { "t:${it.id}" }) { track ->
+                    ListItem(
+                        selected = track.selected,
+                        onClick = { onInteraction(); onSubtitle(track.id) },
+                        modifier = if (track.id == focusedSubtitleId) Modifier.focusRequester(focus) else Modifier,
+                        headlineContent = { Text(track.label) },
+                    )
+                }
+                if (subtitles.isEmpty()) {
+                    item { Text(stringResource(R.string.vod_subtitles_none), style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.7f)) }
+                }
+            }
         }
     }
-    LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
+    LaunchedEffect(page, focusedAudioId, focusedSubtitleId) {
+        listState.scrollToItem(focusIndex)
+        focus.requestFocus()
+    }
 }
 
 private const val POLL_MS = 500L
+internal const val VOD_CONTROLS_TIMEOUT_MS = 30_000L

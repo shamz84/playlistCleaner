@@ -51,6 +51,8 @@
     <string name="vod_cancel">Cancel</string>
     <string name="vod_tracks">Audio and subtitles</string>
     <string name="vod_audio">Audio</string>
+    <string name="vod_audio_none">This stream has no audio tracks.</string>
+    <string name="vod_options_hint">▲ Picture, audio and subtitles</string>
     <string name="vod_subtitles">Subtitles</string>
     <string name="vod_subtitles_off">Off</string>
     <string name="vod_subtitles_none">This stream has no subtitle tracks.</string>

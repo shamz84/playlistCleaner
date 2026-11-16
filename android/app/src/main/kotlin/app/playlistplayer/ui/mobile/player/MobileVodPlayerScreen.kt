@@ -268,7 +268,7 @@ fun MobileVodPlayerScreen(
             .background(Color.Black)
             .testTag(MobileVodPlayerTags.ROOT),
     ) {
-        VideoSurface(exo, Modifier.fillMaxSize())
+        VideoSurface(exo, Modifier.fillMaxSize(), videoScaling.scaling)
 
         // Gesture layer over the video (below the controls, so buttons receive their own taps).
         Box(

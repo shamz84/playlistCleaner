@@ -6,6 +6,8 @@ import android.os.SystemClock
 import android.view.KeyEvent as AndroidKeyEvent
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
@@ -93,7 +95,7 @@ object LiveTvTags {
  * number and name, title, time with progress, description, catch-up badge) beside a live preview;
  * below, the dense guide of the selected group ([EpgGridScreen] over the shared
  * [EpgGridViewModel], one per group in the activity store, rows loaded lazily). Groups (sectioned by
- * playlist name, R25) are in a side panel that slides in over the guide.
+ * playlist name, R25) are in a side panel that slides in and pushes the guide to the right.
  *
  * - Preview: [preview] renders the app's single player while [LiveTvViewModel] reports a live
  *   channel playing (it IS the playing stream; nothing opens a second connection); otherwise the
@@ -122,7 +124,7 @@ fun LiveTvScreen(
     var showRecent by remember { mutableStateOf(false) }
     val history by guide.history.state.collectAsStateWithLifecycle()
     val groupsFocus = remember { FocusRequester() }
-    var gridHasFocus by remember { mutableStateOf(false) }
+    var contentHasFocus by remember { mutableStateOf(false) }
     /** Starts pending: the grid takes focus once loaded each time the screen is shown. */
     var gridFocusRequest by remember { mutableIntStateOf(1) }
     val numberEntry = remember { NumberEntryController() }
@@ -192,13 +194,14 @@ fun LiveTvScreen(
         entry = numberEntry.state
     }
     BackHandler(enabled = !entry.isActive && state.groupsPanelOpen) { closePanel() }
-    BackHandler(enabled = !entry.isActive && !state.groupsPanelOpen && gridHasFocus) { viewModel.openGroupsPanel() }
+    BackHandler(enabled = !entry.isActive && !state.groupsPanelOpen && contentHasFocus && group != null && !showRecent && !showOrder) { viewModel.openGroupsPanel() }
 
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(UiTokens.Background)
             .testTag(LiveTvTags.ROOT)
+            .onFocusChanged { contentHasFocus = it.hasFocus }
             .onPreviewKeyEvent { event ->
                 if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
                 val code = event.nativeKeyEvent.keyCode
@@ -227,7 +230,11 @@ fun LiveTvScreen(
     ) {
         TvUiState(state = state.sections, modifier = Modifier.fillMaxSize().padding(TvDensity.ScreenPadding)) { sections ->
             Row(modifier = Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(UiTokens.SpaceS)) {
-            // TiviMate-style: the compact playlist/group tree is always visible beside the guide.
+            AnimatedVisibility(
+                visible = state.groupsPanelOpen,
+                enter = slideInHorizontally { -it } + expandHorizontally(expandFrom = Alignment.Start),
+                exit = slideOutHorizontally { -it } + shrinkHorizontally(shrinkTowards = Alignment.Start),
+            ) {
             GroupRail(
                 sections = sections,
                 selected = group,
@@ -255,6 +262,7 @@ fun LiveTvScreen(
                         }
                     },
             )
+            }
             Column(modifier = Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(UiTokens.SpaceS)) {
                 Row(
                     modifier = Modifier.fillMaxWidth().fillMaxHeight(TvDensity.DetailsFraction),
@@ -275,8 +283,7 @@ fun LiveTvScreen(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth()
-                        .testTag(LiveTvTags.GRID_PANE)
-                        .onFocusChanged { gridHasFocus = it.hasFocus },
+                        .testTag(LiveTvTags.GRID_PANE),
                 ) {
                     if (group != null && grid != null) {
                         val section = sections.firstOrNull { it.playlistId == group.playlistId }

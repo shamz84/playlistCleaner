@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>8TV Player — Live TV guide concepts</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#09111a;color:#ecf4ff;font:15px system-ui,sans-serif}
+main{max-width:1280px;margin:auto;padding:28px 20px 50px}h1{font-size:clamp(26px,4vw,40px);margin:5px 0}
+.muted{color:#a9bbcc}.intro{max-width:950px;line-height:1.5}.eyebrow{color:#79b5ff;text-transform:uppercase;letter-spacing:.13em;font-size:12px;font-weight:800}
+button,select{font:inherit;color:#edf6ff;background:#203044;border:1px solid #536a83;border-radius:6px;cursor:pointer}
+button:focus-visible,select:focus-visible{outline:3px solid white;outline-offset:2px;position:relative;z-index:5}
+button:hover{border-color:#9cc8ff}.choices,.remote{display:flex;gap:8px;flex-wrap:wrap;margin:15px 0}
+.choices button,.remote button{padding:9px 13px}.choices button[aria-pressed=true]{background:#276fc0;border-color:#a6d0ff}
+.frame{background:#030609;padding:8px;border-radius:14px;box-shadow:0 20px 50px #0008}
+.tv{position:relative;background:#0c141e;min-height:570px;overflow:hidden;padding:18px 22px;transition:padding-left .25s ease-out}
+.tv.drawer-open{padding-left:322px}
+.top{display:flex;gap:20px;align-items:stretch;margin-bottom:12px}.detail{flex:1;background:#172534;padding:14px;border-radius:6px}
+.detail h2{margin:4px 0;font-size:24px}.detail p{margin:6px 0}.preview{width:24%;min-width:170px;aspect-ratio:16/9;background:linear-gradient(135deg,#405c71,#122333);display:grid;place-items:center;border:1px solid #587289}
+.preview span{text-align:center;font-weight:700;color:#e3f1ff}.guide-title{display:flex;justify-content:space-between;color:#abc0d4;font-size:13px;margin:6px 0 8px}
+.timeline,.row{display:grid;grid-template-columns:220px repeat(3,minmax(120px,1fr));gap:4px}.timeline{color:#98b0c5;font-size:12px;margin-bottom:5px}
+.timeline span{padding:0 10px}.rows{display:grid;gap:4px;max-height:350px;overflow:auto;padding:3px}
+.cell{min-width:0;height:40px;padding:0 10px;text-align:left;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;border-radius:4px;background:#1f3143;font-size:13px}
+.channel{background:#263c52;font-weight:700}.cell.active{background:#275c91;border-color:#84baff}.cell.selected{box-shadow:inset 4px 0 #8bc6ff}
+.layout-b .top{margin-bottom:5px}.layout-b .detail{padding:8px 14px}.layout-b .detail h2{font-size:19px}.layout-b .preview{width:17%;min-width:130px}
+.layout-b .rows{max-height:410px}.layout-b .cell{height:34px}.layout-c .timeline,.layout-c .row{grid-template-columns:260px repeat(3,minmax(120px,1fr))}
+.layout-c .cell{height:48px}.layout-c .preview{width:22%}
+.drawer{position:absolute;inset:0 auto 0 0;width:300px;max-width:80%;background:#16283a;box-shadow:12px 0 35px #000b;padding:25px;z-index:3;overflow:auto;animation:drawer-enter .25s ease-out}
+@keyframes drawer-enter{from{transform:translateX(-100%)}to{transform:translateX(0)}}
+@media(prefers-reduced-motion:reduce){.drawer{animation:none}.tv{transition:none}}
+.drawer h2{margin:0 0 8px}.drawer p{color:#afc2d5}.drawer button{display:block;width:100%;text-align:left;padding:12px;margin:7px 0}
+.drawer button[aria-pressed=true]{background:#285e97;border-color:#83baff}.panel{position:absolute;inset:22px 18%;background:#152638;border:1px solid #607c95;border-radius:10px;padding:25px;z-index:4;overflow:auto;box-shadow:0 0 0 40px #0009}
+.panel h2{margin:0 0 8px}.setting{display:flex;justify-content:space-between;align-items:center;gap:15px;padding:15px 0;border-bottom:1px solid #34495d}
+.setting label strong{display:block}.setting label small{color:#aabed2}.setting select{padding:8px;min-width:160px}.panel button{padding:9px 16px;margin-top:18px}
+.fullscreen{height:534px;background:linear-gradient(145deg,#294b62,#101d2b 62%,#09111a);display:flex;flex-direction:column;justify-content:flex-end;padding:35px}
+.fullscreen h2{font-size:30px;margin:0}.fullscreen p{color:#d7e8f7}.fullscreen button{align-self:flex-start;padding:10px 16px}
+.legend{font-size:13px;color:#a6bace;margin-top:14px}.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:18px}
+.cards article{padding:15px;background:#152332;border:1px solid #2e4356;border-radius:8px}.cards h3{margin:0 0 6px;font-size:15px}.cards p{margin:0;color:#aabdd0;font-size:13px}
+.status{color:#b8d7f6;font-size:13px;min-height:20px}
+@media(max-width:700px){.cards{grid-template-columns:1fr}.tv{padding:12px;overflow:auto}.tv.drawer-open{padding-left:min(312px,calc(80% + 12px))}.preview{min-width:110px}.timeline,.row,.layout-c .timeline,.layout-c .row{grid-template-columns:150px repeat(3,150px)}.timeline,.rows{min-width:600px}.panel{inset:15px 5%}.setting{flex-direction:column;align-items:flex-start}}
+</style>
+</head>
+<body><main>
+<div class="eyebrow">8TV Player · interactive mock-up</div>
+<h1>More room for your Live TV guide</h1>
+<p class="intro muted">Compare three fictional layouts. Each uses the requested flow: <strong>Back from full-screen → guide with preview → categories slide out</strong>. Nothing here changes the app or plays a stream.</p>
+<div class="choices" aria-label="Choose layout">
+ <button data-layout="a" aria-pressed="true">A · Balanced</button>
+ <button data-layout="b" aria-pressed="false">B · More guide rows</button>
+ <button data-layout="c" aria-pressed="false">C · Wider channel names</button>
+</div>
+<div class="remote" aria-label="Demo controls">
+ <button data-command="back">Back</button><button data-command="fullscreen">Full screen</button><button data-command="categories">Categories</button><button data-command="settings">Playback settings</button>
+</div>
+<p class="muted">Use the buttons, or focus a control and use arrow keys and Enter. Esc / Backspace simulates the remote Back button; the preview is a placeholder.</p>
+<div class="frame"><section id="tv" class="tv" aria-label="Interactive TV preview"></section></div>
+<p class="status" id="status" role="status"></p>
+<div class="cards">
+ <article><h3>A · Balanced</h3><p>Programme details and preview stay prominent, with a wider guide when categories are closed.</p></article>
+ <article><h3>B · More guide rows</h3><p>A shorter information area and denser rows show more channels at once.</p></article>
+ <article><h3>C · Wider channel names</h3><p>A wider channel column and taller rows favour legibility over the number of visible listings.</p></article>
+</div>
+<p class="legend">Picture-format settings in this demo are independent and temporary. Normal (fit / letterbox), Full (stretch), 4:3, 16:9, 2.35:1 and Zoom are illustrative options; changing them here does not affect a real video.</p>
+</main>
+<script>
+(() => {
+ const tv=document.querySelector('#tv'),status=document.querySelector('#status');
+ const categories=['Entertainment','News','Movies','Sports','Kids','Documentaries'];
+ const data={
+  Entertainment:[['1','North One'],['2','North Two'],['3','City TV'],['4','Channel Four'],['5','Evening TV'],['6','Arts Network'],['7','Nature Plus'],['8','Classic TV'],['9','World Stories'],['10','Drama Central']],
+  News:[['21','World News'],['22','Local News'],['23','Business News']],
+  Movies:[['31','Cinema One'],['32','Classic Films'],['33','Movie Night']],
+  Sports:[['41','Sports One'],['42','Arena'],['43','Extra Sports']],
+  Kids:[['51','Kids Club'],['52','Family Fun']],Documentaries:[['61','Discovery View'],['62','History World']]
+ };
+ const programmes=['The Morning Show','Around the City','The Daily Report','Wild Places','The Big Match','A New Adventure','The Evening Film','Stories of Home'];
+ const state={layout:'a',mode:'fullscreen',category:'Entertainment',channel:'North One',drawer:false,settings:false,live:'Normal',vod:'Normal',lastFocus:null};
+ function guide(){
+  const rows=data[state.category].map(([number,name],i)=>`<div class="row"><button class="cell channel ${name===state.channel?'selected':''}" data-key="c${i}" data-action="channel" data-value="${name}">${number} &nbsp; ${name}</button>${[0,1,2].map((p)=>`<button class="cell ${i===0&&p===0?'active':''}" data-key="p${i}-${p}" data-action="programme" data-value="${programmes[(i+p)%programmes.length]}">${programmes[(i+p)%programmes.length]}</button>`).join('')}</div>`).join('');
+  return `<div class="top"><div class="detail"><div class="eyebrow">${state.category} · watching ${state.channel}</div><h2 data-detail>The Morning Show</h2><p>Fictional listing</p><p class="muted">Move focus to a programme to see its title here.</p></div><button class="preview" data-key="preview" data-action="fullscreen"><span>LIVE PREVIEW<br><small>${state.channel} · Full screen</small></span></button></div><div class="guide-title"><span>${state.category} · CHANNELS & GUIDE</span><span>Back: Categories</span></div><div class="timeline"><span>CHANNEL</span><span>09:00</span><span>10:00</span><span>11:00</span></div><div class="rows">${rows}</div>`;
+ }
+ function drawer(){return `<aside class="drawer" aria-label="Categories"><h2>Categories</h2><p>Choose a category; Back closes this panel.</p>${categories.map((c,i)=>`<button data-key="g${i}" data-action="category" data-value="${c}" aria-pressed="${c===state.category}">${c}</button>`).join('')}</aside>`}
+ function settings(){
+  const opts=['Normal','Full (stretch)','4:3','16:9','2.35:1','Zoom'];
+  const select=(type,value)=>`<select id="${type}" data-key="${type}" data-setting="${type}">${opts.map(o=>`<option ${o===value?'selected':''}>${o}</option>`).join('')}</select>`;
+  return `<aside class="panel" aria-label="Playback settings"><h2>Playback settings</h2><p class="muted">Demo only: changing one setting leaves the other unchanged.</p><div class="setting"><label for="live"><strong>Live TV picture format</strong><small>Applies to live viewing</small></label>${select('live',state.live)}</div><div class="setting"><label for="vod"><strong>On-demand picture format</strong><small>Applies to movies and TV shows</small></label>${select('vod',state.vod)}</div><button data-key="close" data-action="close-settings">Done</button></aside>`;
+ }
+ function render(focus){
+  tv.className='tv layout-'+state.layout+(state.drawer?' drawer-open':'');
+  tv.innerHTML=(state.mode==='fullscreen'?`<div class="fullscreen"><div class="eyebrow">LIVE TV · FICTIONAL PREVIEW</div><h2>${state.channel}</h2><p>Press Back to open the guide while the preview keeps playing.</p><button data-key="open-guide" data-action="back">Back to guide</button></div>`:guide())+(state.drawer?drawer():'')+(state.settings?settings():'');
+  if(focus){const el=[...tv.querySelectorAll('[data-key]')].find(x=>x.dataset.key===focus);if(el){el.focus({preventScroll:true});el.scrollIntoView({block:'nearest',inline:'nearest'});}}
+ }
+ function back(){
+  if(state.settings){state.settings=false;render(state.lastFocus);status.textContent='Settings closed.'}
+  else if(state.drawer){state.drawer=false;render('c0');status.textContent='Categories closed; guide remains visible.'}
+  else if(state.mode==='fullscreen'){state.mode='guide';render('c0');status.textContent='Guide opened with the live preview.'}
+  else {state.drawer=true;render('g'+categories.indexOf(state.category));status.textContent='Categories opened, pushing the guide to the right.'}
+ }
+ function command(action,value){
+  if(action==='back')return back();
+  if(action==='fullscreen'){state.mode='fullscreen';state.drawer=false;state.settings=false;render('open-guide');status.textContent='Full-screen viewing.'}
+  if(action==='categories'){state.mode='guide';state.drawer=true;state.settings=false;render('g'+categories.indexOf(state.category));status.textContent='Categories opened.'}
+  if(action==='settings'){state.lastFocus=document.activeElement?.dataset.key||null;state.drawer=false;state.settings=true;render('live');status.textContent='Choose separate picture formats.'}
+  if(action==='close-settings'){state.settings=false;render(state.lastFocus);status.textContent='Settings closed.'}
+  if(action==='category'){state.category=value;state.drawer=false;state.mode='guide';render('c0');status.textContent=value+' guide selected; the current live preview continues.'}
+  if(action==='channel'){state.channel=value;state.mode='fullscreen';render('open-guide');status.textContent='Demo: '+value+' selected for viewing.'}
+  if(action==='programme'){status.textContent='Demo listing: '+value+'. Playback and catch-up are not simulated.'}
+ }
+ document.querySelectorAll('[data-layout]').forEach(b=>b.addEventListener('click',()=>{state.layout=b.dataset.layout;document.querySelectorAll('[data-layout]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));render();status.textContent='Layout '+state.layout.toUpperCase()+' selected.'}));
+ document.querySelectorAll('[data-command]').forEach(b=>b.addEventListener('click',()=>command(b.dataset.command)));
+ tv.addEventListener('click',e=>{const b=e.target.closest('[data-action]');if(b)command(b.dataset.action,b.dataset.value)});
+ tv.addEventListener('focusin',e=>{if(e.target.dataset.action==='programme')tv.querySelector('[data-detail]').textContent=e.target.dataset.value;});
+ tv.addEventListener('change',e=>{if(e.target.dataset.setting){state[e.target.dataset.setting]=e.target.value;status.textContent='Live TV: '+state.live+' · On-demand: '+state.vod;}});
+ document.addEventListener('keydown',e=>{
+  if((e.key==='Escape'||e.key==='Backspace')&&e.target.tagName!=='SELECT'){e.preventDefault();back();return}
+  if(!['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)||!tv.contains(document.activeElement)||document.activeElement.tagName==='SELECT')return;
+  const scope=state.settings?tv.querySelector('.panel'):state.drawer?tv.querySelector('.drawer'):tv;
+  const active=document.activeElement,r=active.getBoundingClientRect(),x=r.left+r.width/2,y=r.top+r.height/2;
+  const h=e.key==='ArrowLeft'||e.key==='ArrowRight',sign=(e.key==='ArrowRight'||e.key==='ArrowDown')?1:-1;
+  const next=[...scope.querySelectorAll('button,select')].filter(el=>el!==active).map(el=>{const q=el.getBoundingClientRect(),dx=q.left+q.width/2-x,dy=q.top+q.height/2-y;return {el,primary:(h?dx:dy)*sign,cross:Math.abs(h?dy:dx)}}).filter(a=>a.primary>4).sort((a,b)=>(a.primary+2*a.cross)-(b.primary+2*b.cross))[0];
+  if(next){e.preventDefault();next.el.focus();next.el.scrollIntoView({block:'nearest',inline:'nearest'})}
+ });
+ render();
+})();
+</script></body></html>

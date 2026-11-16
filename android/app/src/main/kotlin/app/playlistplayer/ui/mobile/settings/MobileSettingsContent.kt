@@ -401,6 +401,22 @@ private fun GuideRow(summary: PlaylistSummary, guide: GuideUiState, viewModel: S
 
 private fun LazyListScope.playback(state: SettingsUiState, viewModel: SettingsViewModel) {
     val playback = state.preferences.playback
+    item(key = "live-picture-format") {
+        ClickRow(
+            title = stringResource(R.string.settings_live_picture_format),
+            value = stringResource(app.playlistplayer.ui.common.VideoScalingLabels.label(playback.liveVideoScaling)),
+            supporting = stringResource(R.string.settings_live_picture_format_description),
+            onClick = { viewModel.setLiveVideoScaling(playback.liveVideoScaling.next()) },
+        )
+    }
+    item(key = "vod-picture-format") {
+        ClickRow(
+            title = stringResource(R.string.settings_vod_picture_format),
+            value = stringResource(app.playlistplayer.ui.common.VideoScalingLabels.label(playback.videoScaling)),
+            supporting = stringResource(R.string.settings_vod_picture_format_description),
+            onClick = { viewModel.setVideoScaling(playback.videoScaling.next()) },
+        )
+    }
     item(key = "format") {
         val next = if (playback.liveFormat == LiveFormatPreference.TS) LiveFormatPreference.HLS else LiveFormatPreference.TS
         ClickRow(

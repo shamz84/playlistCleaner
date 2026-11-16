@@ -69,6 +69,10 @@
 
     <!-- Playback -->
     <string name="settings_playback_live_format">Live stream format</string>
+    <string name="settings_live_picture_format">Live TV picture format</string>
+    <string name="settings_live_picture_format_description">Select to change the picture format for live TV and catch-up.</string>
+    <string name="settings_vod_picture_format">On-demand picture format</string>
+    <string name="settings_vod_picture_format_description">Select to change the picture format for movies and TV shows.</string>
     <string name="settings_playback_format_ts">MPEG-TS</string>
     <string name="settings_playback_format_hls">HLS</string>
     <string name="settings_playback_hls_unavailable">HLS is not allowed by any account</string>

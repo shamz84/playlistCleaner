@@ -88,7 +88,8 @@ enum class AppTheme {
 /**
  * Playback preferences.
  *
- * @property videoScaling how video fills the screen (default [VideoScaling.FIT]).
+ * @property videoScaling on-demand picture format (default [VideoScaling.FIT]).
+ * @property liveVideoScaling live TV and catch-up picture format.
  * @property catchupOffsetHours correction applied to catch-up start times, in [CATCHUP_OFFSET_RANGE].
  * @property audioLanguage preferred audio language of movies and episodes (lower-case BCP 47
  *   tag such as `en` or `pt-br`); null = the device language (then English).
@@ -104,6 +105,7 @@ data class PlaybackPreferences(
     val audioLanguage: String? = null,
     val subtitleLanguage: String? = DEFAULT_SUBTITLE_LANGUAGE,
     val videoScaling: VideoScaling = VideoScaling.FIT,
+    val liveVideoScaling: VideoScaling = VideoScaling.FIT,
     val showClock: Boolean = false,
     val showVideoInfo: Boolean = false,
     val showVodDiagnostics: Boolean = false,
@@ -168,6 +170,7 @@ object PreferencesCodec {
     const val KEY_AUDIO_LANGUAGE = "playback.audioLanguage"
     const val KEY_SUBTITLE_LANGUAGE = "playback.subtitleLanguage"
     const val KEY_VIDEO_SCALING = "playback.videoScaling"
+    const val KEY_LIVE_VIDEO_SCALING = "playback.liveVideoScaling"
     const val KEY_SHOW_CLOCK = "playback.showClock"
     const val KEY_SHOW_VIDEO_INFO = "playback.showVideoInfo"
     const val KEY_SHOW_VOD_DIAGNOSTICS = "playback.showVodDiagnostics"
@@ -193,6 +196,7 @@ object PreferencesCodec {
         KEY_AUDIO_LANGUAGE to prefs.playback.audioLanguage.orEmpty(),
         KEY_SUBTITLE_LANGUAGE to (prefs.playback.subtitleLanguage ?: SUBTITLES_OFF),
         KEY_VIDEO_SCALING to prefs.playback.videoScaling.name,
+        KEY_LIVE_VIDEO_SCALING to prefs.playback.liveVideoScaling.name,
         KEY_SHOW_CLOCK to prefs.playback.showClock.toString(),
         KEY_SHOW_VIDEO_INFO to prefs.playback.showVideoInfo.toString(),
         KEY_SHOW_VOD_DIAGNOSTICS to prefs.playback.showVodDiagnostics.toString(),
@@ -224,6 +228,7 @@ object PreferencesCodec {
                 catchupUrlStyle = enumOr(map[KEY_CATCHUP_STYLE], d.playback.catchupUrlStyle),
                 audioLanguage = languageOrNull(map[KEY_AUDIO_LANGUAGE]),
                 videoScaling = enumOr(map[KEY_VIDEO_SCALING], d.playback.videoScaling),
+                liveVideoScaling = enumOr(map[KEY_LIVE_VIDEO_SCALING], enumOr(map[KEY_VIDEO_SCALING], d.playback.liveVideoScaling)),
                 showClock = boolOr(map[KEY_SHOW_CLOCK], d.playback.showClock),
                 showVideoInfo = boolOr(map[KEY_SHOW_VIDEO_INFO], d.playback.showVideoInfo),
                 showVodDiagnostics = boolOr(map[KEY_SHOW_VOD_DIAGNOSTICS], d.playback.showVodDiagnostics),

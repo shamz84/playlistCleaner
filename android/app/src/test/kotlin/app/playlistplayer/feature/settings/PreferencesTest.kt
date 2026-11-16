@@ -57,6 +57,17 @@ class PreferencesTest {
     }
 
     @Test
+    fun `existing picture format migrates to both settings and remains independent`() {
+        val old = PreferencesCodec.decode(mapOf(PreferencesCodec.KEY_VIDEO_SCALING to VideoScaling.ZOOM.name))
+        assertThat(old.playback.videoScaling).isEqualTo(VideoScaling.ZOOM)
+        assertThat(old.playback.liveVideoScaling).isEqualTo(VideoScaling.ZOOM)
+        val separate = old.copy(playback = old.playback.copy(liveVideoScaling = VideoScaling.FIT))
+        val restored = PreferencesCodec.decode(PreferencesCodec.encode(separate))
+        assertThat(restored.playback.liveVideoScaling).isEqualTo(VideoScaling.FIT)
+        assertThat(restored.playback.videoScaling).isEqualTo(VideoScaling.ZOOM)
+    }
+
+    @Test
     fun `theme cycle includes graphite and codec preserves all choices`() {
         assertThat(AppTheme.entries.map { it.next() }).containsExactly(
             AppTheme.CINEMA_EMBER, AppTheme.GRAPHITE, AppTheme.MIDNIGHT_BLUE,

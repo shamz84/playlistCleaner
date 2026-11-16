@@ -267,6 +267,10 @@ class SettingsViewModel(
 
     // ---- Playback ----
 
+    fun setVideoScaling(scaling: VideoScaling) = launchPrefs { preferences.setVideoScaling(scaling) }
+
+    fun setLiveVideoScaling(scaling: VideoScaling) = launchPrefs { preferences.setLiveVideoScaling(scaling) }
+
     fun setLiveFormat(format: LiveFormatPreference) {
         if (format == LiveFormatPreference.HLS && !_state.value.hlsAllowed) {
             _state.update { it.copy(message = SettingsMessage.HlsNotAllowed) }

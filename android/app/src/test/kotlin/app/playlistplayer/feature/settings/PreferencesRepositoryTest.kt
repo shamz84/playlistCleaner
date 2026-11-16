@@ -20,6 +20,16 @@ class PreferencesRepositoryTest {
     }
 
     @Test
+    fun pictureFormatsPersistIndependently() = runTest {
+        val repo = PreferencesRepository(storage)
+        repo.setLiveVideoScaling(VideoScaling.ZOOM)
+        repo.setVideoScaling(VideoScaling.R4_3)
+        val reopened = PreferencesRepository(SecretSlotPreferencesStorage(slots)).current()
+        assertThat(reopened.playback.liveVideoScaling).isEqualTo(VideoScaling.ZOOM)
+        assertThat(reopened.playback.videoScaling).isEqualTo(VideoScaling.R4_3)
+    }
+
+    @Test
     fun everySettingPersistsAcrossANewRepositoryInstance() = runTest {
         val repo = PreferencesRepository(storage)
         repo.addLanguage("HI")

@@ -169,6 +169,21 @@ class MobileGuideSmokeTest {
         assertComposed()
     }
 
+    @Test
+    fun `reopening the guide after browsing the future returns to now`() {
+        val vm = gridViewModel()
+        show { MobileTheme { MobileGuideGrid(vm, onPlayCatchup = {}, onWatchLive = {}) } }
+        idle()
+        val initialResetVersion = vm.state.value.nowResetVersion
+        compose.runOnIdle { vm.pageForward() }
+        idle()
+        assertThat(vm.state.value.showNowLine).isFalse()
+        show { MobileTheme { MobileGuideGrid(vm, onPlayCatchup = {}, onWatchLive = {}) } }
+        idle()
+        assertThat(vm.state.value.showNowLine).isTrue()
+        assertThat(vm.state.value.nowResetVersion).isEqualTo(initialResetVersion + 1)
+    }
+
     private object NoOnboarder : PlaylistOnboarder {
         override val progress: Flow<OnboardingProgress> = emptyFlow()
         override suspend fun addPlaylist(name: String, source: SourceInput, xtreamEnabled: Boolean, epgOverrideUrl: String?): OnboardingResult =

@@ -162,6 +162,7 @@ class PreferencesRepository(private val storage: PreferencesStorage) {
     suspend fun setTheme(theme: AppTheme) = update { it.copy(theme = theme) }
 
     suspend fun setVideoScaling(scaling: VideoScaling) = update { it.copy(playback = it.playback.copy(videoScaling = scaling)) }
+    suspend fun setLiveVideoScaling(scaling: VideoScaling) = update { it.copy(playback = it.playback.copy(liveVideoScaling = scaling)) }
 
     /** Sets the order playlists are listed in Live TV (ids; playlists not listed follow in the order added). */
     suspend fun setPlaylistOrder(order: List<Long>) = update { it.copy(playlistOrder = order.distinct()) }

@@ -85,7 +85,7 @@ object LivePlayerTags {
  * - digits: number entry (position within the group);
  * - Menu / Info: "Other versions";
  * - Last channel (KEYCODE_LAST_CHANNEL, or "Last channel" on the overlay): the previous channel;
- * - Back: closes the panel, then the overlay, then leaves the player.
+ * - Back: closes an open panel or number entry; otherwise opens the Live TV guide.
  *
  * Zapping (U22): the overlay shows the new channel at once while the SurfaceView keeps the last
  * frame until the new stream renders; buffering is a small corner indicator, never a centre
@@ -142,7 +142,6 @@ fun LivePlayerScreen(
         when {
             state.versionsOpen -> viewModel.closeVersions()
             state.numberDigits.isNotEmpty() -> viewModel.cancelNumber()
-            state.overlayVisible && !blockingPanel -> viewModel.hideOverlay()
             else -> onExit()
         }
     }

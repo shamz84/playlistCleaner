@@ -38,7 +38,7 @@ import java.time.temporal.ChronoUnit
  * - past programmes inside the archive of the channel or an other version get the catch-up icon;
  * - OK: eligible past → [EpgEvent.PlayCatchup]; airing → [AiringChoice] (Watch live / Restart);
  *   future or non-eligible past → [ProgrammeDetails] only;
- * - remembers the focused programme, so returning from the player restores it.
+ * - returning to the guide resets the timeline and programme to now while keeping the channel.
  *
  * The UI calls [tick] about once a minute to move the now-line.
  *
@@ -132,7 +132,7 @@ class EpgGridViewModel(
     fun shiftSlots(slots: Int) = moveTo(windowStart + slots * SLOT_MILLIS)
 
     /** Back to now. */
-    fun jumpToNow() = moveTo(slotFloor(clock()))
+    fun jumpToNow() = onReturn()
 
     /**
      * Jumps to the same time of day on the day [offset] days from today, within
@@ -155,7 +155,7 @@ class EpgGridViewModel(
         loadJob = viewModelScope.launch { load(clock()) }
     }
 
-    private suspend fun load(now: Long) {
+    private suspend fun load(now: Long, resetToNow: Boolean = false) {
         val from = windowStart
         val to = windowStart + windowMillis
         rowsJob?.cancel()
@@ -170,7 +170,8 @@ class EpgGridViewModel(
             mutableState.update { it.copy(loading = false, loadFailed = true) }
             return
         }
-        publish(now)
+        if (resetToNow) focus = focus?.let { EpgFocus(it.channelOrdinal, null, now) }
+        publish(now, resetToNow)
         if (rowBlock > 0) onVisibleRows(visibleFirst, visibleLast)
     }
 
@@ -249,10 +250,20 @@ class EpgGridViewModel(
         publish(clock())
     }
 
-    /** Back from the player: refresh now and keep the window and the remembered focus. */
-    fun onReturn() = refresh()
+    /** On reopening, show current programmes while retaining the previously focused channel. */
+    fun onReturn() {
+        if (playable.isEmpty()) {
+            refresh()
+            return
+        }
+        val now = clock()
+        focus = focus?.let { EpgFocus(it.channelOrdinal, null, now) }
+        windowStart = clampStart(slotFloor(now))
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch { load(now, resetToNow = true) }
+    }
 
-    private fun publish(now: Long) {
+    private fun publish(now: Long, resetToNow: Boolean = false) {
         val from = windowStart
         val to = windowStart + windowMillis
         val previous = mutableState.value.rows
@@ -272,6 +283,7 @@ class EpgGridViewModel(
                 nowMillis = now,
                 windowStartMillis = from,
                 windowEndMillis = to,
+                nowResetVersion = if (resetToNow) it.nowResetVersion + 1 else it.nowResetVersion,
                 slots = (0 until windowSlots).map { i -> from + i * SLOT_MILLIS },
                 days = (minDayOffset()..MAX_DAYS_AHEAD).map { offset -> EpgDay(offset, today(now).plusDays(offset.toLong())) },
                 selectedDayOffset = dayOffset,

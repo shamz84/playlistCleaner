@@ -100,7 +100,7 @@ const val TV_GUIDE_ROW_BLOCK = 24
  * Restart on the airing one, or shows details; long-press OK (or Info) shows details for any
  * programme; OK on the channel (logo, number, name) or a "No guide data" row watches the channel
  * live. Left on the channel column and Menu anywhere call [onOpenGroups]. Focus returns to the
- * remembered programme when the screen is shown again (e.g. back from the player).
+ * current programme on the remembered channel when the screen is shown again.
  *
  * Performance: rows have stable keys and keep their instance while unchanged; the focus is read per
  * row through `derivedStateOf`, so a focus move recomposes only the rows it leaves and enters (and
@@ -126,7 +126,7 @@ fun EpgGridScreen(
     val watchLive by rememberUpdatedState(onWatchLive)
 
     LaunchedEffect(viewModel) {
-        // Shown again (e.g. back from the player): refresh now, keeping the window and focus.
+        // Shown again (e.g. back from the player): return to now on the remembered channel.
         if (viewModel.state.value.rows.isNotEmpty()) viewModel.onReturn()
         viewModel.events.collect { event ->
             when (event) {
@@ -211,7 +211,7 @@ private fun Grid(
 
     // Restore the remembered programme when the window changes or the screen is shown again, and
     // move focus there when requested.
-    LaunchedEffect(windowStart, state.rows.size, focusRequest) {
+    LaunchedEffect(windowStart, state.rows.size, focusRequest, state.nowResetVersion) {
         val requested = focusRequest != handledRequest
         handledRequest = focusRequest
         // A requested focus was set on the ViewModel just before: let it reach this composition.
