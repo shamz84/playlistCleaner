@@ -72,9 +72,11 @@ class ExoPlaybackController(
     clock: () -> Long = SystemClock::elapsedRealtime,
     onTransition: (PlaybackState) -> Unit = {},
     private val progressPollMs: Long = 500,
+    diagnosticsSink: (String) -> Unit = {},
 ) : PlaybackDriver {
 
     private val exo = player.exoPlayer
+    private val diagnostics = PlaybackDiagnostics(clock, diagnosticsSink)
 
     val machine = PlaybackStateMachine(
         scope = scope,
@@ -83,7 +85,10 @@ class ExoPlaybackController(
         connectivity = connectivity,
         policy = policy,
         clock = clock,
-        onTransition = onTransition,
+        onTransition = { state ->
+            diagnostics.transition(state, diagnosticSnapshot())
+            onTransition(state)
+        },
     )
 
     val state: StateFlow<PlaybackState> = machine.state
@@ -117,8 +122,14 @@ class ExoPlaybackController(
 
         override fun onPlaybackStateChanged(playbackState: Int) {
             when (playbackState) {
-                Player.STATE_BUFFERING -> machine.onBufferingChanged(true)
-                Player.STATE_READY -> machine.onBufferingChanged(false)
+                Player.STATE_BUFFERING -> {
+                    diagnostics.buffering(true, diagnosticSnapshot())
+                    machine.onBufferingChanged(true)
+                }
+                Player.STATE_READY -> {
+                    diagnostics.buffering(false, diagnosticSnapshot())
+                    machine.onBufferingChanged(false)
+                }
                 Player.STATE_ENDED -> machine.onEnded()
                 else -> Unit
             }
@@ -126,6 +137,14 @@ class ExoPlaybackController(
 
         override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
             machine.onPausedChanged(!playWhenReady)
+        }
+
+        override fun onPositionDiscontinuity(
+            oldPosition: Player.PositionInfo,
+            newPosition: Player.PositionInfo,
+            reason: Int,
+        ) {
+            if (reason == Player.DISCONTINUITY_REASON_SEEK) machine.onSeek(newPosition.positionMs)
         }
 
         override fun onPlayerError(error: PlaybackException) {
@@ -236,7 +255,18 @@ class ExoPlaybackController(
             isPlaying = exo.isPlaying,
             playWhenReady = exo.playWhenReady,
         )
+        if (machine.state.value is PlaybackState.Preparing || machine.state.value is PlaybackState.Playing) {
+            diagnostics.sample(diagnosticSnapshot())
+        }
     }
+
+    private fun diagnosticSnapshot() = PlaybackDiagnosticSnapshot(
+        positionMs = exo.currentPosition.coerceAtLeast(0),
+        bufferedMs = exo.totalBufferedDuration.coerceAtLeast(0),
+        seekable = if (exo.currentTimeline.isEmpty) null else exo.isCurrentMediaItemSeekable,
+        playing = exo.isPlaying,
+        droppedFrames = droppedFrames,
+    )
 
     private fun resetStats() {
         lastPositionMs = C.TIME_UNSET

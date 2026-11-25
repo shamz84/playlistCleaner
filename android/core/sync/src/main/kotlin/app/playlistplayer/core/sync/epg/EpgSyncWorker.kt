@@ -13,6 +13,7 @@ import androidx.work.OneTimeWorkRequest
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequest
 import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.WorkerFactory
 import androidx.work.WorkerParameters
@@ -25,6 +26,8 @@ import app.playlistplayer.core.sync.SyncOutcome
 import app.playlistplayer.core.sync.catalog.CatalogSyncFollowUp
 import app.playlistplayer.core.sync.catalog.CatalogSyncOutcome
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlin.coroutines.cancellation.CancellationException
 
 /**
@@ -38,7 +41,9 @@ import kotlin.coroutines.cancellation.CancellationException
  *   notification on API < 31) and is cut off by the expedited time quota, which a full provider
  *   import (86 MB of XML) can exceed. Without an idle or unmetered constraint it still starts as
  *   soon as the device is online.
- * - The daily refresh ([periodicRequest]) waits for an unmetered network and an idle device.
+ * - The periodic refresh ([periodicRequest], every [PERIODIC_INTERVAL_HOURS] unless Settings
+ *   chooses another interval) waits for an unmetered network and an idle device. While the app is
+ *   open, [GuideFreshness] queues an [importRequest] for any guide that is overdue.
  */
 class EpgSyncWorker(
     context: Context,
@@ -79,7 +84,7 @@ class EpgSyncWorker(
         /** First import: connected network only, no idle/unmetered requirement. */
         val importConstraints: Constraints = Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()
 
-        /** Daily refresh: unmetered network and an idle device. */
+        /** Periodic refresh: unmetered network and an idle device. */
         val periodicConstraints: Constraints = Constraints.Builder()
             .setRequiredNetworkType(NetworkType.UNMETERED)
             .setRequiresDeviceIdle(true)
@@ -109,8 +114,26 @@ class EpgSyncWorker(
             workManager.enqueueUniqueWork(uniqueName(playlistId), policy, importRequest(playlistId))
         }
 
-        fun schedulePeriodic(workManager: WorkManager, playlistId: Long, intervalHours: Long = PERIODIC_INTERVAL_HOURS) {
-            workManager.enqueueUniquePeriodicWork(periodicName(playlistId), ExistingPeriodicWorkPolicy.KEEP, periodicRequest(playlistId, intervalHours))
+        /**
+         * Makes sure the periodic refresh exists. [ExistingPeriodicWorkPolicy.KEEP] leaves an existing
+         * schedule alone; pass [ExistingPeriodicWorkPolicy.UPDATE] when the interval changed.
+         */
+        fun schedulePeriodic(
+            workManager: WorkManager,
+            playlistId: Long,
+            intervalHours: Long = PERIODIC_INTERVAL_HOURS,
+            policy: ExistingPeriodicWorkPolicy = ExistingPeriodicWorkPolicy.KEEP,
+        ) {
+            workManager.enqueueUniquePeriodicWork(periodicName(playlistId), policy, periodicRequest(playlistId, intervalHours))
+        }
+
+        /**
+         * True while an import of [playlistId] is queued or running through this worker: a one-time
+         * import that has not finished, or the periodic refresh while it runs.
+         */
+        suspend fun isImportActive(workManager: WorkManager, playlistId: Long): Boolean = withContext(Dispatchers.IO) {
+            workManager.getWorkInfosForUniqueWork(uniqueName(playlistId)).get().any { !it.state.isFinished } ||
+                workManager.getWorkInfosForUniqueWork(periodicName(playlistId)).get().any { it.state == WorkInfo.State.RUNNING }
         }
 
         fun cancel(workManager: WorkManager, playlistId: Long) {
@@ -135,13 +158,15 @@ class EpgSyncWorkerFactory(private val syncer: () -> EpgSyncer) : WorkerFactory(
  * - after a playlist sync of a playlist with Xtream off but an override URL set,
  *
  * queuing a one-time import when the EPG is `epgStale` (first sync, credentials changed) or was
- * never imported, and making sure the daily refresh is scheduled.
+ * never imported, and making sure the periodic refresh is scheduled.
  */
 class EpgSyncChain(
     private val playlistStore: PlaylistStore,
     private val epgStore: EpgStore,
     private val hasOverride: suspend (playlistId: Long) -> Boolean,
     private val logger: RedactingLogger = RedactingLogger.NONE,
+    /** The guide refresh interval chosen in Settings. */
+    private val refreshIntervalHours: suspend () -> Long = { EpgSyncWorker.PERIODIC_INTERVAL_HOURS },
     private val workManager: () -> WorkManager,
 ) : PlaylistSyncFollowUp, CatalogSyncFollowUp {
 
@@ -166,7 +191,7 @@ class EpgSyncChain(
 
     private suspend fun enqueueIfNeeded(playlistId: Long) {
         val wm = workManager()
-        EpgSyncWorker.schedulePeriodic(wm, playlistId)
+        EpgSyncWorker.schedulePeriodic(wm, playlistId, refreshIntervalHours())
         if (needsImport(playlistId)) EpgSyncWorker.enqueueImport(wm, playlistId)
     }
 

@@ -136,8 +136,10 @@ class EpgSyncer(
     private val mutex = Mutex()
     private val parser = XmltvParser(pullFactory)
 
-    suspend fun sync(playlistId: Long, backfill: Boolean = true): EpgSyncOutcome =
-        gate.run("epg-import") { mutex.withLock { syncLocked(playlistId, backfill) } }
+    suspend fun sync(playlistId: Long, backfill: Boolean = true): EpgSyncOutcome {
+        logger.i("EPG import for playlist $playlistId waiting for background work")
+        return gate.run("epg-import") { mutex.withLock { syncLocked(playlistId, backfill) } }
+    }
 
     private class PassResult(val match: EpgMatchResult, val programmesStaged: Int)
 
@@ -162,6 +164,7 @@ class EpgSyncer(
             .distinctBy { it.key }
 
         val importId = epgStore.beginImport(playlistId)
+        logger.i("EPG import for playlist $playlistId started")
         val job = currentCoroutineContext()[Job]
         val overrideMatch: EpgMatchResult?
         val providerMatch: EpgMatchResult?
@@ -187,7 +190,9 @@ class EpgSyncer(
                 null
             }
         } catch (e: CancellationException) {
+            logger.w("EPG import for playlist $playlistId cancelled while downloading or staging")
             withContext(NonCancellable) { epgStore.discardImport(playlistId, importId) }
+            logger.i("EPG import for playlist $playlistId cancellation cleanup completed")
             throw e
         } catch (e: Exception) {
             epgStore.discardImport(playlistId, importId)
@@ -204,6 +209,7 @@ class EpgSyncer(
         val previousMappings = epgStore.mappings(playlistId)
         val mappings = buildMappings(playlistId, overrideMatch, providerMatch, previousMappings)
 
+        logger.i("EPG import for playlist $playlistId committing $staged staged programmes")
         val stats = try {
             epgStore.commitImport(playlistId, importId, importStart, pruneBefore, mappings) { state, _, coverageFrom, coverageTo ->
                 state.copy(
@@ -223,7 +229,9 @@ class EpgSyncer(
                 )
             }
         } catch (e: CancellationException) {
+            logger.w("EPG import for playlist $playlistId cancelled while committing")
             withContext(NonCancellable) { epgStore.discardImport(playlistId, importId) }
+            logger.i("EPG import for playlist $playlistId cancellation cleanup completed")
             throw e
         } catch (e: Exception) {
             epgStore.discardImport(playlistId, importId)
@@ -296,6 +304,7 @@ class EpgSyncer(
             private set
         var staged = 0
             private set
+        private var nextProgress = 10_000
 
         override fun onChannel(channel: XmltvChannel) {
             allIds += channel.id
@@ -345,8 +354,12 @@ class EpgSyncer(
 
         private fun stage(rows: List<ProgrammeEntity>) {
             if (rows.isEmpty()) return
-            runBlocking { epgStore.stage(importId, rows) }
+            runBlocking(job ?: error("EPG import requires a coroutine job")) { epgStore.stage(importId, rows) }
             staged += rows.size
+            if (staged >= nextProgress) {
+                logger.i("EPG import for playlist $playlistId staged $staged programmes")
+                nextProgress = staged + 10_000
+            }
         }
 
         /**

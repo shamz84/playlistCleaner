@@ -1,6 +1,8 @@
 package app.playlistplayer.core.database
 
+import androidx.room3.useReaderConnection
 import androidx.test.core.app.ApplicationProvider
+import app.playlistplayer.core.database.dao.DROP_ARCHIVE_OVERLAPPING_SQL
 import app.playlistplayer.core.database.entity.ChannelEntity
 import app.playlistplayer.core.database.entity.ChannelEpgMapEntity
 import app.playlistplayer.core.database.entity.ChannelGroupEntity
@@ -113,6 +115,44 @@ class EpgStoreTest {
             "xmltv old" to ProgrammeSource.XMLTV,
             "xmltv" to ProgrammeSource.XMLTV,
         ).inOrder()
+    }
+
+    @Test
+    fun archiveOverlapUsesTheChannelAndTimeIndex() = runBlocking<Unit> {
+        val plan = db.useReaderConnection { connection ->
+            connection.usePrepared("EXPLAIN QUERY PLAN $DROP_ARCHIVE_OVERLAPPING_SQL") { statement ->
+                buildList {
+                    while (statement.step()) add(statement.getText(3))
+                }
+            }
+        }
+        assertThat(plan.any {
+            it.contains("SEARCH n USING INDEX index_programme_playlistId_channelKey_startMillis") &&
+                it.contains("playlistId=? AND channelKey=? AND startMillis>? AND startMillis<?")
+        }).isTrue()
+    }
+
+    @Test
+    fun largeImportReplacesOnlyOverlappingArchiveRows() = runBlocking<Unit> {
+        val id = playlist()
+        val otherId = playlist()
+        val dao = db.programmeDao()
+        val archive = (0 until 300).flatMap { channel ->
+            (0 until 20).map { slot -> row(id, "channel-$channel", slot.toLong(), slot + 1L, "archive", ProgrammeSource.XTREAM_ARCHIVE) }
+        }
+        archive.chunked(500).forEach { dao.insert(it) }
+        dao.insert(listOf(row(otherId, "channel-0", 0, 1, "other playlist", ProgrammeSource.XTREAM_ARCHIVE)))
+        val importId = epg.beginImport(id)
+        val staged = (0 until 300).flatMap { channel ->
+            (0 until 100).map { slot -> row(id, "channel-$channel", slot.toLong(), slot + 1L, "xmltv") }
+        }
+        staged.chunked(500).forEach { epg.stage(importId, it) }
+
+        epg.commitImport(id, importId, now - hour, now - 96 * hour, emptyList()) { state, _, _, _ -> state }
+
+        assertThat(epg.programmeCount(id)).isEqualTo(30_000)
+        assertThat(epg.pendingCount(id)).isEqualTo(0)
+        assertThat(epg.programmes(otherId, listOf("channel-0"), now, now + hour).single().title).isEqualTo("other playlist")
     }
 
     @Test

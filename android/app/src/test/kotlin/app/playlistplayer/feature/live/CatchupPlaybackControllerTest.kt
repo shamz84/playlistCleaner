@@ -26,8 +26,11 @@ class CatchupPlaybackControllerTest {
     private val bbcOne = LiveChannel(1, ordinal = 10, groupOrdinal = 2, name = "UK: BBC One HD", streamId = 1234, archiveDays = 3)
     private val prefs = FakePreferences()
 
-    private fun controller(seekable: Boolean = true) =
-        CatchupPlaybackController(accounts, amsterdam, prefs, clock = { now }, seekable = seekable)
+    private fun controller(seekable: Boolean = true, rebuildRestartSeeks: Boolean = false) =
+        CatchupPlaybackController(
+            accounts, amsterdam, prefs, clock = { now }, seekable = seekable,
+            rebuildRestartSeeks = rebuildRestartSeeks,
+        )
 
     private fun request(channel: LiveChannel = bbcOne, others: List<LiveChannel> = emptyList(), from: Long = start, to: Long = stop) =
         CatchupRequest(channel, others, from, to, title = "The Celebrity Traitors")
@@ -92,6 +95,24 @@ class CatchupPlaybackControllerTest {
         assertThat(playback.availableMs()).isEqualTo(40 * MINUTE)
         val seek = playback.seekTo(55 * MINUTE)
         assertThat(seek.timelinePositionMs).isEqualTo(40 * MINUTE)
+    }
+
+    @Test
+    fun `restart URL rebuild seeks from selected minute and preserves residual timeline`() = runTest {
+        now = utc("2026-10-29T19:50:00Z")
+        val playback = started(controller(rebuildRestartSeeks = true), request())
+        val seek = playback.seekTo(40 * MINUTE + 31_000) as CatchupSeekCommand.Reload
+
+        assertThat(seek.source.url).endsWith("/25/2026-10-29:20-40/1234.ts")
+        assertThat(seek.startPositionMs).isEqualTo(31_000)
+        assertThat(seek.timelinePositionMs).isEqualTo(40 * MINUTE + 31_000)
+        assertThat(playback.timelinePositionMs(31_000)).isEqualTo(40 * MINUTE + 31_000)
+    }
+
+    @Test
+    fun `restart rebuild flag does not change completed catch-up native seeks`() = runTest {
+        val playback = started(controller(rebuildRestartSeeks = true), request())
+        assertThat(playback.seekTo(35 * MINUTE)).isInstanceOf(CatchupSeekCommand.NativeSeek::class.java)
     }
 
     @Test

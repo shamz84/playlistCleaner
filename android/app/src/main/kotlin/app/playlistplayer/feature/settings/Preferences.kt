@@ -126,20 +126,25 @@ data class PlaybackPreferences(
  * Sync preferences.
  *
  * @property refreshIntervalHours periodic playlist refresh, in [REFRESH_RANGE].
+ * @property guideRefreshHours how old the TV guide may get before it is refreshed, in [GUIDE_REFRESH_RANGE].
  * @property staleWarningDays age after which cached data shows a staleness warning, in [STALE_RANGE].
  */
 data class SyncPreferences(
     val refreshIntervalHours: Int = 6,
     val staleWarningDays: Int = 7,
+    val guideRefreshHours: Int = DEFAULT_GUIDE_REFRESH_HOURS,
 ) {
     init {
         require(refreshIntervalHours in REFRESH_RANGE) { "refresh interval out of range" }
+        require(guideRefreshHours in GUIDE_REFRESH_RANGE) { "guide refresh interval out of range" }
         require(staleWarningDays in STALE_RANGE) { "stale warning out of range" }
     }
 
     companion object {
         val REFRESH_RANGE = 1..168
         val STALE_RANGE = 1..90
+        val GUIDE_REFRESH_RANGE = 1..168
+        const val DEFAULT_GUIDE_REFRESH_HOURS = 24
     }
 }
 
@@ -176,6 +181,7 @@ object PreferencesCodec {
     const val KEY_SHOW_VOD_DIAGNOSTICS = "playback.showVodDiagnostics"
     const val KEY_REFRESH_HOURS = "sync.refreshIntervalHours"
     const val KEY_STALE_DAYS = "sync.staleWarningDays"
+    const val KEY_GUIDE_REFRESH_HOURS = "sync.guideRefreshHours"
     const val KEY_PLAYLIST_ORDER = "live.playlistOrder"
     const val KEY_THEME = "app.theme"
     private const val VERSION = "1"
@@ -202,6 +208,7 @@ object PreferencesCodec {
         KEY_SHOW_VOD_DIAGNOSTICS to prefs.playback.showVodDiagnostics.toString(),
         KEY_REFRESH_HOURS to prefs.sync.refreshIntervalHours.toString(),
         KEY_STALE_DAYS to prefs.sync.staleWarningDays.toString(),
+        KEY_GUIDE_REFRESH_HOURS to prefs.sync.guideRefreshHours.toString(),
         KEY_PLAYLIST_ORDER to prefs.playlistOrder.joinToString(","),
         KEY_THEME to prefs.theme.name,
     )
@@ -239,6 +246,7 @@ object PreferencesCodec {
             sync = SyncPreferences(
                 refreshIntervalHours = intIn(map[KEY_REFRESH_HOURS], SyncPreferences.REFRESH_RANGE, d.sync.refreshIntervalHours),
                 staleWarningDays = intIn(map[KEY_STALE_DAYS], SyncPreferences.STALE_RANGE, d.sync.staleWarningDays),
+                guideRefreshHours = intIn(map[KEY_GUIDE_REFRESH_HOURS], SyncPreferences.GUIDE_REFRESH_RANGE, d.sync.guideRefreshHours),
             ),
             playlistOrder = map[KEY_PLAYLIST_ORDER].orEmpty().split(',').mapNotNull { it.trim().toLongOrNull() }.distinct(),
             theme = enumOr(map[KEY_THEME], d.theme),

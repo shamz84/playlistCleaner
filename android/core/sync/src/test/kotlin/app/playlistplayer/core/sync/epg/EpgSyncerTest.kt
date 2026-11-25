@@ -1,9 +1,14 @@
 package app.playlistplayer.core.sync.epg
 
+import androidx.room3.withWriteTransaction
 import app.playlistplayer.core.database.entity.EpgMapMethod
 import app.playlistplayer.core.database.entity.EpgMapOrigin
 import app.playlistplayer.core.database.entity.ProgrammeEntity
 import app.playlistplayer.core.database.entity.ProgrammeSource
+import app.playlistplayer.core.network.RedactingLogger
+import app.playlistplayer.core.parsing.xmltv.XmlPullEvent
+import app.playlistplayer.core.parsing.xmltv.XmlPullSource
+import app.playlistplayer.core.parsing.xmltv.XmlPullSourceFactory
 import app.playlistplayer.core.sync.epg.EpgTestEnv.Companion.DAY
 import app.playlistplayer.core.sync.epg.EpgTestEnv.Companion.HOUR
 import app.playlistplayer.core.sync.epg.EpgTestEnv.Companion.NOW
@@ -12,7 +17,14 @@ import app.playlistplayer.core.sync.epg.EpgTestEnv.Companion.xml
 import app.playlistplayer.core.sync.epg.EpgTestEnv.Companion.xmltv
 import app.playlistplayer.core.sync.epg.EpgTestEnv.Programme
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import mockwebserver3.MockResponse
 import okio.Buffer
 import org.junit.After
@@ -25,6 +37,8 @@ import org.robolectric.RobolectricTestRunner
 import java.io.ByteArrayOutputStream
 import java.time.LocalDateTime
 import java.time.ZoneId
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import java.util.zip.GZIPOutputStream
 
 @RunWith(RobolectricTestRunner::class)
@@ -145,6 +159,60 @@ class EpgSyncerTest {
         val outcome = env.syncer(noBackfill).sync(id, backfill = false)
         assertThat(outcome).isInstanceOf(EpgSyncOutcome.Imported::class.java)
         assertThat(env.epg.programmeCount(id)).isEqualTo(45)
+    }
+
+    @Test
+    fun cancellingWhileStagingWaitsForWriterReleasesTheParserAndPreservesPreviousGuide() = runBlocking<Unit> {
+        val id = env.playlist()
+        env.syncer(noBackfill).sync(id, backfill = false)
+        val previous = all(id, "bbc1.uk")
+        val parserReached = CountDownLatch(1)
+        val continueParsing = CountDownLatch(1)
+        val cancellationReached = CountDownLatch(1)
+        val writerHeld = CompletableDeferred<Unit>()
+        val releaseWriter = CompletableDeferred<Unit>()
+        val factory = XmlPullSourceFactory { input ->
+            val delegate = AndroidXmlPullSource.open(input)
+            object : XmlPullSource by delegate {
+                override fun next(): XmlPullEvent {
+                    val event = delegate.next()
+                    if (event == XmlPullEvent.START_TAG && delegate.name == "programme" && parserReached.count > 0) {
+                        parserReached.countDown()
+                        check(continueParsing.await(10, TimeUnit.SECONDS))
+                    }
+                    return event
+                }
+            }
+        }
+        val logger = RedactingLogger({ _, _, message, _ ->
+            if (message.contains("cancelled while downloading or staging")) cancellationReached.countDown()
+        })
+        val import = async(Dispatchers.IO) { env.syncer(EpgSyncConfig(batchSize = 1), factory, logger).sync(id, backfill = false) }
+        val writer = async(Dispatchers.IO) {
+            check(parserReached.await(10, TimeUnit.SECONDS))
+            env.h.db.withWriteTransaction {
+                writerHeld.complete(Unit)
+                releaseWriter.await()
+            }
+        }
+        try {
+            assertThat(withContext(Dispatchers.IO) { parserReached.await(10, TimeUnit.SECONDS) }).isTrue()
+            withTimeout(10_000) { writerHeld.await() }
+            continueParsing.countDown()
+            delay(300)
+            import.cancel()
+            assertThat(withContext(Dispatchers.IO) { cancellationReached.await(10, TimeUnit.SECONDS) }).isTrue()
+        } finally {
+            continueParsing.countDown()
+            releaseWriter.complete(Unit)
+            withTimeout(10_000) {
+                import.cancelAndJoin()
+                writer.await()
+            }
+        }
+        assertThat(env.epg.pendingCount(id)).isEqualTo(0)
+        assertThat(all(id, "bbc1.uk")).isEqualTo(previous)
+        env.epg.updateState(id) { it.copy(lastErrorKind = null) }
     }
 
     @Test

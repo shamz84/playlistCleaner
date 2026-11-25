@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -59,6 +60,13 @@ fun MobileLiveTvScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     var showGroups by rememberSaveable { mutableStateOf(false) }
     var collapsed by rememberSaveable { mutableStateOf(listOf<Long>()) }
+    var entryReturnPending by remember { mutableStateOf(true) }
+    val onGridReady: (EpgGridViewModel) -> Unit = { grid ->
+        if (entryReturnPending) {
+            entryReturnPending = false
+            if (grid.state.value.rows.isNotEmpty()) grid.onReturn()
+        }
+    }
     val group = state.selectedGroup
 
     BackHandler(enabled = !wide && showGroups && group != null) { showGroups = false }
@@ -81,10 +89,10 @@ fun MobileLiveTvScreen(
             wide -> Row(modifier = Modifier.fillMaxSize()) {
                 groups(Modifier.weight(0.35f).fillMaxHeight())
                 VerticalDivider()
-                GridPane(viewModel, guide, sections, group, state.restoreChannel, onPlayChannel, onPlayCatchup, onChangeGroup = null, Modifier.weight(0.65f).fillMaxHeight())
+                GridPane(viewModel, guide, sections, group, state.restoreChannel, onPlayChannel, onPlayCatchup, onGridReady, onChangeGroup = null, Modifier.weight(0.65f).fillMaxHeight())
             }
             showGroups || group == null -> groups(Modifier.fillMaxSize())
-            else -> GridPane(viewModel, guide, sections, group, state.restoreChannel, onPlayChannel, onPlayCatchup, onChangeGroup = { showGroups = true }, Modifier.fillMaxSize())
+            else -> GridPane(viewModel, guide, sections, group, state.restoreChannel, onPlayChannel, onPlayCatchup, onGridReady, onChangeGroup = { showGroups = true }, Modifier.fillMaxSize())
         }
     }
 }
@@ -98,6 +106,7 @@ private fun GridPane(
     restoreChannel: Int?,
     onPlayChannel: (LiveChannel) -> Unit,
     onPlayCatchup: (CatchupRequest) -> Unit,
+    onGridReady: (EpgGridViewModel) -> Unit,
     onChangeGroup: (() -> Unit)?,
     modifier: Modifier,
 ) {
@@ -115,6 +124,7 @@ private fun GridPane(
                 windowSlots = GuideGeometry.PHONE_WINDOW_SLOTS,
             )
         }
+        LaunchedEffect(grid) { onGridReady(grid) }
         LaunchedEffect(grid, restoreChannel) {
             if (restoreChannel == null) return@LaunchedEffect
             grid.onFocus(restoreChannel, null)
@@ -122,7 +132,7 @@ private fun GridPane(
         }
         // Scroll positions belong to the group: a new group opens at its top and at now.
         key(group) {
-            MobileGuideGrid(grid, onPlayCatchup = onPlayCatchup, onWatchLive = onPlayChannel, modifier = Modifier.weight(1f))
+            MobileGuideGrid(grid, onPlayCatchup = onPlayCatchup, onWatchLive = onPlayChannel, modifier = Modifier.weight(1f), resetOnEntry = false)
         }
     }
 }

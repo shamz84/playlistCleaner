@@ -120,7 +120,8 @@ internal fun GroupButton(label: Pair<String, String>?, onClick: () -> Unit) {
  * The touch grid for one group: day chips (Now, −archive days … +2), Earlier / Later paging, then
  * channels as rows with a sticky channel column and time scrolling horizontally (30-minute slots,
  * now-line). Taps route exactly as OK on TV through the shared ViewModel: an eligible past programme
- * plays from the archive, the airing one offers Watch live / Restart, anything else shows details;
+ * plays from the archive, an eligible airing one offers Watch live / Restart, other airing
+ * programmes play live, and anything else shows details;
  * long press shows details; a "No guide data" row or a channel name plays the channel live.
  */
 @Composable
@@ -129,14 +130,14 @@ fun MobileGuideGrid(
     onPlayCatchup: (CatchupRequest) -> Unit,
     onWatchLive: (LiveChannel) -> Unit,
     modifier: Modifier = Modifier,
+    resetOnEntry: Boolean = true,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val playCatchup by rememberUpdatedState(onPlayCatchup)
     val watchLive by rememberUpdatedState(onWatchLive)
 
     LaunchedEffect(viewModel) {
-        // Shown again (e.g. back from the player): return to now on the remembered channel.
-        if (viewModel.state.value.rows.isNotEmpty()) viewModel.onReturn()
+        if (resetOnEntry && viewModel.state.value.rows.isNotEmpty()) viewModel.onReturn()
         viewModel.events.collect { event ->
             when (event) {
                 is EpgEvent.PlayCatchup -> playCatchup(event.request)

@@ -211,6 +211,14 @@ class PlaylistOrchestrator(
         return PipelineHandle(playlistId, steps)
     }
 
+    /** True while a GUIDE step for [playlistId] is waiting or running in the pipeline. */
+    suspend fun isGuideStepActive(playlistId: Long): Boolean {
+        val query = WorkQuery.Builder.fromTags(listOf(playlistTag(playlistId)))
+            .addStates(listOf(WorkInfo.State.ENQUEUED, WorkInfo.State.BLOCKED, WorkInfo.State.RUNNING))
+            .build()
+        return workManager().getWorkInfosFlow(query).first().any { stepTag(PipelineStep.GUIDE) in it.tags }
+    }
+
     private suspend fun pendingInfos(): List<WorkInfo> {
         val query = WorkQuery.Builder.fromTags(listOf(TAG_STEP))
             .addStates(listOf(WorkInfo.State.ENQUEUED, WorkInfo.State.BLOCKED))
@@ -326,8 +334,8 @@ class PipelineSteps(
     /** True when the guide needs its first import or a re-import (EpgSyncChain.needsImport). */
     private val needsEpgImport: suspend (playlistId: Long) -> Boolean,
     private val hasEpgOverride: suspend (playlistId: Long) -> Boolean,
-    /** Ensures the daily idle/unmetered guide refresh is scheduled (EpgSyncWorker.schedulePeriodic). */
-    private val scheduleDailyGuide: (playlistId: Long) -> Unit,
+    /** Ensures the periodic idle/unmetered guide refresh is scheduled (EpgSyncWorker.schedulePeriodic). */
+    private val scheduleDailyGuide: suspend (playlistId: Long) -> Unit,
     private val logger: RedactingLogger = RedactingLogger.NONE,
 ) : PipelineStepRunner {
     override suspend fun run(step: PipelineStep, playlistId: Long, force: Boolean, previous: Map<PipelineStep, String>): StepResult =

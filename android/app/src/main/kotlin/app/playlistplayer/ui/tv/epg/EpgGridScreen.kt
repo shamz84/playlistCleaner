@@ -5,6 +5,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.runtime.mutableIntStateOf
 import android.view.KeyEvent as AndroidKeyEvent
+import android.view.ViewConfiguration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -48,7 +49,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
+import app.playlistplayer.ui.tv.components.TvDialog as Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.tv.material3.ClickableSurfaceDefaults
 import androidx.tv.material3.MaterialTheme
@@ -96,11 +97,11 @@ const val TV_GUIDE_ROW_BLOCK = 24
 
 /**
  * Dense TiviMate-style guide grid for the current group (U9, U21). D-pad moves between programmes;
- * Left/Right past the window edge page in time; OK plays a catch-up programme, offers Watch live /
- * Restart on the airing one, or shows details; long-press OK (or Info) shows details for any
+ * Left/Right past the window edge page in time; double-tap Left to return to now.
+ * OK plays catch-up, offers Watch live / Restart when eligible, plays other airing programmes live,
+ * or shows details; long-press OK (or Info) shows details for any
  * programme; OK on the channel (logo, number, name) or a "No guide data" row watches the channel
- * live. Left on the channel column and Menu anywhere call [onOpenGroups]. Focus returns to the
- * current programme on the remembered channel when the screen is shown again.
+ * live. Left on the channel column and Menu anywhere call [onOpenGroups].
  *
  * Performance: rows have stable keys and keep their instance while unchanged; the focus is read per
  * row through `derivedStateOf`, so a focus move recomposes only the rows it leaves and enters (and
@@ -120,14 +121,14 @@ fun EpgGridScreen(
     autoFocus: Boolean = true,
     focusRequest: Int = 0,
     onOpenGroups: () -> Unit = {},
+    resetOnEntry: Boolean = true,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val playCatchup by rememberUpdatedState(onPlayCatchup)
     val watchLive by rememberUpdatedState(onWatchLive)
 
     LaunchedEffect(viewModel) {
-        // Shown again (e.g. back from the player): return to now on the remembered channel.
-        if (viewModel.state.value.rows.isNotEmpty()) viewModel.onReturn()
+        if (resetOnEntry && viewModel.state.value.rows.isNotEmpty()) viewModel.onReturn()
         viewModel.events.collect { event ->
             when (event) {
                 is EpgEvent.PlayCatchup -> playCatchup(event.request)
@@ -198,6 +199,7 @@ private fun Grid(
 ) {
     val time = rememberTimeFormatter()
     val listState = rememberLazyListState()
+    val leftDoubleTap = remember(viewModel) { GuideLeftDoubleTap(ViewConfiguration.getDoubleTapTimeout().toLong()) }
     val focusRequester = remember { FocusRequester() }
     val focusState = viewModel.focusedCell.collectAsStateWithLifecycle()
     val windowStart = state.windowStartMillis
@@ -265,7 +267,14 @@ private fun Grid(
                 LazyColumn(
                     state = listState,
                     verticalArrangement = Arrangement.spacedBy(TvDensity.GuideRowGap),
-                    modifier = Modifier.fillMaxSize().testTag(EpgTags.GRID),
+                    modifier = Modifier.fillMaxSize().testTag(EpgTags.GRID).onPreviewKeyEvent { event ->
+                        if (leftDoubleTap.onKeyEvent(event.nativeKeyEvent)) {
+                            viewModel.jumpToNow()
+                            true
+                        } else {
+                            false
+                        }
+                    },
                 ) {
                     items(state.rows, key = { it.channel.ordinal }, contentType = { "row" }) { row ->
                         GuideRow(

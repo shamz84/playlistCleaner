@@ -184,6 +184,7 @@ object SettingsTexts {
 
     /** Preset steps for the App section steppers (D-pad friendly). */
     val REFRESH_PRESETS_HOURS: List<Int> = listOf(2, 4, 6, 12)
+    val GUIDE_REFRESH_PRESETS_HOURS: List<Int> = listOf(6, 12, 24, 48)
     val STALE_PRESETS_DAYS: List<Int> = listOf(1, 2, 3, 7, 14, 30, 60, 90)
 
     /** The next preset above/below [current] (direction +1/-1), or [current] at the end. */

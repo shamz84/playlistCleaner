@@ -17,6 +17,7 @@ import app.playlistplayer.ui.common.GroupKey
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
@@ -98,6 +99,28 @@ class EpgGridViewModelTest {
 
         // Focus starts on the airing programme of the first row.
         assertThat(vm.focusedCell.value).isEqualTo(EpgFocus(10, 2, now))
+    }
+
+    @Test
+    fun `open guide reloads its current window when a committed import changes`() = runTest(main.dispatcher) {
+        val changes = MutableSharedFlow<Unit>()
+        val source = object : EpgGridSource {
+            override suspend fun gridForGroup(playlistId: Long, groupOrdinal: Int, fromMillis: Long, toMillis: Long) =
+                grid.gridForGroup(playlistId, groupOrdinal, fromMillis, toMillis)
+
+            override fun observeChanges(playlistId: Long) = changes
+        }
+        val vm = EpgGridViewModel(GroupKey(1, 2), channels, source, resolver, clock = { now }, zone = zone)
+        advanceUntilIdle()
+        assertThat(vm.state.value.row(13).noGuideData).isTrue()
+        val window = vm.state.value.windowStartMillis
+        grid.add(13, programme(99, "itv", now - 60_000, now + 60_000, "New guide"))
+
+        changes.emit(Unit)
+        advanceUntilIdle()
+
+        assertThat(vm.state.value.row(13).cells.single().title).isEqualTo("New guide")
+        assertThat(vm.state.value.windowStartMillis).isEqualTo(window)
     }
 
     @Test
@@ -221,11 +244,8 @@ class EpgGridViewModelTest {
         assertThat(playback.currentSource().url).endsWith("/65/2026-10-29:20-00/101.ts")
 
         vm.select(11, 5)
-        assertThat(vm.state.value.airingChoice?.canRestart).isFalse()
-        vm.chooseRestart() // not offered: no event
-        assertThat(events).hasSize(1)
-        vm.select(11, 5)
-        vm.chooseWatchLive()
+        assertThat(vm.state.value.airingChoice).isNull()
+        assertThat(events).hasSize(2)
         assertThat(events.last()).isEqualTo(EpgEvent.WatchLive(two))
     }
 
@@ -239,6 +259,20 @@ class EpgGridViewModelTest {
         val playback = (CatchupPlaybackController(accounts, amsterdam, FakePreferences(), clock = { now }).start(request) as CatchupStart.Started).playback
         assertThat(playback.usesOtherVersion).isTrue()
         assertThat(playback.currentSource().url).endsWith("/35/2026-10-29:20-00/301.ts")
+    }
+
+    @Test
+    fun `airing programme can restart through an eligible alternative channel version`() = runTest(main.dispatcher) {
+        grid.add(14, programme(7, "c4", now - 60_000, now + 60_000, "Live programme"))
+        val vm = viewModel()
+        val events = events(vm)
+        advanceUntilIdle()
+        vm.select(14, 7)
+        assertThat(vm.state.value.airingChoice?.canRestart).isTrue()
+        vm.chooseRestart()
+        val request = (events.single() as EpgEvent.PlayCatchup).request
+        val playback = (CatchupPlaybackController(accounts, amsterdam, FakePreferences(), clock = { now }).start(request) as CatchupStart.Started).playback
+        assertThat(playback.usesOtherVersion).isTrue()
     }
 
     @Test
@@ -257,7 +291,6 @@ class EpgGridViewModelTest {
         advanceUntilIdle()
         vm.onFocus(11, 5)
         vm.select(11, 5)
-        vm.chooseWatchLive()
         assertThat(events.single()).isEqualTo(EpgEvent.WatchLive(two))
 
         // Browse into the future, then return after the current 30-minute slot changes.
@@ -270,6 +303,60 @@ class EpgGridViewModelTest {
         assertThat(vm.focusedCell.value?.channelOrdinal).isEqualTo(11)
         assertThat(vm.focusedCell.value?.programmeId).isEqualTo(5)
         assertThat(vm.state.value.windowStartMillis).isEqualTo(utc("2026-10-29T20:00:00Z"))
+        assertThat(vm.state.value.showNowLine).isTrue()
+        assertThat(vm.state.value.nowResetVersion).isEqualTo(1)
+    }
+
+    @Test
+    fun `return from live focuses the playing channel when it belongs to the group`() = runTest(main.dispatcher) {
+        val vm = viewModel()
+        advanceUntilIdle()
+        vm.onFocus(10, 2)
+        vm.onReturn(playingChannelOrdinal = 11)
+        advanceUntilIdle()
+        assertThat(vm.focusedCell.value?.channelOrdinal).isEqualTo(11)
+        vm.onReturn(playingChannelOrdinal = 999)
+        advanceUntilIdle()
+        assertThat(vm.focusedCell.value?.channelOrdinal).isEqualTo(11)
+    }
+
+    @Test
+    fun `return from a selected past programme preserves its time and focus once`() = runTest(main.dispatcher) {
+        val vm = viewModel()
+        val events = events(vm)
+        advanceUntilIdle()
+        vm.pageBack()
+        advanceUntilIdle()
+        vm.onFocus(10, 1)
+        val before = vm.state.value.windowStartMillis
+        val focus = vm.focusedCell.value
+        vm.select(10, 1)
+        assertThat(events.single()).isInstanceOf(EpgEvent.PlayCatchup::class.java)
+
+        now += 60_000
+        vm.onReturn(playingChannelOrdinal = 11)
+        advanceUntilIdle()
+        assertThat(vm.state.value.windowStartMillis).isEqualTo(before)
+        assertThat(vm.focusedCell.value).isEqualTo(focus)
+        assertThat(vm.state.value.nowMillis).isEqualTo(now)
+        assertThat(vm.state.value.nowResetVersion).isEqualTo(0)
+
+        vm.onReturn()
+        advanceUntilIdle()
+        assertThat(vm.state.value.nowResetVersion).isEqualTo(1)
+        assertThat(vm.state.value.showNowLine).isTrue()
+    }
+
+    @Test
+    fun `now overrides the pending catchup return`() = runTest(main.dispatcher) {
+        val vm = viewModel()
+        events(vm)
+        advanceUntilIdle()
+        vm.pageBack()
+        advanceUntilIdle()
+        vm.select(10, 1)
+        vm.jumpToNow()
+        advanceUntilIdle()
         assertThat(vm.state.value.showNowLine).isTrue()
         assertThat(vm.state.value.nowResetVersion).isEqualTo(1)
     }
@@ -340,7 +427,7 @@ class EpgGridViewModelTest {
 
     @Test
     fun `with row blocks only the rows near the visible ones are loaded`() = runTest(main.dispatcher) {
-        val vm = EpgGridViewModel(GroupKey(1, 2), channels, grid, resolver, clock = { now }, zone = zone, rowBlock = 2)
+        val vm = EpgGridViewModel(GroupKey(1, 2), channels, grid, resolver, clock = { now }, zone = zone, rowBlock = 2, versionsDispatcher = main.dispatcher)
         advanceUntilIdle()
         assertThat(vm.state.value.rows.map { it.loaded }).containsExactly(true, true, false, false).inOrder()
         // Not loaded yet is not "No guide data".
@@ -369,7 +456,7 @@ class EpgGridViewModelTest {
         }
         val vm = EpgGridViewModel(
             GroupKey(1, 2), manyChannels, manyProgrammes, OtherVersionsResolver { emptyList() },
-            clock = { now }, zone = zone, rowBlock = 10,
+            clock = { now }, zone = zone, rowBlock = 10, versionsDispatcher = main.dispatcher,
         )
         advanceUntilIdle()
         vm.onFocus(0, 1)
@@ -400,7 +487,7 @@ class EpgGridViewModelTest {
         }
         val vm = EpgGridViewModel(
             GroupKey(1, 2), manyChannels, slowGrid, OtherVersionsResolver { emptyList() },
-            clock = { now }, zone = zone, rowBlock = 10,
+            clock = { now }, zone = zone, rowBlock = 10, versionsDispatcher = main.dispatcher,
         )
         runCurrent()
         vm.onVisibleRows(40, 49)
@@ -408,5 +495,110 @@ class EpgGridViewModelTest {
         advanceUntilIdle()
         assertThat(vm.state.value.row(40).loaded).isTrue()
         assertThat(vm.state.value.row(49).loaded).isTrue()
+    }
+
+    @Test
+    fun `initial channel block loads before other channel metadata`() = runTest(main.dispatcher) {
+        val source = FakeLiveChannelSource()
+        val calls = mutableListOf<Int>()
+        repeat(100) { source.add(LiveChannel(1, it, 2, "Channel $it", streamId = it.toLong() + 1)) }
+        val metadataGate = CompletableDeferred<Unit>()
+        val resolver = OtherVersionsResolver { channel ->
+            calls += channel.ordinal
+            if (channel.ordinal == 0) metadataGate.await()
+            emptyList()
+        }
+        val programme = programme(81, "id80", now - 60_000, now + 60_000, "Playing")
+        val programmeSource = FakeEpgGridSource().apply { add(80, programme) }
+        val vm = EpgGridViewModel(
+            GroupKey(1, 2), source, programmeSource, resolver, clock = { now }, zone = zone,
+            rowBlock = 10, initialChannelOrdinal = 80, versionsDispatcher = main.dispatcher,
+        )
+        runCurrent()
+        assertThat(calls.take(10)).containsExactlyElementsIn(80..89).inOrder()
+        assertThat(vm.state.value.row(80).loaded).isTrue()
+        assertThat(vm.state.value.cell(80, 81).title).isEqualTo("Playing")
+        assertThat(vm.focusedCell.value?.channelOrdinal).isEqualTo(80)
+        assertThat(vm.state.value.row(0).loaded).isFalse()
+        metadataGate.complete(Unit)
+        advanceUntilIdle()
+    }
+
+    @Test
+    fun `background alternatives expand archive days without blocking the selected block`() = runTest(main.dispatcher) {
+        val source = FakeLiveChannelSource()
+        repeat(30) { source.add(LiveChannel(1, it, 2, "Channel $it", streamId = it.toLong() + 1)) }
+        val gate = CompletableDeferred<Unit>()
+        val resolver = OtherVersionsResolver { channel ->
+            if (channel.ordinal == 0) gate.await()
+            if (channel.ordinal == 0) listOf(LiveChannel(1, 100, 9, "Alternative", streamId = 101, archiveDays = 5))
+            else emptyList()
+        }
+        val vm = EpgGridViewModel(
+            GroupKey(1, 2), source, FakeEpgGridSource(), resolver, clock = { now }, zone = zone,
+            rowBlock = 10, initialChannelOrdinal = 20, versionsDispatcher = main.dispatcher,
+        )
+        runCurrent()
+        assertThat(vm.state.value.row(20).loaded).isTrue()
+        assertThat(vm.state.value.days.minOf { it.offset }).isEqualTo(0)
+        gate.complete(Unit)
+        advanceUntilIdle()
+        assertThat(vm.state.value.days.minOf { it.offset }).isEqualTo(-5)
+    }
+
+    @Test
+    fun `scrolling again during a row fetch loads the newest visible rows`() = runTest(main.dispatcher) {
+        val source = FakeLiveChannelSource()
+        repeat(100) { source.add(LiveChannel(1, it, 2, "Channel $it", streamId = it.toLong() + 1)) }
+        val gate = CompletableDeferred<Unit>()
+        val queries = mutableListOf<Int>()
+        val programmeSource = object : EpgGridSource {
+            override suspend fun gridForGroup(playlistId: Long, groupOrdinal: Int, fromMillis: Long, toMillis: Long) =
+                emptyList<app.playlistplayer.core.database.entity.ChannelProgramme>()
+
+            override suspend fun gridForChannels(playlistId: Long, groupOrdinal: Int, fromOrdinal: Int, toOrdinal: Int, fromMillis: Long, toMillis: Long): List<app.playlistplayer.core.database.entity.ChannelProgramme> {
+                queries += fromOrdinal
+                if (fromOrdinal == 10) gate.await()
+                return emptyList()
+            }
+        }
+        val vm = EpgGridViewModel(
+            GroupKey(1, 2), source, programmeSource, OtherVersionsResolver { emptyList() },
+            clock = { now }, zone = zone, rowBlock = 10, versionsDispatcher = main.dispatcher,
+        )
+        advanceUntilIdle()
+        vm.onVisibleRows(20, 29)
+        runCurrent()
+        assertThat(queries).contains(10)
+        vm.onVisibleRows(80, 89)
+        gate.complete(Unit)
+        advanceUntilIdle()
+        assertThat(vm.state.value.row(80).loaded).isTrue()
+        assertThat(vm.state.value.row(89).loaded).isTrue()
+    }
+
+    @Test
+    fun `return from live loads the newly playing channel block first`() = runTest(main.dispatcher) {
+        val source = FakeLiveChannelSource()
+        repeat(100) { source.add(LiveChannel(1, it, 2, "Channel $it", streamId = it.toLong() + 1)) }
+        val queries = mutableListOf<Int>()
+        val programmeSource = object : EpgGridSource {
+            override suspend fun gridForGroup(playlistId: Long, groupOrdinal: Int, fromMillis: Long, toMillis: Long) =
+                emptyList<app.playlistplayer.core.database.entity.ChannelProgramme>()
+            override suspend fun gridForChannels(playlistId: Long, groupOrdinal: Int, fromOrdinal: Int, toOrdinal: Int, fromMillis: Long, toMillis: Long): List<app.playlistplayer.core.database.entity.ChannelProgramme> {
+                queries += fromOrdinal
+                return emptyList()
+            }
+        }
+        val vm = EpgGridViewModel(
+            GroupKey(1, 2), source, programmeSource, OtherVersionsResolver { emptyList() },
+            clock = { now }, zone = zone, rowBlock = 10, versionsDispatcher = main.dispatcher,
+        )
+        advanceUntilIdle()
+        queries.clear()
+        vm.onReturn(playingChannelOrdinal = 80)
+        advanceUntilIdle()
+        assertThat(queries.first()).isEqualTo(80)
+        assertThat(vm.focusedCell.value?.channelOrdinal).isEqualTo(80)
     }
 }

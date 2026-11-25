@@ -14,6 +14,8 @@ import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 class EpgOverrideSettings(
     private val secureStore: SecureStore,
     private val epgStore: EpgStore,
+    /** The guide refresh interval chosen in Settings. */
+    private val refreshIntervalHours: suspend () -> Long = { EpgSyncWorker.PERIODIC_INTERVAL_HOURS },
     private val workManager: () -> WorkManager,
 ) {
     /** Sets the override, or clears it (back to the provider guide) when [url] is null/blank. */
@@ -30,7 +32,7 @@ class EpgOverrideSettings(
         }
         val wm = workManager()
         EpgSyncWorker.enqueueImport(wm, playlistId, ExistingWorkPolicy.REPLACE)
-        EpgSyncWorker.schedulePeriodic(wm, playlistId)
+        EpgSyncWorker.schedulePeriodic(wm, playlistId, refreshIntervalHours())
         return Result.Saved
     }
 

@@ -14,6 +14,7 @@ import app.playlistplayer.core.database.VodTitleStore
 import app.playlistplayer.core.sync.BackgroundWorkGate
 import android.content.Context
 import androidx.work.DelegatingWorkerFactory
+import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.WorkManager
 import app.playlistplayer.core.consolidation.DeviceCapabilities
 import app.playlistplayer.core.database.AppDatabase
@@ -60,6 +61,7 @@ import app.playlistplayer.core.sync.epg.EpgSyncChain
 import app.playlistplayer.core.sync.epg.EpgSyncWorker
 import app.playlistplayer.core.sync.epg.EpgSyncWorkerFactory
 import app.playlistplayer.core.sync.epg.EpgSyncer
+import app.playlistplayer.core.sync.epg.GuideFreshness
 import app.playlistplayer.core.sync.epg.NowNextRepository
 import app.playlistplayer.core.sync.platform.AndroidLogSink
 import app.playlistplayer.core.sync.platform.AppSignature
@@ -140,10 +142,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
@@ -322,7 +326,7 @@ class AppContainer(context: Context, private val overrides: Overrides = Override
     }
 
     /** Settings: set/clear the XMLTV override (re-imports immediately). */
-    val epgOverrideSettings: EpgOverrideSettings by lazy { EpgOverrideSettings(secureStore, epgStore) { workManager } }
+    val epgOverrideSettings: EpgOverrideSettings by lazy { EpgOverrideSettings(secureStore, epgStore, { guideRefreshHours() }) { workManager } }
 
     /** Now/next per channel: Room first, then get_short_epg on demand (U9 channel list/player). */
     val nowNextRepository: NowNextRepository by lazy {
@@ -331,7 +335,7 @@ class AppContainer(context: Context, private val overrides: Overrides = Override
 
     /** Queues the first EPG import after the catalog sync (or playlist sync for override-only playlists). */
     val epgSyncChain: EpgSyncChain by lazy {
-        EpgSyncChain(playlistStore, epgStore, { id -> secureStore.epgOverrideUrl(id) != null }, logger.withTag("EpgSync")) { workManager }
+        EpgSyncChain(playlistStore, epgStore, { id -> secureStore.epgOverrideUrl(id) != null }, logger.withTag("EpgSync"), { guideRefreshHours() }) { workManager }
     }
 
     // ---- Multiple playlists (U15) ----
@@ -349,7 +353,7 @@ class AppContainer(context: Context, private val overrides: Overrides = Override
             epgSyncer = { epgSyncer },
             needsEpgImport = { id -> epgSyncChain.needsImport(id) },
             hasEpgOverride = { id -> secureStore.epgOverrideUrl(id) != null },
-            scheduleDailyGuide = { id -> EpgSyncWorker.schedulePeriodic(workManager, id) },
+            scheduleDailyGuide = { id -> EpgSyncWorker.schedulePeriodic(workManager, id, guideRefreshHours()) },
             logger = logger.withTag("Pipeline"),
         )
     }
@@ -374,7 +378,56 @@ class AppContainer(context: Context, private val overrides: Overrides = Override
             authorize = { action -> playlistAuthorizer(action) },
             onRemoved = { id -> onPlaylistRemoved(id) },
             logger = logger.withTag("Playlists"),
+            rescheduleGuides = { hours -> rescheduleGuides(hours) },
         )
+    }
+
+    /** The guide refresh interval chosen in Settings (default 24 h). */
+    private suspend fun guideRefreshHours(): Long = preferencesRepository.current().sync.guideRefreshHours.toLong()
+
+    /** Playlists with a guide source (provider guide or override URL) and channels to match. */
+    private suspend fun guidePlaylistIds(): List<Long> = playlistStore.playlists()
+        .filter { it.xtreamEnabled || secureStore.epgOverrideUrl(it.id) != null }
+        .filter { playlistStore.syncState(it.id)?.activeGeneration != null }
+        .map { it.id }
+
+    private suspend fun rescheduleGuides(hours: Long) {
+        if (overrides.scheduler != null) return
+        guidePlaylistIds().forEach { id ->
+            EpgSyncWorker.schedulePeriodic(workManager, id, hours, ExistingPeriodicWorkPolicy.UPDATE)
+        }
+    }
+
+    private val guideFreshness: GuideFreshness by lazy {
+        GuideFreshness(
+            epgStore = epgStore,
+            playlistIds = { guidePlaylistIds() },
+            intervalHours = { guideRefreshHours() },
+            isImportActive = { id -> EpgSyncWorker.isImportActive(workManager, id) || playlistOrchestrator.isGuideStepActive(id) },
+            enqueueImport = { id -> EpgSyncWorker.enqueueImport(workManager, id) },
+            logger = logger.withTag("EpgSync"),
+        )
+    }
+
+    /**
+     * While the app is on screen (call from `repeatOnLifecycle(STARTED)`): refreshes any guide that
+     * is older than the Settings interval, now, every [GuideFreshness.CHECK_INTERVAL_MS] and when
+     * the interval changes. Guides already importing are left alone.
+     */
+    suspend fun keepGuideFresh() {
+        if (overrides.scheduler != null) return
+        preferencesRepository.preferences.map { it.sync.guideRefreshHours }.distinctUntilChanged().collectLatest {
+            while (true) {
+                try {
+                    guideFreshness.refreshOverdue()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    logger.withTag("EpgSync").w("Guide freshness check failed", e)
+                }
+                delay(GuideFreshness.CHECK_INTERVAL_MS)
+            }
+        }
     }
 
     /** First run and "Add playlist" (U9 onboarding screen). */
@@ -631,7 +684,13 @@ class AppContainer(context: Context, private val overrides: Overrides = Override
     }
 
     val catchupController: CatchupPlaybackController by lazy {
-        CatchupPlaybackController(accountProvider, liveAccountStatusSource, playbackPreferences, clock = overrides.clock)
+        CatchupPlaybackController(
+            accountProvider,
+            liveAccountStatusSource,
+            playbackPreferences,
+            clock = overrides.clock,
+            rebuildRestartSeeks = true,
+        )
     }
 
     val movieInfoLoader: MovieInfoLoader by lazy { MovieInfoLoader.from(vodInfoRepository) }
@@ -657,7 +716,12 @@ class AppContainer(context: Context, private val overrides: Overrides = Override
             PlayerFactory(appContext, PlayerSettings(tunnelingEnabled = prefs?.tunneling == true), baseClient = okHttpClient).create()
         },
         createController = { player ->
-            ExoPlaybackController(player, accountStatusChecker = playerAccountStatusChecker, connectivity = connectivityMonitor)
+            ExoPlaybackController(
+                player,
+                accountStatusChecker = playerAccountStatusChecker,
+                connectivity = connectivityMonitor,
+                diagnosticsSink = { logger.withTag("PlaybackDiag").i(it) },
+            )
         },
     )
 
@@ -712,9 +776,10 @@ class AppContainer(context: Context, private val overrides: Overrides = Override
                 val hours = preferencesRepository.current().sync.refreshIntervalHours
                 playlistSyncScheduler.schedulePeriodic(hours.toLong())
                 if (overrides.scheduler == null) {
+                    val guideHours = guideRefreshHours()
                     playlistStore.playlists()
                         .filter { it.xtreamEnabled || secureStore.epgOverrideUrl(it.id) != null }
-                        .forEach { EpgSyncWorker.schedulePeriodic(workManager, it.id) }
+                        .forEach { EpgSyncWorker.schedulePeriodic(workManager, it.id, guideHours) }
                 }
             } catch (e: CancellationException) {
                 throw e

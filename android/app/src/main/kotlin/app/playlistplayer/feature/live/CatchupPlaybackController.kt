@@ -62,7 +62,8 @@ sealed interface CatchupSeekCommand {
  * the programme start into the server timezone from the account status (falling back to UTC when
  * unknown) plus the user's offset, uses the URL style from the settings, and decides how seeks
  * work: native byte-range seeking when [seekable] (the provider spike found timeshift responses
- * seekable), otherwise a URL rebuild through [CatchupSession].
+ * seekable), otherwise a URL rebuild through [CatchupSession]. [rebuildRestartSeeks] enables
+ * the URL-rebuild strategy for ongoing programmes independently of completed archive playback.
  */
 class CatchupPlaybackController(
     private val accounts: AccountProvider,
@@ -70,6 +71,7 @@ class CatchupPlaybackController(
     private val playbackPreferences: PlaybackPreferencesProvider,
     private val clock: () -> Long = System::currentTimeMillis,
     private val seekable: Boolean = true,
+    private val rebuildRestartSeeks: Boolean = false,
 ) {
     /** The decision for [request] at [nowMillis] (pure; no I/O). */
     fun decide(request: CatchupRequest, nowMillis: Long = clock()): CatchupDecision =
@@ -95,7 +97,7 @@ class CatchupPlaybackController(
             serverZone = zone,
             userOffsetHours = prefs.catchupOffsetHours,
             strategy = CatchupUrlStrategy.forStyle(prefs.catchupUrlStyle),
-            seekable = seekable,
+            seekable = seekable && !(restart && rebuildRestartSeeks),
         )
         return CatchupStart.Started(CatchupPlayback(request, channel, usesOther, restart, session, clock))
     }

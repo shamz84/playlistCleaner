@@ -32,9 +32,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.KeyEventType
@@ -123,22 +120,33 @@ fun LiveTvScreen(
     var showOrder by remember { mutableStateOf(false) }
     var showRecent by remember { mutableStateOf(false) }
     val history by guide.history.state.collectAsStateWithLifecycle()
-    val groupsFocus = remember { FocusRequester() }
     var contentHasFocus by remember { mutableStateOf(false) }
     /** Starts pending: the grid takes focus once loaded each time the screen is shown. */
     var gridFocusRequest by remember { mutableIntStateOf(1) }
     val numberEntry = remember { NumberEntryController() }
     var entry by remember { mutableStateOf(NumberEntryController.State()) }
     var notFound by remember { mutableStateOf<String?>(null) }
+    var entryReturnPending by remember { mutableStateOf(true) }
 
     val group = state.selectedGroup
     val grid: EpgGridViewModel? = group?.let { key ->
         storedViewModel(key = "tv-livetv-${key.playlistId}-${key.groupOrdinal}") {
-            EpgGridViewModel(key, guide.channels, guide.grid, guide.coordinator, guide.clock, guide.zone, rowBlock = TV_GUIDE_ROW_BLOCK)
+            EpgGridViewModel(key, guide.channels, guide.grid, guide.coordinator, guide.clock, guide.zone,
+                rowBlock = TV_GUIDE_ROW_BLOCK,
+                initialChannelOrdinal = state.restoreChannel ?: state.playing?.takeIf { it.playlistId == key.playlistId }?.ordinal)
         }
     }
     val rowsState = grid?.state?.collectAsStateWithLifecycle()
     val playableCount by remember(rowsState) { derivedStateOf { rowsState?.value?.rows?.size ?: 0 } }
+
+    LaunchedEffect(grid) {
+        if (entryReturnPending && grid != null) {
+            entryReturnPending = false
+            if (grid.state.value.rows.isNotEmpty()) {
+                grid.onReturn(state.playing?.takeIf { it.playlistId == group?.playlistId }?.ordinal)
+            }
+        }
+    }
 
     // The focused cell of the selected group's guide drives the details area.
     LaunchedEffect(grid) {
@@ -151,12 +159,6 @@ fun LiveTvScreen(
         grid.onFocus(ordinal, null)
         viewModel.onRestoreHandled()
         gridFocusRequest++
-    }
-    LaunchedEffect(state.groupsPanelOpen) {
-        if (state.groupsPanelOpen) {
-            delay(PANEL_FOCUS_DELAY_MS) // let the panel compose
-            runCatching { groupsFocus.requestFocus() }
-        }
     }
 
     fun handle(outcome: NumberEntryController.Outcome?) {
@@ -244,6 +246,7 @@ fun LiveTvScreen(
                     closePanel()
                 },
                 compact = true,
+                focusSelected = state.groupsPanelOpen,
                 modifier = Modifier
                     .width(TvDensity.GroupsPanelWidth)
                     .fillMaxHeight()
@@ -251,8 +254,6 @@ fun LiveTvScreen(
                     .debugTint(TvDebugColors.Tree)
                     .padding(horizontal = UiTokens.SpaceXs, vertical = UiTokens.SpaceS)
                     .testTag(LiveTvTags.GROUPS_PANEL)
-                    .focusRequester(groupsFocus)
-                    .focusRestorer()
                     .onPreviewKeyEvent { event ->
                         if (event.type == KeyEventType.KeyDown && event.nativeKeyEvent.keyCode == AndroidKeyEvent.KEYCODE_DPAD_RIGHT) {
                             closePanel()
@@ -302,6 +303,7 @@ fun LiveTvScreen(
                                 autoFocus = !state.groupsPanelOpen,
                                 focusRequest = gridFocusRequest,
                                 onOpenGroups = viewModel::openGroupsPanel,
+                                resetOnEntry = false,
                             )
                         }
                     }
@@ -430,5 +432,3 @@ private fun Logo(url: String?, modifier: Modifier) {
     if (url == null) return
     AsyncImage(model = url, contentDescription = null, contentScale = ContentScale.Fit, modifier = modifier)
 }
-
-private const val PANEL_FOCUS_DELAY_MS = 50L

@@ -33,7 +33,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
+import app.playlistplayer.ui.tv.components.TvDialog as Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.ClickableSurfaceDefaults
@@ -164,7 +164,7 @@ fun TvShell(
 }
 
 @Composable
-private fun ExitDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
+internal fun ExitDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
     val cancelFocus = remember { FocusRequester() }
     LaunchedEffect(Unit) { runCatching { cancelFocus.requestFocus() } }
     Dialog(onDismissRequest = onDismiss) {

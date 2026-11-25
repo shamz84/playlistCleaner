@@ -26,6 +26,7 @@ class PreferencesTest {
         assertThat(prefs.playback.catchupUrlStyle).isEqualTo(CatchupUrlStyle.PATH)
         assertThat(prefs.sync.refreshIntervalHours).isEqualTo(6)
         assertThat(prefs.sync.staleWarningDays).isEqualTo(7)
+        assertThat(prefs.sync.guideRefreshHours).isEqualTo(24)
         assertThat(prefs.theme).isEqualTo(AppTheme.MIDNIGHT_BLUE)
     }
 
@@ -42,7 +43,7 @@ class PreferencesTest {
                 catchupOffsetHours = -12,
                 catchupUrlStyle = CatchupUrlStyle.PHP,
             ),
-            sync = SyncPreferences(refreshIntervalHours = 24, staleWarningDays = 30),
+            sync = SyncPreferences(refreshIntervalHours = 24, staleWarningDays = 30, guideRefreshHours = 48),
             playlistOrder = listOf(3L, 1L, 2L),
             theme = AppTheme.CINEMA_EMBER,
         )

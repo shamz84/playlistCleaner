@@ -10,14 +10,21 @@ import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.test.performKeyInput
+import androidx.compose.ui.test.pressKey
+import androidx.compose.ui.input.key.Key
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.playlistplayer.feature.live.CatchupRequest
 import app.playlistplayer.feature.live.LiveChannel
+import app.playlistplayer.feature.live.LastChannel
+import app.playlistplayer.feature.live.programme
+import app.playlistplayer.feature.live.utc
 import app.playlistplayer.ui.common.GroupKey
 import app.playlistplayer.ui.common.PlaylistSection
 import app.playlistplayer.ui.common.live.ChannelRow
@@ -68,8 +75,8 @@ class LiveTvScreenTest {
     private val fullscreen = mutableListOf<ChannelRef>()
     private lateinit var back: OnBackPressedDispatcher
 
-    private fun show(): LiveTvViewModel {
-        val vm = LiveTvViewModel(Sections(f.sections), { null }, text, history = history, streamActive = streamActive)
+    private fun show(lastChannel: LastChannel? = null): LiveTvViewModel {
+        val vm = LiveTvViewModel(Sections(f.sections), { playlistId -> lastChannel?.takeIf { playlistId == f.group.playlistId } }, text, history = history, streamActive = streamActive)
         compose.setContent {
             back = checkNotNull(LocalOnBackPressedDispatcherOwner.current).onBackPressedDispatcher
             TvTheme {
@@ -110,6 +117,13 @@ class LiveTvScreenTest {
     }
 
     @Test
+    fun `opens the restored channel on its guide row`() {
+        val vm = show(LastChannel(f.bbcTwo.ordinal, f.bbcTwo.groupOrdinal))
+        compose.waitUntil(10_000) { vm.focused.value?.channel == f.bbcTwo }
+        assertThat(vm.focused.value?.channel).isEqualTo(f.bbcTwo)
+    }
+
+    @Test
     fun `the group tree opens on demand and selecting a group shows its grid`() {
         val vm = show()
         assertThat(exists(hasTestTag(LiveTvTags.GROUPS_PANEL))).isFalse()
@@ -123,6 +137,10 @@ class LiveTvScreenTest {
         assertThat(exists(hasText("Family · Kids"))).isTrue()
         assertThat(exists(hasText("This group has no channels."))).isTrue()
         assertThat(exists(hasTestTag(EpgTags.channel(f.bbcOne.ordinal)))).isFalse()
+        vm.openGroupsPanel()
+        compose.waitForIdle()
+        compose.onAllNodes(hasClickAction() and hasAnyDescendant(hasText("Kids")), useUnmergedTree = true)
+            .onFirst().assertIsFocused()
     }
 
     @Test
@@ -162,6 +180,81 @@ class LiveTvScreenTest {
         show()
         clickText("No guide data")
         assertThat(watched).containsExactly(f.itv)
+    }
+
+    @Test
+    fun `a short left moves from the current programme into the past`() {
+        show()
+        val current = compose.onAllNodes(hasClickAction() and hasAnyDescendant(hasText("The Celebrity Traitors")), useUnmergedTree = true).onFirst()
+        current.assertIsFocused()
+        current.performKeyInput { pressKey(Key.DirectionLeft) }
+        compose.onAllNodes(hasClickAction() and hasAnyDescendant(hasText("Six O'Clock News")), useUnmergedTree = true)
+            .onFirst().assertIsFocused()
+    }
+
+    @Test
+    fun `left moves from a future programme to the current programme`() {
+        show()
+        val current = compose.onAllNodes(hasClickAction() and hasAnyDescendant(hasText("The Celebrity Traitors")), useUnmergedTree = true).onFirst()
+        current.performKeyInput { pressKey(Key.DirectionRight) }
+        val future = compose.onAllNodes(hasClickAction() and hasAnyDescendant(hasText("Question Time")), useUnmergedTree = true).onFirst()
+        future.assertIsFocused()
+        future.performKeyInput { pressKey(Key.DirectionLeft) }
+        current.assertIsFocused()
+    }
+
+    @Test
+    fun `double left returns to the current programme`() {
+        show()
+        val current = compose.onAllNodes(hasClickAction() and hasAnyDescendant(hasText("The Celebrity Traitors")), useUnmergedTree = true).onFirst()
+        current.performKeyInput { pressKey(Key.DirectionRight) }
+        val future = compose.onAllNodes(hasClickAction() and hasAnyDescendant(hasText("Question Time")), useUnmergedTree = true).onFirst()
+        future.performKeyInput {
+            pressKey(Key.DirectionLeft)
+            pressKey(Key.DirectionLeft)
+        }
+        compose.waitForIdle()
+        current.assertIsFocused()
+    }
+
+    @Test
+    fun `left pages back from a guide window hours ahead`() {
+        f.grid.add(10, programme(7, "bbc1", utc("2026-10-29T21:00:00Z"), utc("2026-10-29T23:00:00Z"), "Late programme"))
+        show()
+        val current = compose.onAllNodes(hasClickAction() and hasAnyDescendant(hasText("The Celebrity Traitors")), useUnmergedTree = true).onFirst()
+        current.performKeyInput {
+            pressKey(Key.DirectionRight)
+            pressKey(Key.DirectionRight)
+        }
+        val late = compose.onAllNodes(hasClickAction() and hasAnyDescendant(hasText("Late programme")), useUnmergedTree = true).onFirst()
+        late.assertIsFocused()
+        late.performKeyInput { pressKey(Key.DirectionRight) }
+        compose.waitForIdle()
+        assertThat(exists(hasTestTag(EpgTags.NOW_LINE))).isFalse()
+        late.performKeyInput { pressKey(Key.DirectionLeft) }
+        compose.waitForIdle()
+        assertThat(exists(hasTestTag(EpgTags.NOW_LINE))).isTrue()
+    }
+
+    @Test
+    fun `double left returns to now from a guide window hours ahead`() {
+        f.grid.add(10, programme(7, "bbc1", utc("2026-10-29T21:00:00Z"), utc("2026-10-29T23:00:00Z"), "Late programme"))
+        show()
+        val current = compose.onAllNodes(hasClickAction() and hasAnyDescendant(hasText("The Celebrity Traitors")), useUnmergedTree = true).onFirst()
+        current.performKeyInput {
+            pressKey(Key.DirectionRight)
+            pressKey(Key.DirectionRight)
+        }
+        val late = compose.onAllNodes(hasClickAction() and hasAnyDescendant(hasText("Late programme")), useUnmergedTree = true).onFirst()
+        late.performKeyInput { pressKey(Key.DirectionRight) }
+        compose.waitForIdle()
+        assertThat(exists(hasTestTag(EpgTags.NOW_LINE))).isFalse()
+        late.performKeyInput {
+            pressKey(Key.DirectionLeft)
+            pressKey(Key.DirectionLeft)
+        }
+        compose.waitForIdle()
+        current.assertIsFocused()
     }
 
     @Test

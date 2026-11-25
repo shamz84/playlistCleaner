@@ -25,6 +25,8 @@ import app.playlistplayer.core.database.PlaylistStore
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
@@ -183,6 +185,13 @@ class PlaylistAccountStatusChecker(
 fun EpgStore.gridSource(): app.playlistplayer.feature.live.EpgGridSource {
     val store = this
     return object : app.playlistplayer.feature.live.EpgGridSource {
+        override fun observeChanges(playlistId: Long) =
+            store.observeState(playlistId)
+                .map { it?.lastImportAt }
+                .distinctUntilChanged()
+                .drop(1)
+                .map { }
+
         override suspend fun gridForGroup(playlistId: Long, groupOrdinal: Int, fromMillis: Long, toMillis: Long) =
             store.gridForGroup(playlistId, groupOrdinal, fromMillis, toMillis)
 

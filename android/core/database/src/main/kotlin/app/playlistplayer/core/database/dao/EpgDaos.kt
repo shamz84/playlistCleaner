@@ -12,6 +12,14 @@ import app.playlistplayer.core.database.entity.EpgSourceStateEntity
 import app.playlistplayer.core.database.entity.ProgrammeEntity
 import kotlinx.coroutines.flow.Flow
 
+internal const val DROP_ARCHIVE_OVERLAPPING_SQL =
+    """DELETE FROM programme WHERE playlistId = :playlistId AND pending = 0 AND source = 'XTREAM_ARCHIVE'
+       AND EXISTS (SELECT 1 FROM programme n INDEXED BY index_programme_playlistId_channelKey_startMillis
+            WHERE n.playlistId = programme.playlistId AND n.channelKey = programme.channelKey
+            AND n.importId = :importId AND n.pending = 1
+            AND n.startMillis < programme.stopMillis AND n.startMillis > programme.startMillis - :maxDurationMillis
+            AND n.stopMillis > programme.startMillis)"""
+
 @Dao
 interface EpgSourceStateDao {
     @Query("SELECT * FROM epg_source_state WHERE playlistId = :playlistId")
@@ -195,13 +203,7 @@ interface ProgrammeDao {
     suspend fun dropStagedPastOverlaps(importId: Long, importStart: Long, maxDurationMillis: Long)
 
     /** Commit step 3: XMLTV wins over archive backfill for the same slot. */
-    @Query(
-        """DELETE FROM programme WHERE playlistId = :playlistId AND pending = 0 AND source = 'XTREAM_ARCHIVE'
-           AND EXISTS (SELECT 1 FROM programme n WHERE n.importId = :importId AND n.pending = 1
-                AND n.channelKey = programme.channelKey
-                AND n.startMillis < programme.stopMillis AND n.startMillis > programme.startMillis - :maxDurationMillis
-                AND n.stopMillis > programme.startMillis)""",
-    )
+    @Query(DROP_ARCHIVE_OVERLAPPING_SQL)
     suspend fun dropArchiveOverlapping(playlistId: Long, importId: Long, maxDurationMillis: Long)
 
     /** Commit step 4. */

@@ -1,5 +1,6 @@
 package app.playlistplayer.feature.epg
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.playlistplayer.core.database.entity.ProgrammeEntity
@@ -13,6 +14,8 @@ import app.playlistplayer.feature.live.LiveChannelSource
 import app.playlistplayer.feature.live.OtherVersionsResolver
 import app.playlistplayer.ui.common.GroupKey
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -22,6 +25,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.yield
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -36,9 +41,9 @@ import java.time.temporal.ChronoUnit
  * - pages in time by [windowSlots] slots, and jumps by day from −(largest archive window of the
  *   group's channels and their other versions) to +2 days, bounded to those days;
  * - past programmes inside the archive of the channel or an other version get the catch-up icon;
- * - OK: eligible past → [EpgEvent.PlayCatchup]; airing → [AiringChoice] (Watch live / Restart);
+ * - OK: eligible past → [EpgEvent.PlayCatchup]; eligible airing → [AiringChoice]; other airing → live;
  *   future or non-eligible past → [ProgrammeDetails] only;
- * - returning to the guide resets the timeline and programme to now while keeping the channel.
+ * - returning from catch-up preserves the selected time; other returns reset to now.
  *
  * The UI calls [tick] about once a minute to move the now-line.
  *
@@ -56,6 +61,8 @@ class EpgGridViewModel(
     private val zone: ZoneId = ZoneId.systemDefault(),
     private val windowSlots: Int = DEFAULT_WINDOW_SLOTS,
     private val rowBlock: Int = 0,
+    initialChannelOrdinal: Int? = null,
+    private val versionsDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
 
     init {
@@ -80,19 +87,24 @@ class EpgGridViewModel(
 
     private val windowMillis = windowSlots * SLOT_MILLIS
     private var playable: List<LiveChannel> = emptyList()
-    private var others: Map<Int, List<LiveChannel>> = emptyMap()
+    private val others = HashMap<Int, List<LiveChannel>>()
     private var maxArchiveDays = 0
     private var programmes: Map<Int, List<ProgrammeEntity>> = emptyMap()
     private var windowStart = 0L
-    private var focus: EpgFocus? = null
+    private var focus: EpgFocus? = initialChannelOrdinal?.let { EpgFocus(it, null, clock()) }
     private var loadJob: Job? = null
     private var rowsJob: Job? = null
+    private var metadataJob: Job? = null
     private val loadedBlocks = HashSet<Int>()
     private var visibleFirst = 0
     private var visibleLast = 0
+    private var preserveTimeOnReturn = false
 
     init {
-        viewModelScope.launch { open() }
+        loadJob = viewModelScope.launch { open() }
+        viewModelScope.launch {
+            grid.observeChanges(group.playlistId).collect { refresh() }
+        }
     }
 
     private suspend fun open() {
@@ -100,24 +112,27 @@ class EpgGridViewModel(
         try {
             playable = channels.groupChannels(group.playlistId, group.groupOrdinal)
                 .filter { it.playlistId == group.playlistId && it.isPlayable }
-            others = playable.associate { it.ordinal to otherVersions.otherVersions(it) }
         } catch (e: CancellationException) {
             throw e
         } catch (_: Exception) {
             mutableState.update { it.copy(loading = false, loadFailed = true) }
             return
         }
-        maxArchiveDays = playable.maxOfOrNull { channel ->
-            (listOf(channel) + others[channel.ordinal].orEmpty())
-                .filter { it.streamId != null }
-                .maxOfOrNull { it.archiveDays.coerceAtLeast(0) } ?: 0
-        } ?: 0
+        maxArchiveDays = playable.filter { it.streamId != null }.maxOfOrNull { it.archiveDays.coerceAtLeast(0) } ?: 0
         if (playable.isEmpty()) {
             mutableState.update { it.copy(loading = false, emptyGroup = true, nowMillis = now) }
             return
         }
+        val initialIndex = focus?.let { f -> playable.indexOfFirst { it.ordinal == f.channelOrdinal } } ?: -1
+        if (initialIndex >= 0) {
+            visibleFirst = initialIndex
+            visibleLast = initialIndex
+        } else {
+            focus = null
+        }
         windowStart = clampStart(slotFloor(now))
         load(now)
+        if (rowBlock > 0) resolveRemainingVersions()
     }
 
     // ---- window ----
@@ -132,7 +147,10 @@ class EpgGridViewModel(
     fun shiftSlots(slots: Int) = moveTo(windowStart + slots * SLOT_MILLIS)
 
     /** Back to now. */
-    fun jumpToNow() = onReturn()
+    fun jumpToNow() {
+        preserveTimeOnReturn = false
+        onReturn()
+    }
 
     /**
      * Jumps to the same time of day on the day [offset] days from today, within
@@ -163,7 +181,10 @@ class EpgGridViewModel(
         loadedBlocks.clear()
         programmes = emptyMap()
         try {
-            fetch(neededBlocks(), from, to)
+            val needed = neededBlocks()
+            val focusIndex = focus?.let { f -> playable.indexOfFirst { it.ordinal == f.channelOrdinal } } ?: -1
+            val first = if (rowBlock > 0 && focusIndex >= 0) setOf(blockOf(focusIndex)) else needed.take(1).toSet()
+            fetch(first, from, to)
         } catch (e: CancellationException) {
             throw e
         } catch (_: Exception) {
@@ -185,20 +206,58 @@ class EpgGridViewModel(
         val completed = loadedBlocks.intersect(wanted).toMutableSet()
         for (block in blocks) {
             if (block in completed) continue
+            val blockChannels = if (rowBlock <= 0) playable else
+                playable.subList(block * rowBlock, minOf(playable.size, (block + 1) * rowBlock))
+            resolveVersions(blockChannels)
             val rows = if (rowBlock <= 0) {
                 grid.gridForGroup(group.playlistId, group.groupOrdinal, from, to)
             } else {
-                val channels = playable.subList(block * rowBlock, minOf(playable.size, (block + 1) * rowBlock))
-                val ordinals = channels.mapTo(HashSet()) { it.ordinal }
-                grid.gridForChannels(group.playlistId, group.groupOrdinal, channels.minOf { it.ordinal }, channels.maxOf { it.ordinal }, from, to)
+                val ordinals = blockChannels.mapTo(HashSet()) { it.ordinal }
+                grid.gridForChannels(group.playlistId, group.groupOrdinal, blockChannels.minOf { it.ordinal }, blockChannels.maxOf { it.ordinal }, from, to)
                     .filter { it.channelOrdinal in ordinals }
             }
+
             rows.groupBy({ it.channelOrdinal }, { it.programme }).forEach { (ordinal, list) -> loaded[ordinal] = list }
             completed += block
         }
         loadedBlocks.clear()
         loadedBlocks.addAll(completed)
         programmes = loaded
+    }
+
+    private suspend fun resolveVersions(channels: List<LiveChannel>) {
+        val unresolved = channels.filterNot { it.ordinal in others }
+        if (unresolved.isEmpty()) return
+        val resolved = if (rowBlock <= 0) {
+            unresolved.associate { it.ordinal to otherVersions.otherVersions(it) }
+        } else {
+            withContext(versionsDispatcher) {
+                unresolved.associate { it.ordinal to otherVersions.otherVersions(it) }
+            }
+        }
+        others.putAll(resolved)
+        val extraDays = resolved.values.asSequence().flatten()
+            .filter { it.streamId != null }
+            .maxOfOrNull { it.archiveDays.coerceAtLeast(0) } ?: 0
+        maxArchiveDays = maxOf(maxArchiveDays, extraDays)
+    }
+
+    private fun resolveRemainingVersions() {
+        metadataJob?.cancel()
+        metadataJob = viewModelScope.launch {
+            try {
+                for (block in playable.indices step rowBlock) {
+                    val before = maxArchiveDays
+                    resolveVersions(playable.subList(block, minOf(playable.size, block + rowBlock)))
+                    if (before != maxArchiveDays && !mutableState.value.loading) publish(clock())
+                    yield()
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.w("EpgGrid", "Failed to resolve remaining channel versions (${e.javaClass.simpleName})")
+            }
+        }
     }
 
     private fun blockOf(index: Int): Int = if (rowBlock <= 0) 0 else index / rowBlock
@@ -220,21 +279,21 @@ class EpgGridViewModel(
         visibleFirst = firstIndex.coerceAtLeast(0)
         visibleLast = lastIndex.coerceAtLeast(visibleFirst)
         if (rowBlock <= 0 || playable.isEmpty() || mutableState.value.loading || rowsJob?.isActive == true) return
-        val needed = neededBlocks()
-        if (needed == loadedBlocks) return
-        val from = windowStart
-        val to = windowStart + windowMillis
+        if (neededBlocks() == loadedBlocks) return
         rowsJob = viewModelScope.launch {
             try {
-                fetch(needed, from, to)
+                while (true) {
+                    val needed = neededBlocks()
+                    if (needed == loadedBlocks) break
+                    fetch(needed, windowStart, windowStart + windowMillis)
+                    publish(clock())
+                }
             } catch (e: CancellationException) {
                 throw e
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                Log.w("EpgGrid", "Failed to load guide rows (${e.javaClass.simpleName})")
                 return@launch // the rows stay placeholders; the next scroll retries
             }
-            publish(clock())
-            // More rows may have scrolled into view meanwhile.
-            onVisibleRows(visibleFirst, visibleLast)
         }
     }
 
@@ -250,14 +309,21 @@ class EpgGridViewModel(
         publish(clock())
     }
 
-    /** On reopening, show current programmes while retaining the previously focused channel. */
-    fun onReturn() {
+    /** On reopening, show current programmes on the playing channel if it belongs to this group. */
+    fun onReturn(playingChannelOrdinal: Int? = null) {
+        if (preserveTimeOnReturn) {
+            preserveTimeOnReturn = false
+            tick()
+            return
+        }
         if (playable.isEmpty()) {
             refresh()
             return
         }
         val now = clock()
-        focus = focus?.let { EpgFocus(it.channelOrdinal, null, now) }
+        val channelOrdinal = playingChannelOrdinal?.takeIf { ordinal -> playable.any { it.ordinal == ordinal } }
+            ?: focus?.channelOrdinal
+        focus = channelOrdinal?.let { EpgFocus(it, null, now) }
         windowStart = clampStart(slotFloor(now))
         loadJob?.cancel()
         loadJob = viewModelScope.launch { load(now, resetToNow = true) }
@@ -392,10 +458,16 @@ class EpgGridViewModel(
         val timing = timingOf(programme, now)
         val decision = if (timing == ProgrammeTiming.FUTURE) CatchupDecision.NotEligible else decide(channel, programme, now)
         when {
-            timing == ProgrammeTiming.PAST && decision is CatchupDecision.PlayFromStart ->
+            timing == ProgrammeTiming.PAST && decision is CatchupDecision.PlayFromStart -> {
+                preserveTimeOnReturn = true
                 eventChannel.trySend(EpgEvent.PlayCatchup(requestFor(channel, programme)))
-            timing == ProgrammeTiming.AIRING -> mutableState.update {
-                it.copy(airingChoice = AiringChoice(channelOrdinal, programmeId, programme.title, decision is CatchupDecision.RestartLive))
+            }
+            timing == ProgrammeTiming.AIRING && decision is CatchupDecision.RestartLive -> mutableState.update {
+                it.copy(airingChoice = AiringChoice(channelOrdinal, programmeId, programme.title, canRestart = true))
+            }
+            timing == ProgrammeTiming.AIRING -> {
+                preserveTimeOnReturn = false
+                eventChannel.trySend(EpgEvent.WatchLive(channel))
             }
             else -> showDetails(channelOrdinal, programmeId)
         }
@@ -404,12 +476,14 @@ class EpgGridViewModel(
     /** OK on a "No guide data" row: watch the channel live. */
     fun selectChannel(channelOrdinal: Int) {
         onFocus(channelOrdinal, null)
+        preserveTimeOnReturn = false
         playable.firstOrNull { it.ordinal == channelOrdinal }?.let { eventChannel.trySend(EpgEvent.WatchLive(it)) }
     }
 
     fun chooseWatchLive() {
         val choice = mutableState.value.airingChoice ?: return
         mutableState.update { it.copy(airingChoice = null) }
+        preserveTimeOnReturn = false
         playable.firstOrNull { it.ordinal == choice.channelOrdinal }?.let { eventChannel.trySend(EpgEvent.WatchLive(it)) }
     }
 
@@ -418,6 +492,7 @@ class EpgGridViewModel(
         mutableState.update { it.copy(airingChoice = null) }
         if (!choice.canRestart) return
         val (channel, programme) = find(choice.channelOrdinal, choice.programmeId) ?: return
+        preserveTimeOnReturn = true
         eventChannel.trySend(EpgEvent.PlayCatchup(requestFor(channel, programme)))
     }
 

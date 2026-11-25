@@ -216,6 +216,13 @@ class PreferencesRepository(private val storage: PreferencesStorage) {
         return applied
     }
 
+    /** Clamped into [SyncPreferences.GUIDE_REFRESH_RANGE]; returns the applied value. */
+    suspend fun setGuideRefreshHours(hours: Int): Int {
+        val applied = hours.coerceIn(SyncPreferences.GUIDE_REFRESH_RANGE)
+        update { it.copy(sync = it.sync.copy(guideRefreshHours = applied)) }
+        return applied
+    }
+
     /** Clamped into [SyncPreferences.STALE_RANGE]; returns the applied value. */
     suspend fun setStaleWarningDays(days: Int): Int {
         val applied = days.coerceIn(SyncPreferences.STALE_RANGE)

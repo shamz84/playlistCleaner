@@ -419,6 +419,12 @@ class SettingsViewModel(
         if (applied != hours) _state.update { it.copy(message = SettingsMessage.ValueClamped(applied)) }
     }
 
+    fun setGuideRefreshInterval(hours: Int) = launchPrefs {
+        val applied = preferences.setGuideRefreshHours(hours)
+        deps.playlists.setGuideRefreshInterval(applied)
+        if (applied != hours) _state.update { it.copy(message = SettingsMessage.ValueClamped(applied)) }
+    }
+
     fun setStaleWarningDays(days: Int) = launchPrefs {
         val applied = preferences.setStaleWarningDays(days)
         if (applied != days) _state.update { it.copy(message = SettingsMessage.ValueClamped(applied)) }

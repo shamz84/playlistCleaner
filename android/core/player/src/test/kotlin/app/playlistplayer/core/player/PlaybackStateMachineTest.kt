@@ -281,6 +281,21 @@ class PlaybackStateMachineTest {
     }
 
     @Test
+    fun seekStall_retriesAtTheSeekTargetEvenWithoutSubsequentProgress() = runTest {
+        val f = MachineFixture(this)
+        f.machine.play(listOf(vod("catchup")))
+        f.machine.onFirstFrame()
+        f.machine.onProgress(42_000)
+        advance(f.policy.stallThresholdMs - 100)
+        f.machine.onSeek(180_000)
+        advance(100)
+        assertThat(f.state).isInstanceOf(PlaybackState.Playing::class.java)
+        advance(f.policy.stallThresholdMs - 100)
+        advance(f.policy.reconnectBackoffInitialMs)
+        assertThat(f.driver.calls.last()).isEqualTo("prepare:catchup@180000")
+    }
+
+    @Test
     fun stall_triggersExactlyOneReprepareAtLiveEdge_notOverlapping() = runTest {
         val f = MachineFixture(this)
         f.machine.play(listOf(live("a")))
@@ -304,6 +319,47 @@ class PlaybackStateMachineTest {
         advance(f.policy.startTimeoutMs - 1)
         assertThat(f.driver.prepareCount("a")).isEqualTo(2)
         assertThat(f.history.filterIsInstance<PlaybackState.Stalled>()).hasSize(1)
+    }
+
+    @Test
+    fun recoveredBufferingGetsTimeForNextProgressBeforeWatchdogRetries() = runTest {
+        val f = MachineFixture(this)
+        f.machine.play(listOf(vod("catchup")))
+        f.machine.onFirstFrame()
+        f.machine.onBufferingChanged(true)
+        advance(f.policy.stallThresholdMs - 200)
+        f.machine.onBufferingChanged(false)
+
+        advance(500)
+        assertThat(f.state).isEqualTo(PlaybackState.Playing(vod("catchup")))
+        assertThat(f.driver.prepareCount("catchup")).isEqualTo(1)
+        advance(f.policy.stallThresholdMs - 500)
+        assertThat(f.state).isInstanceOf(PlaybackState.Retrying::class.java)
+    }
+
+    @Test
+    fun prolongedBufferingStillTriggersWatchdog() = runTest {
+        val f = MachineFixture(this)
+        f.machine.play(listOf(vod("catchup")))
+        f.machine.onFirstFrame()
+        f.machine.onBufferingChanged(true)
+
+        advance(f.policy.stallThresholdMs)
+        assertThat((f.state as PlaybackState.Retrying).reason).isEqualTo(PlaybackError.STALL)
+    }
+
+    @Test
+    fun bufferingEndingWhilePausedDoesNotArmWatchdog() = runTest {
+        val f = MachineFixture(this)
+        f.machine.play(listOf(vod("catchup")))
+        f.machine.onFirstFrame()
+        f.machine.onBufferingChanged(true)
+        f.machine.onPausedChanged(true)
+        f.machine.onBufferingChanged(false)
+
+        advance(f.policy.stallThresholdMs * 2)
+        assertThat(f.state).isEqualTo(PlaybackState.Playing(vod("catchup")))
+        assertThat(f.driver.prepareCount("catchup")).isEqualTo(1)
     }
 
     @Test

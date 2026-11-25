@@ -148,7 +148,10 @@ class PlaybackStateMachine(
 
     fun onBufferingChanged(buffering: Boolean) {
         val s = state.value as? PlaybackState.Playing ?: return
-        if (s.buffering != buffering) set(s.copy(buffering = buffering))
+        if (s.buffering != buffering) {
+            if (!buffering && !paused) watchdog.arm(policy.stallThresholdMs)
+            set(s.copy(buffering = buffering))
+        }
     }
 
     /** Playback position advanced to [positionMs]. */
@@ -160,6 +163,13 @@ class PlaybackStateMachine(
             reconnectStep = 0
             mediaErrorRetries = 0
         }
+    }
+
+    /** Preserve a user seek even if the player stalls before it can report further progress. */
+    fun onSeek(positionMs: Long) {
+        val source = current ?: return
+        if (!source.isLive) lastPositionMs = positionMs.coerceAtLeast(0)
+        if (state.value is PlaybackState.Playing && !paused) watchdog.arm(policy.stallThresholdMs)
     }
 
     /** The user paused or resumed; the watchdog does not run while paused. */

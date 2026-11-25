@@ -750,6 +750,14 @@ private fun LazyListScope.app(state: SettingsUiState, viewModel: SettingsViewMod
             onIncrease = { viewModel.setRefreshInterval(SettingsTexts.step(SettingsTexts.REFRESH_PRESETS_HOURS, sync.refreshIntervalHours, +1)) },
         )
     }
+    item(key = "guide-refresh") {
+        StepperRow(
+            title = stringResource(R.string.settings_app_guide_refresh_interval),
+            value = stringResource(R.string.settings_app_hours, sync.guideRefreshHours),
+            onDecrease = { viewModel.setGuideRefreshInterval(SettingsTexts.step(SettingsTexts.GUIDE_REFRESH_PRESETS_HOURS, sync.guideRefreshHours, -1)) },
+            onIncrease = { viewModel.setGuideRefreshInterval(SettingsTexts.step(SettingsTexts.GUIDE_REFRESH_PRESETS_HOURS, sync.guideRefreshHours, +1)) },
+        )
+    }
     item(key = "stale") {
         StepperRow(
             title = stringResource(R.string.settings_app_stale_warning),

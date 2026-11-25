@@ -160,15 +160,16 @@ class SettingsViewModelTest {
         vm.setTunneling(true)
         vm.setCatchupOffsetHours(1)
         vm.setRefreshInterval(24)
+        vm.setGuideRefreshInterval(12)
         vm.setStaleWarningDays(10)
-        vm.await { it.preferences.sync.staleWarningDays == 10 }
+        vm.await { it.preferences.sync.staleWarningDays == 10 && it.preferences.sync.guideRefreshHours == 12 }
 
         val reopened = PreferencesRepository(SecretSlotPreferencesStorage(SecureStoreSecretSlots(env.secureStore))).current()
         assertThat(reopened.content.quality).isEqualTo(QualityPreference.HD)
         assertThat(reopened.playback.matchFrameRate).isTrue()
         assertThat(reopened.playback.tunneling).isTrue()
         assertThat(reopened.playback.catchupOffsetHours).isEqualTo(1)
-        assertThat(reopened.sync).isEqualTo(SyncPreferences(refreshIntervalHours = 24, staleWarningDays = 10))
+        assertThat(reopened.sync).isEqualTo(SyncPreferences(refreshIntervalHours = 24, staleWarningDays = 10, guideRefreshHours = 12))
         // The refresh interval is applied to the periodic work.
         assertThat(env.scheduler.calls).contains("periodic:24")
     }

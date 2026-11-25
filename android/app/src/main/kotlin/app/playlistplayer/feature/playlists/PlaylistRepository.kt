@@ -136,6 +136,8 @@ class PlaylistRepository(
     /** Extra per-playlist cleanup on removal (parental locked groups, favourites, progress). */
     private val onRemoved: suspend (playlistId: Long) -> Unit = {},
     private val logger: RedactingLogger = RedactingLogger.NONE,
+    /** Re-schedules every playlist's periodic guide refresh at a new interval. */
+    private val rescheduleGuides: suspend (hours: Long) -> Unit = {},
 ) {
     // ---- reads ----
 
@@ -334,6 +336,11 @@ class PlaylistRepository(
     /** Applies the Settings refresh interval to the periodic "refresh all" work. */
     suspend fun setRefreshInterval(hours: Int) {
         scheduler.schedulePeriodic(hours.toLong())
+    }
+
+    /** Applies the Settings guide refresh interval to every playlist's periodic guide refresh. */
+    suspend fun setGuideRefreshInterval(hours: Int) {
+        rescheduleGuides(hours.toLong())
     }
 
     companion object {

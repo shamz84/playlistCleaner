@@ -108,6 +108,56 @@ To embed a Drive API key, see the last section of [../../docs/ANDROID_PLAYER_SET
 
 Do not host the APK at a public, searchable URL, and do not name it after content or services.
 
+### Playback diagnostics
+
+The app writes `PlaybackDiag` logcat events for playback transitions and periodic samples while
+playing or preparing. They report the playback kind, buffering duration, position, buffered
+duration, seekability, dropped frames, and classified retry reason or HTTP status. They do not
+include channel or programme names, stream identifiers, URLs, credentials, or error messages.
+Logcat is a rolling device buffer; events may be overwritten. For a comparison, observe an
+ordinary live channel, a completed catch-up programme, and an ongoing programme restarted from
+the beginning. Capture events during the interruption, without posting other unreviewed logcat
+output, which may contain sensitive information from other components.
+
+After playback has started, the watchdog reconnects after six seconds without progress. A
+completed rebuffer gets a fresh six-second window for playback to advance. This does not prevent
+buffering caused by a slow source or network.
+
+For an ongoing programme restarted from the beginning, the app currently tests rebuilding the
+timeshift URL at the selected minute when seeking, then seeking within that minute. Completed
+catch-up programmes retain native seeking. The strategy is controlled by `rebuildRestartSeeks`
+in the app's catch-up controller wiring and may behave differently across providers.
+
+### TV guide controls
+
+These describe the current working tree. Progressive loading and the double-Left shortcut were
+included in the signed APK installed on `.226`, `.90` and `.96` on 2026-11-23, but still need
+device validation.
+
+- Back from the guide opens the category panel at the selected category. Left and Right move
+  through programmes; double-tap Left to return to the current time. Left on the channel
+  column opens the categories.
+- Selecting an airing programme plays live immediately unless it is eligible for restart, in
+  which case the guide offers live or from the beginning. Returning from live opens the guide
+  at the current time; returning from guide-selected catch-up keeps its selected time.
+- Hold Back for the exit confirmation. A short Back keeps its normal navigation behavior.
+- The TV guide loads programmes around the restored or playing channel first, then loads nearby
+  rows as you scroll. Archive-day options may expand as alternative channel versions are checked
+  in the background.
+- Settings shows a non-clickable App Version beneath App. It reports the configured version name;
+  separate builds with the same version name cannot be distinguished by this label.
+
+Troubleshooting: Android's log buffer is small and can overwrite an import within hours. For a
+missing guide, start `adb logcat` before pressing Refresh guide and look for the redacted
+`EPG import for playlist ...` lines (started, staged, committing, imported or failed). If a
+Stick shows `offline` in `adb devices` while it answers ping, run `adb disconnect <ip>:5555` then
+`adb connect <ip>:5555`; if the handshake still fails, toggle ADB debugging on the device.
+
+Automatic guide refresh runs every 24 hours by default (Settings → App → "Refresh TV guide
+every": 6, 12, 24 or 48 hours). The background job requires an idle device and an unmetered
+network, so it is not guaranteed to run at a particular time. While the app is open it also checks
+on launch and every 15 minutes, and refreshes any guide older than the chosen interval.
+
 ## Sideload on a phone
 
 1. Copy the APK to the phone (USB, private link, or `adb install -r <apk>`).

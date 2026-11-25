@@ -77,6 +77,9 @@ fun interface NowNextSource {
 fun interface EpgGridSource {
     suspend fun gridForGroup(playlistId: Long, groupOrdinal: Int, fromMillis: Long, toMillis: Long): List<ChannelProgramme>
 
+    /** Emits when the playlist's committed guide changes. */
+    fun observeChanges(playlistId: Long): kotlinx.coroutines.flow.Flow<Unit> = kotlinx.coroutines.flow.emptyFlow()
+
     /**
      * Guide rows of the group's channels with an ordinal in `[fromOrdinal, toOrdinal]` (rows loaded
      * lazily around the visible channels). The default filters [gridForGroup].

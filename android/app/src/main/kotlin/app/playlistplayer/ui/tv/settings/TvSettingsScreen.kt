@@ -23,6 +23,7 @@ import androidx.tv.material3.ListItem
 import androidx.tv.material3.ListItemDefaults
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import app.playlistplayer.BuildConfig
 import app.playlistplayer.R
 import app.playlistplayer.feature.settings.SettingsDialog
 import app.playlistplayer.feature.settings.SettingsTexts
@@ -51,22 +52,7 @@ fun TvSettingsScreen(viewModel: SettingsViewModel, onAddPlaylist: () -> Unit, mo
     val state by viewModel.state.collectAsStateWithLifecycle()
     var section by rememberSaveable { mutableStateOf(SettingsSection.Playlists) }
     Row(modifier = modifier.fillMaxSize().padding(TvDimens.ScreenPadding), horizontalArrangement = Arrangement.spacedBy(UiTokens.SpaceL)) {
-        Column(
-            modifier = Modifier.width(240.dp).fillMaxHeight().testTag(TvSettingsTags.SECTIONS),
-            verticalArrangement = Arrangement.spacedBy(UiTokens.SpaceXs),
-        ) {
-            Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.headlineSmall, color = UiTokens.OnBackground)
-            SettingsSection.entries.forEach { entry ->
-                ListItem(
-                    selected = entry == section,
-                    onClick = { section = entry },
-                    headlineContent = { Text(stringResource(entry.titleRes)) },
-                    modifier = Modifier.onFocusChanged { if (it.isFocused) section = entry },
-                    scale = ListItemDefaults.scale(focusedScale = 1.03f, focusedSelectedScale = 1.03f),
-                    border = ListItemDefaults.border(focusedBorder = TvDimens.FocusBorder, focusedSelectedBorder = TvDimens.FocusBorder),
-                )
-            }
-        }
+        SettingsSectionRail(section, onSelect = { section = it })
         Column(modifier = Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(UiTokens.SpaceS)) {
             Messages(state, viewModel)
             LazyColumn(
@@ -84,6 +70,32 @@ fun TvSettingsScreen(viewModel: SettingsViewModel, onAddPlaylist: () -> Unit, mo
         }
     }
     Overlays(state, viewModel)
+}
+
+@Composable
+internal fun SettingsSectionRail(section: SettingsSection, onSelect: (SettingsSection) -> Unit) {
+    Column(
+        modifier = Modifier.width(240.dp).fillMaxHeight().testTag(TvSettingsTags.SECTIONS),
+        verticalArrangement = Arrangement.spacedBy(UiTokens.SpaceXs),
+    ) {
+        Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.headlineSmall, color = UiTokens.OnBackground)
+        SettingsSection.entries.forEach { entry ->
+            ListItem(
+                selected = entry == section,
+                onClick = { onSelect(entry) },
+                headlineContent = { Text(stringResource(entry.titleRes)) },
+                modifier = Modifier.onFocusChanged { if (it.isFocused) onSelect(entry) },
+                scale = ListItemDefaults.scale(focusedScale = 1.03f, focusedSelectedScale = 1.03f),
+                border = ListItemDefaults.border(focusedBorder = TvDimens.FocusBorder, focusedSelectedBorder = TvDimens.FocusBorder),
+            )
+        }
+        Text(
+            text = stringResource(R.string.settings_app_version, BuildConfig.VERSION_NAME),
+            style = MaterialTheme.typography.bodySmall,
+            color = UiTokens.OnSurfaceMuted,
+            modifier = Modifier.padding(horizontal = UiTokens.SpaceM),
+        )
+    }
 }
 
 @Composable

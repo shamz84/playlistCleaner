@@ -229,9 +229,24 @@ internal fun GroupRail(
     onOpenGroup: (GroupKey) -> Unit,
     modifier: Modifier = Modifier,
     compact: Boolean = false,
+    focusSelected: Boolean = false,
 ) {
     val description = stringResource(R.string.live_groups_description)
+    val listState = rememberLazyListState()
+    val selectedRequester = remember { FocusRequester() }
+    val groupKeys = sections.flatMap { section -> section.groups.map { it.key } }
+    val focusKey = selected?.takeIf { it in groupKeys } ?: groupKeys.firstOrNull()
+    val selectedIndex = sections.fold(0 to -1) { (offset, found), section ->
+        val index = section.groups.indexOfFirst { it.key == focusKey }
+        (offset + 1 + section.groups.size) to if (found >= 0) found else if (index >= 0) offset + 1 + index else -1
+    }.second
+    LaunchedEffect(focusSelected, selectedIndex) {
+        if (focusSelected && selectedIndex >= 0) {
+            listState.scrollToItem(selectedIndex)
+        }
+    }
     LazyColumn(
+        state = listState,
         modifier = modifier.testTag(LiveTags.GROUPS).semantics { contentDescription = description },
         verticalArrangement = Arrangement.spacedBy(if (compact) 0.dp else UiTokens.SpaceXs),
     ) {
@@ -251,7 +266,13 @@ internal fun GroupRail(
             }
             section.groups.forEach { group ->
                 item(key = "group-${group.playlistId}-${group.ordinal}", contentType = "group") {
-                    GroupRow(group, selected = group.key == selected, onFocus = onFocusGroup, onOpen = onOpenGroup, compact = compact)
+                    val isSelected = group.key == selected
+                    val isFocusTarget = group.key == focusKey
+                    LaunchedEffect(focusSelected, isFocusTarget) {
+                        if (focusSelected && isFocusTarget) selectedRequester.requestFocus()
+                    }
+                    GroupRow(group, selected = isSelected, onFocus = onFocusGroup, onOpen = onOpenGroup, compact = compact,
+                        modifier = if (focusSelected && isFocusTarget) Modifier.focusRequester(selectedRequester) else Modifier)
                 }
             }
         }
@@ -259,14 +280,14 @@ internal fun GroupRail(
 }
 
 @Composable
-private fun GroupRow(group: GroupItem, selected: Boolean, onFocus: (GroupKey) -> Unit, onOpen: (GroupKey) -> Unit, compact: Boolean = false) {
+private fun GroupRow(group: GroupItem, selected: Boolean, onFocus: (GroupKey) -> Unit, onOpen: (GroupKey) -> Unit, compact: Boolean = false, modifier: Modifier = Modifier) {
     val description = stringResource(R.string.live_group_item_description, group.name, group.channelCount)
     val textStyle = if (compact) MaterialTheme.typography.bodySmall else LocalTextStyle.current
     ListItem(
         selected = selected,
         onClick = { onOpen(group.key) },
         headlineContent = { Text(group.name, style = textStyle, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-        modifier = Modifier
+        modifier = modifier
             .onFocusChanged { if (it.isFocused) onFocus(group.key) }
             .semantics { contentDescription = description },
         scale = ListItemDefaults.scale(focusedScale = if (compact) 1f else 1.03f, focusedSelectedScale = if (compact) 1f else 1.03f),

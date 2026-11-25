@@ -5,8 +5,10 @@ import app.playlistplayer.core.database.EpgStore
 import app.playlistplayer.core.database.entity.AccountStatusEntity
 import app.playlistplayer.core.database.entity.LiveStreamInfoEntity
 import app.playlistplayer.core.model.SourceReference
+import app.playlistplayer.core.network.RedactingLogger
 import app.playlistplayer.core.network.epg.XmltvDownloader
 import app.playlistplayer.core.network.xtream.XtreamClient
+import app.playlistplayer.core.parsing.xmltv.XmlPullSourceFactory
 import app.playlistplayer.core.sync.FakeSource
 import app.playlistplayer.core.sync.SyncHarness
 import app.playlistplayer.core.sync.SyncOutcome
@@ -83,7 +85,11 @@ class EpgTestEnv(tempDir: File) {
 
     val overrideUrl: String get() = server.url("/override.xml").toString()
 
-    fun syncer(config: EpgSyncConfig = EpgSyncConfig(backfillDelayMillis = 0)) = EpgSyncer(
+    fun syncer(
+        config: EpgSyncConfig = EpgSyncConfig(backfillDelayMillis = 0),
+        pullFactory: XmlPullSourceFactory = AndroidXmlPullSource,
+        logger: RedactingLogger = RedactingLogger.NONE,
+    ) = EpgSyncer(
         playlistStore = h.store,
         catalogStore = catalog,
         epgStore = epg,
@@ -91,8 +97,9 @@ class EpgTestEnv(tempDir: File) {
         overrideUrls = { h.secureStore.epgOverrideUrl(it) },
         downloader = XmltvDownloader(http, Dispatchers.IO),
         xtreamClient = xtream,
-        pullFactory = AndroidXmlPullSource,
+        pullFactory = pullFactory,
         clock = { h.now },
+        logger = logger,
         config = config,
         pause = {},
     )

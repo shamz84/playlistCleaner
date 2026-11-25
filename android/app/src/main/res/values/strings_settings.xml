@@ -7,6 +7,7 @@
     <string name="settings_section_playback">Playback</string>
     <string name="settings_section_content">Content</string>
     <string name="settings_section_app">App</string>
+    <string name="settings_app_version">App Version: %1$s</string>
 
     <string name="settings_cancel">Cancel</string>
     <string name="settings_confirm">Confirm</string>
@@ -155,6 +156,7 @@
 
     <!-- App -->
     <string name="settings_app_refresh_interval">Refresh playlists every</string>
+    <string name="settings_app_guide_refresh_interval">Refresh TV guide every</string>
     <string name="settings_app_theme">Colour theme</string>
     <string name="settings_app_theme_midnight">Midnight Blue</string>
     <string name="settings_app_theme_ember">Cinema Ember</string>
